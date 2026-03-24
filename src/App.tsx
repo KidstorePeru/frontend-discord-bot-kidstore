@@ -252,7 +252,7 @@ export default function App() {
                   <Route path="/login"          element={<Login />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/store"          element={<StorePage />} />
-                  <Route path="/admin"          element={<AdminPanel />} />
+                  <Route path="/ksp-admin-2026" element={<AdminPanel />} />
                   <Route path="/dashboard"      element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/recharge"       element={<ProtectedRoute><Recharge /></ProtectedRoute>} />
                   <Route path="/profile"        element={<ProtectedRoute><Profile /></ProtectedRoute>} />
