@@ -6,6 +6,11 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
+  preview: {
+    host: true,
+    port: 4173,
+    allowedHosts: ['frontend-discord-bot-kidstore-production.up.railway.app'],
+  },
   server: {
     port: 5173,
     proxy: {
