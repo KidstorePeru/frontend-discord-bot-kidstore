@@ -45,7 +45,7 @@ export default function Bots() {
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
-    fetch('/api/store/bots-status', {
+    fetch(`${import.meta.env.VITE_API_URL || ''}/store/bots-status`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('kc_token') || ''}` },
     })
       .then(r => r.json())
