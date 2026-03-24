@@ -1,0 +1,154 @@
+/* ════════════════════════════════════════
+   BOTS PAGE — STATUS CARDS
+   ════════════════════════════════════════ */
+
+.bots-status-section { margin-bottom: 36px; animation: fadeUp 0.4s ease-out; }
+.bots-status-title {
+  font-size: 1.1rem; font-weight: 800; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* Availability banner */
+.bots-availability {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 16px 20px; border-radius: var(--radius-lg);
+  margin-bottom: 18px; border: 1px solid;
+}
+.bots-availability.available {
+  background: color-mix(in srgb, var(--green-500) 8%, transparent);
+  border-color: color-mix(in srgb, var(--green-500) 25%, transparent);
+  color: var(--green-500);
+}
+.bots-availability.unavailable {
+  background: color-mix(in srgb, var(--red-500) 8%, transparent);
+  border-color: color-mix(in srgb, var(--red-500) 25%, transparent);
+  color: var(--red-500);
+}
+/* ── Fuera de horario — azul/luna ── */
+.bots-availability.bots-offline {
+  background: color-mix(in srgb, var(--blue-500) 8%, transparent);
+  border-color: color-mix(in srgb, var(--blue-500) 22%, transparent);
+  color: var(--blue-500);
+}
+.bots-availability svg { flex-shrink: 0; margin-top: 2px; }
+.bots-availability strong { display: block; font-size: 0.92rem; margin-bottom: 3px; }
+.bots-availability span { font-size: 0.82rem; opacity: 0.85; line-height: 1.4; }
+
+/* Status grid */
+.bots-status-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.bot-status-card {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+  transition: border-color 0.2s;
+}
+.bot-status-card:hover { border-color: var(--border-bright); }
+.bot-status-card.inactive { opacity: 0.7; border-color: color-mix(in srgb, var(--red-500) 30%, transparent); }
+.bot-status-card.no-gifts { border-color: color-mix(in srgb, var(--amber-500) 30%, transparent); }
+/* ── Card fuera de horario ── */
+.bot-status-card.offline {
+  opacity: 0.65;
+  border-color: color-mix(in srgb, var(--blue-500) 25%, transparent);
+}
+
+.bsc-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; background: var(--bg-surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.bsc-avatar {
+  width: 38px; height: 38px; border-radius: var(--radius-sm); flex-shrink: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff; font-weight: 800; font-size: 0.95rem;
+  display: flex; align-items: center; justify-content: center;
+}
+/* ── Avatar apagado fuera de horario ── */
+.bsc-avatar.offline {
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.bsc-info { flex: 1; min-width: 0; }
+.bsc-info strong { display: block; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bsc-badge { font-size: 0.72rem; font-weight: 700; }
+.bsc-badge.active   { color: var(--green-500); }
+.bsc-badge.inactive { color: var(--red-500); }
+.bsc-badge.offline  { color: var(--blue-500); }
+
+.bsc-stats { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.bsc-stat  { display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; }
+.bsc-stat span { color: var(--text-muted); }
+
+.bsc-gifts { display: flex; align-items: center; gap: 4px; }
+.bsc-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: var(--border-bright);
+  transition: background 0.2s;
+}
+.bsc-dot.on { background: var(--green-500); box-shadow: 0 0 5px color-mix(in srgb, var(--green-500) 40%, transparent); }
+.text-green      { color: var(--green-500) !important; }
+.text-red        { color: var(--red-500) !important; }
+.text-muted-soft { color: var(--text-muted) !important; }
+
+.bsc-vbucks { display: flex; align-items: center; gap: 4px; color: #59c2ea; font-weight: 700; }
+
+.bsc-warning {
+  display: flex; align-items: center; gap: 6px; margin: 0 12px 12px;
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--red-500) 8%, transparent);
+  color: var(--red-500); font-size: 0.76rem; font-weight: 600;
+}
+/* ── Warning fuera de horario — azul ── */
+.bsc-warning.bsc-warning-offline {
+  background: color-mix(in srgb, var(--blue-500) 8%, transparent);
+  color: var(--blue-500);
+  border: 1px solid color-mix(in srgb, var(--blue-500) 18%, transparent);
+}
+
+/* Bot cards with linked status */
+.bots-add-title {
+  font-size: 1.1rem; font-weight: 800; margin-bottom: 6px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.bots-add-sub { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+
+.bot-card { position: relative; }
+
+.bot-link-badge {
+  position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+  padding: 2px 10px; border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  font-size: 0.62rem; font-weight: 800; z-index: 5; white-space: nowrap;
+}
+.bot-link-badge.active   { background: var(--green-500); color: #fff; }
+.bot-link-badge.inactive { background: var(--red-500);   color: #fff; }
+.bot-link-badge.no-gifts { background: #f59e0b;          color: #000; }
+/* ── Badge fuera de horario ── */
+.bot-link-badge.offline  {
+  background: color-mix(in srgb, var(--blue-500) 15%, transparent);
+  color: var(--blue-500);
+  border: 1px solid color-mix(in srgb, var(--blue-500) 30%, transparent);
+}
+
+.bot-card.bot-linked-active   { border-color: color-mix(in srgb, var(--green-500) 40%, transparent); }
+.bot-card.bot-linked-inactive { border-color: color-mix(in srgb, var(--red-500) 30%, transparent); opacity: 0.75; }
+/* ── Card fuera de horario ── */
+.bot-card.bot-linked-offline  {
+  border-color: color-mix(in srgb, var(--blue-500) 25%, transparent);
+  opacity: 0.7;
+}
+
+.bot-status-dot.inactive-dot  { background: var(--red-500) !important; box-shadow: 0 0 6px var(--red-500) !important; }
+.bot-status-dot.no-gifts-dot  { background: #f59e0b !important; box-shadow: 0 0 5px #f59e0b44 !important; }
+/* ── Dot apagado fuera de horario ── */
+.bot-status-dot.offline-dot   {
+  background: var(--blue-500) !important;
+  box-shadow: none !important;
+  opacity: 0.5;
+}
+
+.bot-gifts-available {
+  font-size: 0.7rem; color: var(--green-500); font-weight: 700; margin-top: 2px;
+}
+.bot-gifts-available.no-gifts { color: #f59e0b !important; }

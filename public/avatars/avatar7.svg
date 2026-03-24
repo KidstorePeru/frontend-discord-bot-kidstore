@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <radialGradient id="bg7" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </radialGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#bg7)"/>
+  <!-- Sombrero de mago -->
+  <polygon points="50,6 36,32 64,32" fill="#d97706"/>
+  <rect x="28" y="30" width="44" height="8" rx="4" fill="#f59e0b"/>
+  <!-- Estrella en sombrero -->
+  <polygon points="50,14 52,20 58,20 53,24 55,30 50,26 45,30 47,24 42,20 48,20" fill="#fef3c7" opacity="0.9"/>
+  <!-- Cara -->
+  <ellipse cx="50" cy="48" rx="18" ry="18" fill="#fde8d8"/>
+  <!-- Barba larga -->
+  <ellipse cx="50" cy="62" rx="12" ry="8" fill="#f5f5f4"/>
+  <rect x="42" y="62" width="16" height="16" rx="8" fill="#e7e5e4"/>
+  <!-- Ojos sabios -->
+  <ellipse cx="43" cy="46" rx="4" ry="4" fill="#fff"/>
+  <ellipse cx="57" cy="46" rx="4" ry="4" fill="#fff"/>
+  <ellipse cx="43" cy="46" rx="2.5" ry="2.5" fill="#d97706"/>
+  <ellipse cx="57" cy="46" rx="2.5" ry="2.5" fill="#d97706"/>
+  <circle cx="44" cy="45" r="1" fill="#fff" opacity="0.8"/>
+  <circle cx="58" cy="45" r="1" fill="#fff" opacity="0.8"/>
+  <!-- Cuerpo túnica -->
+  <rect x="28" y="72" width="44" height="18" rx="10" fill="#d97706"/>
+  <polygon points="50,72 40,90 60,90" fill="#b45309"/>
+</svg>
