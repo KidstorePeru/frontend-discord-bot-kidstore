@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule';
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_URL as string) || '/api';
 
 async function adminFetch(path: string, adminKey: string, opts: RequestInit = {}) {
   const res = await fetch(`${BASE}${path}`, {
