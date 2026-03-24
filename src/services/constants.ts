@@ -88,12 +88,12 @@ export const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 // ⚠️ Reemplaza con tus datos reales antes de producción
 // ─────────────────────────────────────────────────────────────
 export const PAYMENT_INFO = {
-  yape:      { number: '999-888-777',            raw: '999888777',           owner: 'KidStorePeru'        },
-  plin:      { number: '999-888-777',            raw: '999888777',           owner: 'KidStorePeru'        },
-  bcp:       { account: '191-00000000-0-00',     raw: '19100000000000',      owner: 'KidStorePeru S.A.C.' },
-  interbank: { account: '200-00000000-0-00',     raw: '20000000000000',      owner: 'KidStorePeru S.A.C.' },
-  bbva:      { account: '0011-0000-00000000-00', raw: '001100000000000000',  owner: 'KidStorePeru S.A.C.' },
-  paypal:    { email: 'pagos@kidstoreperu.com' },
-  binance:   { id: 'KidStorePeru', payId: '123456789' },
-  bizum:     { number: '+34 600 000 000',        owner: 'KidStorePeru ES'   },
+  yape:      { number: '963-469-586',            raw: '963469586',           owner: 'Freddy Aystin Rodriguez Uricay'        },
+  plin:      { number: '963-469-586',            raw: '963469586',           owner: 'Freddy Aystin Rodriguez Uricay'        },
+  bcp:       { account: '192-06197697-0-98',     raw: '19206197697098',      owner: 'Freddy Aystin Rodriguez Uricay' },
+  interbank: { account: '898-3302393-5-69',     raw: '8983302393569',      owner: 'Freddy Aystin Rodriguez Uricay' },
+  bbva:      { account: '0011-0814-02132267-68', raw: '001108140213226768',  owner: 'Freddy Aystin Rodriguez Uricay' },
+  paypal:    { email: 'freddyru180496@icloud.com' },
+  binance:   { id: 'KidStore', payId: '1066569170' },
+  bizum:     { number: '+34 641 653 591',        owner: 'Angel Rodriguez'   },
 };
