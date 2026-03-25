@@ -7,11 +7,16 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function getLang(): string {
+  return localStorage.getItem('kc_lang') || 'es';
+}
+
 async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE}${url}`, {
     ...opts,
     headers: {
       'Content-Type': 'application/json',
+      'X-Lang': getLang(),
       ...authHeaders(),
       ...(opts.headers as Record<string, string> || {}),
     },
@@ -25,6 +30,11 @@ async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
       err.code = body.code || 'UNAUTHORIZED';
       throw err;
     }
+    if (body?.code === 'EMAIL_NOT_VERIFIED' || res.status === 403) {
+      const err = new Error(body.error || 'Email no verificado') as Error & { code?: string };
+      err.code = body.code || 'EMAIL_NOT_VERIFIED';
+      throw err;
+    }
     throw new Error(body.error || body.message || `Error ${res.status}`);
   }
   return body as T;
@@ -32,12 +42,12 @@ async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
 
 /* ── Auth ── */
 
-export async function register(epic_username: string, email: string, password: string): Promise<AuthResponse> {
-  const res = await request<{ success: boolean; token: string; customer: Customer }>('/store/register', {
+export async function register(epic_username: string, email: string, password: string): Promise<{ requires_verification: boolean }> {
+  const res = await request<{ success: boolean; requires_verification: boolean }>('/store/register', {
     method: 'POST',
     body: JSON.stringify({ epic_username, email, password }),
   });
-  return { token: res.token, customer: res.customer };
+  return { requires_verification: res.requires_verification };
 }
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
@@ -48,9 +58,10 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return { token: res.token, customer: res.customer };
 }
 
-export async function forgotPassword(email: string): Promise<void> {
+export async function forgotPassword(email: string, lang?: string): Promise<void> {
   await request('/store/forgot-password', {
     method: 'POST',
+    headers: { 'X-Lang': lang || getLang() },
     body: JSON.stringify({ email }),
   });
 }
@@ -92,6 +103,10 @@ export async function linkDiscord(discord_id: string, discord_username: string):
     method: 'POST',
     body: JSON.stringify({ discord_id, discord_username }),
   });
+}
+
+export async function unlinkDiscord(): Promise<void> {
+  await request('/store/unlink-discord', { method: 'DELETE' });
 }
 
 /* ── Shop ── */
@@ -157,8 +172,7 @@ export async function adminRechargeKC(adminKey: string, data: {
 }
 
 /* ── Discord OAuth ── */
- 
-// Obtiene la URL de autorización de Discord e inicia el flujo OAuth
+
 export async function getDiscordAuthURL(): Promise<string> {
   const token = localStorage.getItem('kc_token') || '';
   const res = await request<{ success: boolean; url: string }>(
@@ -167,6 +181,19 @@ export async function getDiscordAuthURL(): Promise<string> {
   return res.url;
 }
 
-export async function unlinkDiscord(): Promise<void> {
-  await request('/store/unlink-discord', { method: 'DELETE' });
+/* ── Email verification ── */
+
+export async function verifyEmail(token: string): Promise<{ token: string; customer: Customer }> {
+  const res = await request<{ success: boolean; token: string; customer: Customer }>(
+    `/store/verify-email?token=${token}`
+  );
+  return { token: res.token, customer: res.customer };
+}
+
+export async function resendVerification(email: string, lang?: string): Promise<void> {
+  await request('/store/resend-verification', {
+    method: 'POST',
+    headers: { 'X-Lang': lang || getLang() },
+    body: JSON.stringify({ email, lang: lang || getLang() }),
+  });
 }

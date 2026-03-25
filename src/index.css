@@ -5828,3 +5828,80 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2;
   display: flex; align-items: center; justify-content: center;
   border: 2px solid var(--bg-base);
 }
+
+/* ── Fix: avatar en banner de recharge ── */
+.arc-avatar.large {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  max-width: 44px !important;
+  max-height: 44px !important;
+  border-radius: 12px !important;
+  font-size: 1.1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+/* Fix buscador recharge — evita expansión por flex y box-shadow */
+.admin-recharge-customers .admin-search-bar {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+.admin-recharge-customers .admin-search-bar:focus-within {
+  box-shadow: inset 0 0 0 3px rgba(108, 92, 231, 0.1) !important;
+}
+
+/* ── Fix grid tienda ── */
+.sg {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+.sc.sp1 { grid-column: span 1 !important; }
+.sc.sp2 { grid-column: span 2 !important; }
+.sc.sp3 { grid-column: span 3 !important; }
+.sc.sp4 { grid-column: span 4 !important; }
+
+@media (max-width: 1000px) {
+  .sg { grid-template-columns: repeat(3, 1fr) !important; }
+  .sc.sp4 { grid-column: span 3 !important; }
+}
+@media (max-width: 640px) {
+  .sg { grid-template-columns: repeat(2, 1fr) !important; }
+  .sc.sp3, .sc.sp4 { grid-column: span 2 !important; }
+}
+
+/* ── Lotes sp2 y sp3: misma altura que items sp1 de su fila ── */
+.sc.sp2:not(.sp4),
+.sc.sp3:not(.sp4) {
+  min-height: 330px !important;
+}
+.sc.sp2.sc-bun:not(.sp4),
+.sc.sp3.sc-bun:not(.sp4) {
+  min-height: 330px !important;
+}
+
+/* Item fantasma para completar filas incompletas */
+.sc-ghost {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+  min-height: 330px !important;
+  opacity: 0;
+}
+
+/* ── Fix grid tienda ── */
+.sg {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 10px !important;
+  align-items: start !important;
+  grid-auto-flow: dense !important;  /* ← rellena huecos automáticamente */
+}

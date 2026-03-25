@@ -2,13 +2,13 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { getMyOrders, updateProfile, linkDiscord, getDiscordAuthURL, unlinkDiscord } from '../services/api';
+import { getMyOrders, updateProfile, getDiscordAuthURL, unlinkDiscord } from '../services/api';
 import { KCBadge, StatusBadge, PageLoader, Toast } from '../components/UI';
 import type { Order } from '../types';
 import {
   Package, Zap, User, Calendar, CheckCircle2,
   TrendingUp, ShoppingBag, MessageSquare, Copy, Award,
-  Shield, Mail, Key, AtSign, Lock, ExternalLink, Eye, EyeOff, Loader2, Camera, X
+  Shield, Mail, Key, AtSign, Lock, ExternalLink, Eye, EyeOff, Loader2, Camera, X, AlertCircle
 } from 'lucide-react';
 
 const DEFAULT_AVATARS = [
@@ -21,7 +21,6 @@ function getDefaultAvatar(userId: number | string): string {
   const idx = Number(String(userId).split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % DEFAULT_AVATARS.length;
   return DEFAULT_AVATARS[idx];
 }
-
 function getStoredAvatar(userId: number | string): string {
   return localStorage.getItem(`kc_avatar_${userId}`) || getDefaultAvatar(userId);
 }
@@ -114,11 +113,11 @@ export default function Profile() {
         <div className="avatar-modal-overlay" onClick={() => { setAvatarModal(false); setPendingAvatar(''); }}>
           <div className="avatar-modal" onClick={e => e.stopPropagation()}>
             <div className="avatar-modal-head">
-              <h3><Camera size={18}/>{lang === "es" ? " Cambiar foto de perfil" : " Change profile photo"}</h3>
+              <h3><Camera size={18}/>{lang === 'es' ? ' Cambiar foto de perfil' : ' Change profile photo'}</h3>
               <button onClick={() => { setAvatarModal(false); setPendingAvatar(''); }}><X size={20}/></button>
             </div>
             <div className="avatar-modal-body">
-              <p className="avatar-modal-sub">{lang === "es" ? "Elige un avatar predeterminado o sube tu propia foto" : "Choose a default avatar or upload your own photo"}</p>
+              <p className="avatar-modal-sub">{lang === 'es' ? 'Elige un avatar predeterminado o sube tu propia foto' : 'Choose a default avatar or upload your own photo'}</p>
               <div className="avatar-grid">
                 {DEFAULT_AVATARS.map(src => (
                   <button key={src} className={`avatar-option ${(pendingAvatar||avatar)===src?'sel':''}`} onClick={() => setPendingAvatar(src)}>
@@ -135,11 +134,11 @@ export default function Profile() {
               </div>
               <div className="avatar-modal-actions">
                 <label className="avatar-upload-btn">
-                  <Camera size={15}/>{lang === "es" ? " Subir foto" : " Upload photo"}
+                  <Camera size={15}/>{lang === 'es' ? ' Subir foto' : ' Upload photo'}
                   <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handleFileAvatar}/>
                 </label>
                 <button className="btn btn-primary" onClick={handleSaveAvatar} disabled={!pendingAvatar || pendingAvatar === avatar}>
-                  <CheckCircle2 size={16}/>{lang === "es" ? " Guardar" : " Save"}
+                  <CheckCircle2 size={16}/>{lang === 'es' ? ' Guardar' : ' Save'}
                 </button>
               </div>
             </div>
@@ -214,7 +213,7 @@ export default function Profile() {
           <Package size={16} /> {t('profile.recent')}
         </button>
         <button className={`profile-tab ${tab === 'security' ? 'active' : ''}`} onClick={() => setTab('security')}>
-          <Shield size={16} />{lang === "es" ? " Seguridad" : " Security"}
+          <Shield size={16} />{lang === 'es' ? ' Seguridad' : ' Security'}
         </button>
       </div>
 
@@ -258,7 +257,6 @@ export default function Profile() {
           setAuth={setAuth}
           refresh={refresh}
           setToast={setToast}
-          t={t}
           lang={lang}
           onDiscordOAuth={handleDiscordOAuth}
         />
@@ -268,40 +266,76 @@ export default function Profile() {
 }
 
 /* ── Security Tab ── */
-function SecurityTab({ customer, setAuth, refresh, setToast, t, lang, onDiscordOAuth }: {
+function SecurityTab({ customer, setAuth, refresh, setToast, lang, onDiscordOAuth }: {
   customer: any; setAuth: any; refresh: any;
   setToast: (v: { msg: string; type: 'success' | 'error' } | null) => void;
-  t: (k: any) => string; lang: string; onDiscordOAuth: () => void;
+  lang: string; onDiscordOAuth: () => void;
 }) {
-  const [epicVal,    setEpicVal]    = useState('');
-  const [emailVal,   setEmailVal]   = useState('');
-  const [currPass,   setCurrPass]   = useState('');
-  const [newPass,    setNewPass]    = useState('');
-  const [showPass,   setShowPass]   = useState(false);
-  const [saving,     setSaving]     = useState(false);
-  const [unlinking,  setUnlinking]  = useState(false);
+  const es = lang === 'es';
+
+  // ── Sección 1: Datos de cuenta (epic username + email) ──
+  const [epicVal,       setEpicVal]       = useState('');
+  const [emailVal,      setEmailVal]      = useState('');
+  const [passForInfo,   setPassForInfo]   = useState('');
+  const [showPassInfo,  setShowPassInfo]  = useState(false);
+  const [savingInfo,    setSavingInfo]    = useState(false);
+
+  // ── Sección 2: Cambio de contraseña ──
+  const [currPass,      setCurrPass]      = useState('');
+  const [newPass,       setNewPass]       = useState('');
+  const [confirmPass,   setConfirmPass]   = useState('');
+  const [showPass,      setShowPass]      = useState(false);
+  const [savingPass,    setSavingPass]    = useState(false);
+  const [passMatch,     setPassMatch]     = useState(true);
+
+  // ── Discord ──
+  const [unlinking,     setUnlinking]     = useState(false);
   const [confirmUnlink, setConfirmUnlink] = useState(false);
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSaveInfo(e: React.FormEvent) {
     e.preventDefault();
-    if (!epicVal && !emailVal && !newPass) return;
-    setSaving(true);
+    if (!epicVal && !emailVal) return;
+    if (!passForInfo) {
+      setToast({ msg: es ? 'Ingresa tu contraseña actual para confirmar los cambios' : 'Enter your current password to confirm changes', type: 'error' });
+      return;
+    }
+    setSavingInfo(true);
     try {
       const res = await updateProfile({
-        epic_username: epicVal || undefined,
-        email: emailVal || undefined,
-        current_password: currPass || undefined,
-        new_password: newPass || undefined,
+        epic_username:    epicVal   || undefined,
+        email:            emailVal  || undefined,
+        current_password: passForInfo,
       });
       localStorage.setItem('kc_token', res.token);
       setAuth(res.token, res.customer);
-      setToast({ msg: lang === 'es' ? '✅ Perfil actualizado correctamente' : '✅ Profile updated successfully', type: 'success' });
-      setEpicVal(''); setEmailVal(''); setCurrPass(''); setNewPass('');
+      setToast({ msg: es ? '✅ Datos actualizados correctamente' : '✅ Account info updated successfully', type: 'success' });
+      setEpicVal(''); setEmailVal(''); setPassForInfo('');
     } catch (err: any) {
-      setToast({ msg: err.message || 'Error al actualizar', type: 'error' });
-    } finally {
-      setSaving(false);
+      setToast({ msg: err.message || (es ? 'Error al actualizar' : 'Update error'), type: 'error' });
+    } finally { setSavingInfo(false); }
+  }
+
+  async function handleSavePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currPass || !newPass || !confirmPass) return;
+    if (newPass !== confirmPass) {
+      setPassMatch(false);
+      return;
     }
+    setPassMatch(true);
+    setSavingPass(true);
+    try {
+      const res = await updateProfile({
+        current_password: currPass,
+        new_password:     newPass,
+      });
+      localStorage.setItem('kc_token', res.token);
+      setAuth(res.token, res.customer);
+      setToast({ msg: es ? '✅ Contraseña actualizada correctamente' : '✅ Password updated successfully', type: 'success' });
+      setCurrPass(''); setNewPass(''); setConfirmPass('');
+    } catch (err: any) {
+      setToast({ msg: err.message || (es ? 'Error al cambiar contraseña' : 'Password change error'), type: 'error' });
+    } finally { setSavingPass(false); }
   }
 
   async function handleUnlinkDiscord() {
@@ -310,91 +344,176 @@ function SecurityTab({ customer, setAuth, refresh, setToast, t, lang, onDiscordO
       await unlinkDiscord();
       await refresh();
       setConfirmUnlink(false);
-      setToast({ msg: lang === 'es' ? '✅ Discord desvinculado correctamente' : '✅ Discord unlinked successfully', type: 'success' });
+      setToast({ msg: es ? '✅ Discord desvinculado correctamente' : '✅ Discord unlinked successfully', type: 'success' });
     } catch (err: any) {
-      setToast({ msg: err.message || 'Error al desvincular Discord', type: 'error' });
-    } finally {
-      setUnlinking(false);
-    }
+      setToast({ msg: err.message || (es ? 'Error al desvincular Discord' : 'Error unlinking Discord'), type: 'error' });
+    } finally { setUnlinking(false); }
   }
 
   return (
     <div className="security-section">
 
-      {/* Update account info */}
+      {/* ── Sección 1: Datos de cuenta ── */}
       <div className="security-card">
         <div className="security-card-header">
           <AtSign size={18} />
-          <h3>{lang === "es" ? "Actualizar datos de cuenta" : "Update account info"}</h3>
+          <h3>{es ? 'Datos de cuenta' : 'Account info'}</h3>
         </div>
-        <form onSubmit={handleSave} className="security-form">
+        <form onSubmit={handleSaveInfo} className="security-form">
           <div className="sec-field">
-            <label><User size={14} />{lang === "es" ? " Nuevo usuario Epic" : " New Epic username"}</label>
-            <input type="text" placeholder={lang === 'es' ? `Actual: ${customer!.epic_username}` : `Current: ${customer!.epic_username}`} value={epicVal} onChange={e => setEpicVal(e.target.value)} minLength={3} maxLength={50} />
+            <label><User size={13} /> {es ? 'Nuevo usuario Epic' : 'New Epic username'}</label>
+            <input
+              type="text"
+              placeholder={es ? `Actual: ${customer.epic_username}` : `Current: ${customer.epic_username}`}
+              value={epicVal}
+              onChange={e => setEpicVal(e.target.value)}
+              minLength={3} maxLength={50}
+            />
           </div>
           <div className="sec-field">
-            <label><Mail size={14} />{lang === "es" ? " Nuevo email" : " New email"}</label>
-            <input type="email" placeholder={lang === 'es' ? `Actual: ${customer!.email}` : `Current: ${customer!.email}`} value={emailVal} onChange={e => setEmailVal(e.target.value)} />
+            <label><Mail size={13} /> {es ? 'Nuevo email' : 'New email'}</label>
+            <input
+              type="email"
+              placeholder={es ? `Actual: ${customer.email}` : `Current: ${customer.email}`}
+              value={emailVal}
+              onChange={e => setEmailVal(e.target.value)}
+            />
           </div>
-          <div className="sec-divider"><Lock size={14} /> {lang === 'es' ? 'Cambiar contraseña' : 'Change password'}</div>
           <div className="sec-field">
-            <label><Key size={14} />{lang === "es" ? " Contraseña actual" : " Current password"}</label>
+            <label><Lock size={13} /> {es ? 'Contraseña actual (requerida para confirmar)' : 'Current password (required to confirm)'}</label>
             <div className="pass-wrap">
-              <input type={showPass ? 'text' : 'password'} placeholder={lang === 'es' ? 'Contraseña actual' : 'Current password'} value={currPass} onChange={e => setCurrPass(e.target.value)} />
+              <input
+                type={showPassInfo ? 'text' : 'password'}
+                placeholder={es ? 'Ingresa tu contraseña actual' : 'Enter your current password'}
+                value={passForInfo}
+                onChange={e => setPassForInfo(e.target.value)}
+              />
+              <button type="button" className="pass-eye" onClick={() => setShowPassInfo(v => !v)}>
+                {showPassInfo ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 14px',
+            borderRadius: 10, background: 'rgba(108,92,231,0.07)', border: '1px solid rgba(108,92,231,0.2)',
+          }}>
+            <AlertCircle size={14} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+            <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              {es
+                ? 'Para cambiar tu usuario Epic o email debes confirmar tu identidad con tu contraseña actual.'
+                : 'To change your Epic username or email you must confirm your identity with your current password.'}
+            </p>
+          </div>
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={savingInfo || (!epicVal && !emailVal)}
+          >
+            {savingInfo ? <Loader2 className="spin" size={16} /> : <CheckCircle2 size={16} />}
+            {es ? 'Guardar datos' : 'Save info'}
+          </button>
+        </form>
+      </div>
+
+      {/* ── Sección 2: Cambiar contraseña ── */}
+      <div className="security-card">
+        <div className="security-card-header">
+          <Key size={18} />
+          <h3>{es ? 'Cambiar contraseña' : 'Change password'}</h3>
+        </div>
+        <form onSubmit={handleSavePassword} className="security-form">
+          <div className="sec-field">
+            <label><Lock size={13} /> {es ? 'Contraseña actual' : 'Current password'}</label>
+            <div className="pass-wrap">
+              <input
+                type={showPass ? 'text' : 'password'}
+                placeholder={es ? 'Tu contraseña actual' : 'Your current password'}
+                value={currPass}
+                onChange={e => setCurrPass(e.target.value)}
+                required
+              />
               <button type="button" className="pass-eye" onClick={() => setShowPass(v => !v)}>
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
           <div className="sec-field">
-            <label><Key size={14} />{lang === "es" ? " Nueva contraseña" : " New password"}</label>
-            <input type={showPass ? 'text' : 'password'} placeholder={lang === 'es' ? 'Mínimo 8 caracteres' : 'Minimum 8 characters'} value={newPass} onChange={e => setNewPass(e.target.value)} minLength={8} />
+            <label><Key size={13} /> {es ? 'Nueva contraseña' : 'New password'}</label>
+            <input
+              type={showPass ? 'text' : 'password'}
+              placeholder={es ? 'Mínimo 8 caracteres' : 'Minimum 8 characters'}
+              value={newPass}
+              onChange={e => { setNewPass(e.target.value); setPassMatch(true); }}
+              required minLength={8}
+            />
           </div>
-          <p className="sec-note">⚠️ {lang === 'es' ? 'Para cambiar email o contraseña debes ingresar tu contraseña actual.' : 'To change email or password you must enter your current password.'}</p>
-          <button className="btn btn-primary" type="submit" disabled={saving || (!epicVal && !emailVal && !newPass)}>
-            {saving ? <Loader2 className="spin" size={18} /> : <CheckCircle2 size={18} />}
-            {lang === 'es' ? 'Guardar cambios' : 'Save changes'}
+          <div className="sec-field">
+            <label><Key size={13} /> {es ? 'Confirmar nueva contraseña' : 'Confirm new password'}</label>
+            <input
+              type={showPass ? 'text' : 'password'}
+              placeholder={es ? 'Repite la nueva contraseña' : 'Repeat new password'}
+              value={confirmPass}
+              onChange={e => { setConfirmPass(e.target.value); setPassMatch(true); }}
+              required minLength={8}
+            />
+          </div>
+          {!passMatch && (
+            <p style={{ margin: '-4px 0 4px', fontSize: '0.8rem', color: 'var(--red-500)' }}>
+              ⚠️ {es ? 'Las contraseñas no coinciden' : 'Passwords do not match'}
+            </p>
+          )}
+          {newPass && confirmPass && newPass === confirmPass && (
+            <p style={{ margin: '-4px 0 4px', fontSize: '0.8rem', color: 'var(--green-500)' }}>
+              ✓ {es ? 'Las contraseñas coinciden' : 'Passwords match'}
+            </p>
+          )}
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={savingPass || !currPass || !newPass || !confirmPass || newPass !== confirmPass}
+          >
+            {savingPass ? <Loader2 className="spin" size={16} /> : <Key size={16} />}
+            {es ? 'Cambiar contraseña' : 'Change password'}
           </button>
         </form>
       </div>
 
-      {/* Discord */}
+      {/* ── Sección 3: Discord ── */}
       <div className="security-card">
         <div className="security-card-header">
           <MessageSquare size={18} />
-          <h3>{lang === 'es' ? 'Vincular Discord' : 'Link Discord'}</h3>
-          {customer!.discord_username && (
-            <span className="discord-linked-badge">✓ {customer!.discord_username}</span>
+          <h3>{es ? 'Vincular Discord' : 'Link Discord'}</h3>
+          {customer.discord_username && (
+            <span className="discord-linked-badge">✓ {customer.discord_username}</span>
           )}
         </div>
-        {customer!.discord_username ? (
+        {customer.discord_username ? (
           <div className="security-form">
             <p className="sec-already-linked">
-              {lang === 'es'
-                ? <>{`Tu cuenta de Discord `}<strong>{customer!.discord_username}</strong>{` ya está vinculada. Esto te permite hacer compras desde el bot de Discord.`}</>
-                : <>{`Your Discord account `}<strong>{customer!.discord_username}</strong>{` is already linked. This allows you to make purchases from the Discord bot.`}</>}
+              {es
+                ? <>{`Tu cuenta de Discord `}<strong>{customer.discord_username}</strong>{` ya está vinculada. Esto te permite hacer compras desde el bot de Discord.`}</>
+                : <>{`Your Discord account `}<strong>{customer.discord_username}</strong>{` is already linked. This allows you to make purchases from the Discord bot.`}</>}
             </p>
-            {/* Botón desvincular */}
             {!confirmUnlink ? (
               <button
                 type="button"
                 className="btn btn-ghost"
                 onClick={() => setConfirmUnlink(true)}
-                style={{ color: 'var(--red-500)', borderColor: 'var(--red-500)', marginTop: '12px' }}
+                style={{ color: 'var(--red-500)', borderColor: 'var(--red-500)', marginTop: 12 }}
               >
                 <MessageSquare size={16} />
-                {lang === 'es' ? 'Desvincular Discord' : 'Unlink Discord'}
+                {es ? ' Desvincular Discord' : ' Unlink Discord'}
               </button>
             ) : (
-              <div style={{ marginTop: '12px', padding: '14px', borderRadius: '12px', background: 'rgba(239,68,68,0.07)', border: '1.5px solid rgba(239,68,68,0.3)' }}>
+              <div style={{ marginTop: 12, padding: 14, borderRadius: 12, background: 'rgba(239,68,68,0.07)', border: '1.5px solid rgba(239,68,68,0.3)' }}>
                 <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                  ⚠️ {lang === 'es'
+                  ⚠️ {es
                     ? '¿Seguro que quieres desvincular tu Discord? Ya no podrás usar el bot hasta que lo vuelvas a vincular.'
-                    : 'Are you sure you want to unlink your Discord? You won\'t be able to use the bot until you link it again.'}
+                    : "Are you sure you want to unlink your Discord? You won't be able to use the bot until you link it again."}
                 </p>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: 8 }}>
                   <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirmUnlink(false)} disabled={unlinking}>
-                    {lang === 'es' ? 'Cancelar' : 'Cancel'}
+                    {es ? 'Cancelar' : 'Cancel'}
                   </button>
                   <button
                     type="button"
@@ -404,7 +523,7 @@ function SecurityTab({ customer, setAuth, refresh, setToast, t, lang, onDiscordO
                     style={{ background: '#ef4444', color: '#fff', boxShadow: '0 4px 14px rgba(239,68,68,0.3)' }}
                   >
                     {unlinking ? <Loader2 className="spin" size={14} /> : <MessageSquare size={14} />}
-                    {lang === 'es' ? 'Sí, desvincular' : 'Yes, unlink'}
+                    {es ? ' Sí, desvincular' : ' Yes, unlink'}
                   </button>
                 </div>
               </div>
@@ -413,7 +532,7 @@ function SecurityTab({ customer, setAuth, refresh, setToast, t, lang, onDiscordO
         ) : (
           <div className="security-form">
             <p className="sec-note">
-              {lang === 'es'
+              {es
                 ? 'Conecta tu cuenta de Discord para comprar desde el bot y recibir notificaciones.'
                 : 'Connect your Discord account to buy from the bot and receive notifications.'}
             </p>
@@ -424,7 +543,7 @@ function SecurityTab({ customer, setAuth, refresh, setToast, t, lang, onDiscordO
               style={{ background: '#5865f2', boxShadow: '0 4px 14px rgba(88,101,242,0.4)' }}
             >
               <MessageSquare size={18} />
-              {lang === 'es' ? 'Conectar con Discord' : 'Connect with Discord'}
+              {es ? ' Conectar con Discord' : ' Connect with Discord'}
             </button>
           </div>
         )}

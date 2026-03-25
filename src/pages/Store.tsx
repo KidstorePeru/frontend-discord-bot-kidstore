@@ -56,20 +56,35 @@ function parse(data: any): { items: ShopItem[]; total: number } {
 
 function groupSections(items: ShopItem[]): Section[] {
   const m = new Map<string,Section>();
-  for (const i of items) { if(!m.has(i.sectionName)) m.set(i.sectionName,{name:i.sectionName,rank:i.sectionRank,items:[]}); m.get(i.sectionName)!.items.push(i); }
-  return [...m.values()].sort((a,b)=>b.rank-a.rank);
+  for (const i of items) {
+    if (!m.has(i.sectionName)) m.set(i.sectionName, { name: i.sectionName, rank: i.sectionRank, items: [] });
+    m.get(i.sectionName)!.items.push(i);
+  }
+  return [...m.values()].sort((a,b) => b.rank - a.rank);
 }
 
-function useCountdown(target?:string) {
-  const [t,setT]=useState('');
-  useEffect(()=>{if(!target)return;const tick=()=>{const ms=new Date(target).getTime()-Date.now();if(ms<=0){setT('0h 0m');return;}const d=Math.floor(ms/86400000),h=Math.floor((ms%86400000)/3600000),m=Math.floor((ms%3600000)/60000);setT(d>0?`${d}d ${h}h ${m}m`:`${h}h ${m}m`);};tick();const id=setInterval(tick,30000);return()=>clearInterval(id);},[target]);return t;
+function useCountdown(target?: string) {
+  const [t, setT] = useState('');
+  useEffect(() => {
+    if (!target) return;
+    const tick = () => {
+      const ms = new Date(target).getTime() - Date.now();
+      if (ms <= 0) { setT('0h 0m'); return; }
+      const d = Math.floor(ms/86400000), h = Math.floor((ms%86400000)/3600000), m = Math.floor((ms%3600000)/60000);
+      setT(d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`);
+    };
+    tick();
+    const id = setInterval(tick, 30000);
+    return () => clearInterval(id);
+  }, [target]);
+  return t;
 }
 
-function VIcon({s=16}:{s?:number}) {
+function VIcon({ s=16 }: { s?: number }) {
   return <svg width={s} height={s} viewBox="0 0 24 24" style={{flexShrink:0}}><circle cx="12" cy="12" r="11" fill="#59c2ea" stroke="#2ba0cb" strokeWidth="1.5"/><text x="12" y="16.5" textAnchor="middle" fontSize="13" fontWeight="900" fontFamily="sans-serif" fill="#fff">V</text></svg>;
 }
 
-function KCIcon({s=16}:{s?:number}) {
+function KCIcon({ s=16 }: { s?: number }) {
   return <img src="/kidcoin.png" alt="KC" width={s} height={s} style={{objectFit:'contain',flexShrink:0}}/>;
 }
 
@@ -80,7 +95,7 @@ export default function StorePage() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState<{msg:string;type:'success'|'error'}|null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const { storeLang: lang, setStoreLang: setLang, t } = useLang();
   const [navOpen, setNavOpen] = useState(false);
   const countdown = useCountdown(allItems[0]?.outDate);
@@ -88,7 +103,6 @@ export default function StorePage() {
 
   const es = lang === 'es';
 
-  // Validar carrito contra la tienda actual cuando cargan los items
   useEffect(() => {
     if (allItems.length === 0) return;
     const offerIds = new Set(allItems.map(i => i.offerId));
@@ -105,47 +119,106 @@ export default function StorePage() {
 
   function handleAddToCart(item: ShopItem) {
     const result = addToCart(item);
-    if (result === 'not_logged_in') {
-      setToast({ msg: t('store.login'), type: 'error' });
-      return;
-    }
-    if (result === 'already_in_cart') {
-      setToast({ msg: es ? 'Ya está en el carrito' : 'Already in cart', type: 'error' });
-      return;
-    }
-    // Solo abrir el carrito con el primer item
+    if (result === 'not_logged_in') { setToast({ msg: t('store.login'), type: 'error' }); return; }
+    if (result === 'already_in_cart') { setToast({ msg: es ? 'Ya está en el carrito' : 'Already in cart', type: 'error' }); return; }
     if (cartCount === 0) setCartOpen(true);
   }
 
   useEffect(() => { load(); }, [lang]);
-  async function load() { setLoading(true); try { const r = await getShop(lang==='es'?'es-419':'en'); const p = parse(r); setAllItems(p.items); setTotal(p.total); } catch { setToast({ msg: t('store.error'), type: 'error' }); } finally { setLoading(false); } }
+
+  async function load() {
+    setLoading(true);
+    try {
+      const r = await getShop(lang === 'es' ? 'es-419' : 'en');
+      const p = parse(r);
+      setAllItems(p.items);
+      setTotal(p.total);
+    } catch {
+      setToast({ msg: t('store.error'), type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const sections = useMemo(() => {
     let its = allItems;
-    if (search) { const q = search.toLowerCase(); its = its.filter(i => i.name.toLowerCase().includes(q) || i.sectionName.toLowerCase().includes(q)); }
+    if (search) {
+      const q = search.toLowerCase();
+      its = its.filter(i => i.name.toLowerCase().includes(q) || i.sectionName.toLowerCase().includes(q));
+    }
     return groupSections(its);
   }, [allItems, search]);
 
   const secNames = useMemo(() => {
-    const m = new Map<string,number>();
+    const m = new Map<string, number>();
     allItems.forEach(i => { if (!m.has(i.sectionName)) m.set(i.sectionName, i.sectionRank); });
     return [...m.entries()].sort((a,b) => b[1]-a[1]).map(([n]) => n);
   }, [allItems]);
 
   useEffect(() => {
-    const obs = new IntersectionObserver(ents => { for (const e of ents) if (e.isIntersecting) { setActiveSec(e.target.id.replace('s-','')); break; } }, { rootMargin: '-20% 0px -60% 0px' });
+    const obs = new IntersectionObserver(
+      ents => { for (const e of ents) if (e.isIntersecting) { setActiveSec(e.target.id.replace('s-','')); break; } },
+      { rootMargin: '-20% 0px -60% 0px' }
+    );
     secNames.forEach(n => { const el = document.getElementById(`s-${n}`); if (el) obs.observe(el); });
     return () => obs.disconnect();
   }, [secNames]);
 
   function getCardStyle(item: ShopItem): { bg: React.CSSProperties; showRender: boolean } {
-    if (item.albumArt) return { bg: { backgroundImage: `url(${item.albumArt})`, backgroundSize: 'cover', backgroundPosition: 'center' }, showRender: false };
+    if (item.albumArt) return {
+      bg: { backgroundImage: `url(${item.albumArt})`, backgroundSize: 'cover', backgroundPosition: 'center' },
+      showRender: false,
+    };
     const c1 = hex2(item.colors.color1);
     const c2 = hex2(item.colors.color2);
-    return { bg: { background: `linear-gradient(180deg, ${c1} 0%, ${c2} 100%)` }, showRender: item.isBigBundle && !!item.renderImg };
+    return {
+      bg: { background: `linear-gradient(180deg, ${c1} 0%, ${c2} 100%)` },
+      showRender: item.isBigBundle && !!item.renderImg,
+    };
   }
 
-  const today = new Date().toLocaleDateString(lang==='es'?'es-PE':'en-US', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  function renderCard(item: ShopItem, idx: number) {
+    const { bg, showRender } = getCardStyle(item);
+    const inCart = cart.some(i => i.offerId === item.offerId);
+    return (
+      <div
+        className={`sc sp${item.span} ${item.isBigBundle ? 'sc-bun' : ''} ${inCart ? 'sc-in-cart' : ''}`}
+        key={item.offerId + idx}
+        style={bg}
+      >
+        {countdown && <span className="sc-time"><Clock size={10} /> {countdown}</span>}
+        {item.banner && <span className="sc-ban">{item.banner.backendValue === 'New' ? '¡NUEVO!' : item.banner.value}</span>}
+        {inCart && <span className="sc-added-badge"><CheckCircle size={10} /> {es ? 'En carrito' : 'In cart'}</span>}
+        {showRender && <div className="sc-render"><img src={item.renderImg} alt={item.name} loading="lazy" /></div>}
+        {!showRender && !item.albumArt && item.featuredImg && <div className="sc-render"><img src={item.featuredImg} alt={item.name} loading="lazy" /></div>}
+        {!showRender && !item.albumArt && !item.featuredImg && item.renderImg && <div className="sc-render"><img src={item.renderImg} alt={item.name} loading="lazy" /></div>}
+        <div className="sc-info">
+          {item.rarityText && <span className="sc-rar">{item.rarityText.toUpperCase()}</span>}
+          <span className="sc-name">{item.name}</span>
+          {item.isBundle && <span className="sc-lote">LOTE</span>}
+          <div className="sc-bot">
+            <div className="sc-pr">
+              <span className="sc-vb"><VIcon s={16} /> <b>{item.finalPrice.toLocaleString()}</b></span>
+              {item.hasDiscount && <span className="sc-old">{item.regularPrice.toLocaleString()}</span>}
+              <span className="sc-sep">|</span>
+              <span className="sc-kc">KC {item.price_kc.toLocaleString()}</span>
+            </div>
+            <button
+              className={`sc-cart ${inCart ? 'sc-cart-added' : ''}`}
+              onClick={ev => { ev.stopPropagation(); inCart ? removeFromCart(item.offerId) : handleAddToCart(item); }}
+            >
+              {inCart ? <CheckCircle size={15} /> : <ShoppingCart size={15} />}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const today = new Date().toLocaleDateString(
+    lang === 'es' ? 'es-PE' : 'en-US',
+    { weekday:'long', day:'numeric', month:'long', year:'numeric' }
+  );
   if (loading) return <PageLoader />;
 
   return (
@@ -200,11 +273,30 @@ export default function StorePage() {
         </div>
       </div>
 
-      <button className="fnav-btn" onClick={() => setNavOpen(!navOpen)}>{navOpen ? <X size={16} /> : t('store.nav')}</button>
+      <button className="fnav-btn" onClick={() => setNavOpen(!navOpen)}>
+        {navOpen ? <X size={16} /> : t('store.nav')}
+      </button>
       {navOpen && <div className="fnav-ov" onClick={() => setNavOpen(false)} />}
       <aside className={`fnav ${navOpen ? 'open' : ''}`}>
-        <div className="fnav-h"><span>{t('store.nav.title')}</span><button onClick={() => setNavOpen(false)}><X size={16} /></button></div>
-        <div className="fnav-list">{secNames.map(n => (<button key={n} className={`fnav-it ${activeSec===n?'on':''}`} onClick={() => { setNavOpen(false); document.getElementById(`s-${n}`)?.scrollIntoView({ behavior:'smooth', block:'start' }); }}>{n.toUpperCase()}{activeSec===n && <span className="fnav-dot" />}</button>))}</div>
+        <div className="fnav-h">
+          <span>{t('store.nav.title')}</span>
+          <button onClick={() => setNavOpen(false)}><X size={16} /></button>
+        </div>
+        <div className="fnav-list">
+          {secNames.map(n => (
+            <button
+              key={n}
+              className={`fnav-it ${activeSec === n ? 'on' : ''}`}
+              onClick={() => {
+                setNavOpen(false);
+                document.getElementById(`s-${n}`)?.scrollIntoView({ behavior:'smooth', block:'start' });
+              }}
+            >
+              {n.toUpperCase()}
+              {activeSec === n && <span className="fnav-dot" />}
+            </button>
+          ))}
+        </div>
       </aside>
 
       {/* ── Grid de items ── */}
@@ -213,39 +305,7 @@ export default function StorePage() {
           <section className="sh-sec" key={sec.name} id={`s-${sec.name}`}>
             <h2 className="sh-sec-t">{sec.name.toUpperCase()}</h2>
             <div className="sg">
-              {sec.items.map((item, idx) => {
-                const { bg, showRender } = getCardStyle(item);
-                const inCart = cart.some(i => i.offerId === item.offerId);
-                return (
-                  <div className={`sc sp${item.span} ${item.isBigBundle?'sc-bun':''} ${inCart?'sc-in-cart':''}`} key={item.offerId+idx} style={bg}>
-                    {countdown && <span className="sc-time"><Clock size={10} /> {countdown}</span>}
-                    {item.banner && <span className="sc-ban">{item.banner.backendValue==='New' ? '¡NUEVO!' : item.banner.value}</span>}
-                    {inCart && <span className="sc-added-badge"><CheckCircle size={10} /> {es ? 'En carrito' : 'In cart'}</span>}
-                    {showRender && <div className="sc-render"><img src={item.renderImg} alt={item.name} loading="lazy" /></div>}
-                    {!showRender && !item.albumArt && item.featuredImg && <div className="sc-render"><img src={item.featuredImg} alt={item.name} loading="lazy" /></div>}
-                    {!showRender && !item.albumArt && !item.featuredImg && item.renderImg && <div className="sc-render"><img src={item.renderImg} alt={item.name} loading="lazy" /></div>}
-                    <div className="sc-info">
-                      {item.rarityText && <span className="sc-rar">{item.rarityText.toUpperCase()}</span>}
-                      <span className="sc-name">{item.name}</span>
-                      {item.isBundle && <span className="sc-lote">LOTE</span>}
-                      <div className="sc-bot">
-                        <div className="sc-pr">
-                          <span className="sc-vb"><VIcon s={16} /> <b>{item.finalPrice.toLocaleString()}</b></span>
-                          {item.hasDiscount && <span className="sc-old">{item.regularPrice.toLocaleString()}</span>}
-                          <span className="sc-sep">|</span>
-                          <span className="sc-kc">KC {item.price_kc.toLocaleString()}</span>
-                        </div>
-                        <button
-                          className={`sc-cart ${inCart ? 'sc-cart-added' : ''}`}
-                          onClick={ev => { ev.stopPropagation(); inCart ? removeFromCart(item.offerId) : handleAddToCart(item); }}
-                        >
-                          {inCart ? <CheckCircle size={15} /> : <ShoppingCart size={15} />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {sec.items.map((item, idx) => renderCard(item, idx))}
             </div>
           </section>
         ))}

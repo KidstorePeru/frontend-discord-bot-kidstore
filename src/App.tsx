@@ -13,6 +13,7 @@ import Landing from './pages/Landing';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
 import StorePage from './pages/Store';
 import Dashboard from './pages/Dashboard';
 import Recharge from './pages/Recharge';
@@ -251,6 +252,7 @@ export default function App() {
                   <Route path="/register"       element={<Register />} />
                   <Route path="/login"          element={<Login />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/verify-email"   element={<VerifyEmail />} />
                   <Route path="/store"          element={<StorePage />} />
                   <Route path="/ksp-admin-2026" element={<AdminPanel />} />
                   <Route path="/dashboard"      element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
