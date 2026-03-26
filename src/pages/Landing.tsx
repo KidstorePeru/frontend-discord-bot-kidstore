@@ -17,12 +17,15 @@ const PAYMENT_METHODS = [
   { name: 'Binance',   logo: '/binance-imagotipo.png' },
 ];
 
-const KC_PACKAGES = [
-  { id: 'starter', name: 'Starter', kc: 800,   price_soles: 12,    price_usd: 3.20,  price_eur: 2.95,  image: '/800-kc.png',   color: '#3b82f6', glow: '#3b82f625', tag: null,    tagIcon: null },
-  { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_soles: 36,    price_usd: 9.60,  price_eur: 8.85,  image: '/2400-kc.png',  color: '#8b5cf6', glow: '#8b5cf625', tag: 'pop',  tagIcon: 'star' },
-  { id: 'pro',     name: 'Pro',     kc: 4800,  price_soles: 72,    price_usd: 19.20, price_eur: 17.70, image: '/4800-kc.png',  color: '#f59e0b', glow: '#f59e0b25', tag: 'sell', tagIcon: 'fire' },
-  { id: 'legend',  name: 'Legend',  kc: 12500, price_soles: 187.5, price_usd: 50,    price_eur: 46.15, image: '/12500-kc.png', color: '#ec4899', glow: '#ec489925', tag: 'prem', tagIcon: 'crown' },
+const KC_PACKAGES_BASE = [
+  { id: 'starter', name: 'Starter', kc: 800,   price_soles: 12.8,  image: '/800-kc.png',   color: '#3b82f6', glow: '#3b82f625', tag: null,   tagIcon: null },
+  { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_soles: 38.4,  image: '/2400-kc.png',  color: '#8b5cf6', glow: '#8b5cf625', tag: 'pop',  tagIcon: 'star' },
+  { id: 'pro',     name: 'Pro',     kc: 4800,  price_soles: 76.8,  image: '/4800-kc.png',  color: '#f59e0b', glow: '#f59e0b25', tag: 'sell', tagIcon: 'fire' },
+  { id: 'legend',  name: 'Legend',  kc: 12500, price_soles: 200.0, image: '/12500-kc.png', color: '#ec4899', glow: '#ec489925', tag: 'prem', tagIcon: 'crown' },
 ];
+
+const RATES_API_KEY = 'b3b1e1bf6a9c0a14fd80e3fd';
+const RATES_API_URL = `https://v6.exchangerate-api.com/v6/${RATES_API_KEY}/latest/PEN`;
 
 function useRotatingWord(words: string[]) {
   const [index, setIndex] = useState(0);
@@ -47,6 +50,46 @@ export default function Landing() {
   const { t, lang } = useLang();
   const words = t('land.words').split(',');
   const { word, phase, ref } = useRotatingWord(words);
+
+  // Tasas de cambio dinámicas
+  const [usdRate, setUsdRate] = useState<number>(0.27);
+  const [eurRate, setEurRate] = useState<number>(0.25);
+
+  useEffect(() => {
+    // Intentar cargar desde caché local primero
+    const cached = localStorage.getItem('ksp_rates');
+    if (cached) {
+      try {
+        const { usd, eur, ts } = JSON.parse(cached);
+        // Usar caché si tiene menos de 24 horas
+        if (Date.now() - ts < 24 * 60 * 60 * 1000) {
+          setUsdRate(usd);
+          setEurRate(eur);
+          return;
+        }
+      } catch {}
+    }
+    // Fetch tasas frescas
+    fetch(RATES_API_URL)
+      .then(r => r.json())
+      .then(data => {
+        if (data.result === 'success') {
+          const usd = data.conversion_rates?.USD ?? 0.27;
+          const eur = data.conversion_rates?.EUR ?? 0.25;
+          setUsdRate(usd);
+          setEurRate(eur);
+          localStorage.setItem('ksp_rates', JSON.stringify({ usd, eur, ts: Date.now() }));
+        }
+      })
+      .catch(() => {}); // Usar valores por defecto si falla
+  }, []);
+
+  // Calcular precios con tasas actuales
+  const KC_PACKAGES = KC_PACKAGES_BASE.map(pkg => ({
+    ...pkg,
+    price_usd: Math.round(pkg.price_soles * usdRate * 100) / 100,
+    price_eur: Math.round(pkg.price_soles * eurRate * 100) / 100,
+  }));
 
   const tagLabels: Record<string, string> = {
     pop:  lang === 'es' ? 'Más Popular' : 'Most Popular',
@@ -170,7 +213,7 @@ export default function Landing() {
                   <div className="lv7-pkg-kc">{pkg.kc.toLocaleString()} <span>KC</span></div>
                   <div className="lv7-pkg-prices">
                     <strong>S/ {pkg.price_soles.toLocaleString()}</strong>
-                    <span>${pkg.price_usd} · €{pkg.price_eur}</span>
+                    <span>${pkg.price_usd.toFixed(2)} · €{pkg.price_eur.toFixed(2)}</span>
                   </div>
                   <Link to="/recharge" className="lv7-pkg-btn">
                     {t('land.pkg.btn')} <ChevronRight size={14} />
@@ -216,12 +259,9 @@ export default function Landing() {
 
       <footer className="lv7-footer">
         <div className="lv7-footer-inner">
-
-          {/* Brand + socials */}
           <div className="lv7-footer-brand">
             <img src="/logotipo.png" alt="KidStorePeru" className="lv7-footer-logo" />
             <p>{t('land.foot.desc')}</p>
-            {/* Hours */}
             <div className="lv7-footer-hours">
               <span className="lv7-hours-dot"/>
               <span><strong>{lang === 'es' ? 'Atención:' : 'Hours:'}</strong> {t('land.foot.hours')}</span>
@@ -233,7 +273,6 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Links */}
           <div className="lv7-footer-links">
             <div className="lv7-fcol">
               <strong>{t('land.foot.shop')}</strong>

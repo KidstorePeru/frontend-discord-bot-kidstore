@@ -69,7 +69,7 @@ export function withCommission(base: number, rate: number): number {
 }
 
 export function vbucksToKC(vbucks: number): number {
-  return Math.ceil(vbucks * 0.5);
+  return Math.ceil(vbucks * 1);
 }
 
 // ─────────────────────────────────────────────────────────────
