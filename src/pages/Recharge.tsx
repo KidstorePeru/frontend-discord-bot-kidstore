@@ -101,7 +101,7 @@ export default function Recharge() {
     return m[kc] ? `/${m[kc]}.png` : '';
   }
 
-  const KC_RATE = 0.016;
+  const KC_RATE = 0.032;
   const customKCNum = parseInt(customKC) || 0;
   const customPricePen = parseFloat((customKCNum * KC_RATE).toFixed(2));
 
