@@ -18,10 +18,10 @@ const PAYMENT_METHODS = [
 ];
 
 const KC_PACKAGES = [
-  { id: 'starter', name: 'Starter', kc: 800,   price_soles: 12,    price_usd: 3.20,  price_eur: 2.95,  image: '/800-kc.png',   color: '#3b82f6', glow: '#3b82f625', tag: null,    tagIcon: null },
-  { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_soles: 36,    price_usd: 9.60,  price_eur: 8.85,  image: '/2400-kc.png',  color: '#8b5cf6', glow: '#8b5cf625', tag: 'pop',  tagIcon: 'star' },
-  { id: 'pro',     name: 'Pro',     kc: 4800,  price_soles: 72,    price_usd: 19.20, price_eur: 17.70, image: '/4800-kc.png',  color: '#f59e0b', glow: '#f59e0b25', tag: 'sell', tagIcon: 'fire' },
-  { id: 'legend',  name: 'Legend',  kc: 12500, price_soles: 187.5, price_usd: 50,    price_eur: 46.15, image: '/12500-kc.png', color: '#ec4899', glow: '#ec489925', tag: 'prem', tagIcon: 'crown' },
+  { id: 'starter', name: 'Starter', kc: 800,   price_soles: 12.8,    price_usd: 3.20,  price_eur: 2.95,  image: '/800-kc.png',   color: '#3b82f6', glow: '#3b82f625', tag: null,    tagIcon: null },
+  { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_soles: 36.4,    price_usd: 9.60,  price_eur: 8.85,  image: '/2400-kc.png',  color: '#8b5cf6', glow: '#8b5cf625', tag: 'pop',  tagIcon: 'star' },
+  { id: 'pro',     name: 'Pro',     kc: 4800,  price_soles: 76.8,    price_usd: 19.20, price_eur: 17.70, image: '/4800-kc.png',  color: '#f59e0b', glow: '#f59e0b25', tag: 'sell', tagIcon: 'fire' },
+  { id: 'legend',  name: 'Legend',  kc: 12500, price_soles: 200.0, price_usd: 50,    price_eur: 46.15, image: '/12500-kc.png', color: '#ec4899', glow: '#ec489925', tag: 'prem', tagIcon: 'crown' },
 ];
 
 function useRotatingWord(words: string[]) {
