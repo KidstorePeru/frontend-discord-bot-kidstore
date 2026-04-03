@@ -3,8 +3,9 @@ import { useLang } from '../context/LangContext';
 
 export function StatusBadge({ status }: { status: string }) {
   const { t } = useLang();
-  const key = `status.${status}` as any;
-  const label = t(key) !== key ? t(key) : status;
+  // Status keys are dynamic, cast is needed
+  const result = t(`status.${status}` as never);
+  const label = result !== `status.${status}` ? result : status;
   const colorMap: Record<string, string> = { pending: 'var(--amber-500)', processing: 'var(--blue-500)', sent: 'var(--green-500)', failed: 'var(--red-500)', refunded: 'var(--gray-500)' };
   return <span className="status-badge" style={{ '--badge-color': colorMap[status] || 'var(--text-muted)' } as React.CSSProperties}>{label}</span>;
 }

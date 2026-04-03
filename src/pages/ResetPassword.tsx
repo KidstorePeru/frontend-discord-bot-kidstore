@@ -79,7 +79,7 @@ export default function ResetPassword() {
       try {
         await forgotPassword(reqEmail.trim(), lang);
         setReqSent(true);
-      } catch (err: any) {
+      } catch {
         // Siempre mostramos éxito para no revelar si el email existe
         setReqSent(true);
       } finally { setReqLoading(false); }
@@ -192,8 +192,8 @@ export default function ResetPassword() {
       await resetPassword(token, password);
       setDone(true);
       setTimeout(() => navigate('/login'), 3000);
-    } catch (err: any) {
-      setError(err.message || (es ? 'Token inválido o expirado' : 'Invalid or expired token'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : (es ? 'Token inválido o expirado' : 'Invalid or expired token'));
     } finally { setLoading(false); }
   }
 

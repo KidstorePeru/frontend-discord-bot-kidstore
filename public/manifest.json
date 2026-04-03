@@ -1,0 +1,13 @@
+{
+  "name": "KidStorePeru",
+  "short_name": "KidStore",
+  "description": "Tienda de items de Fortnite y Rocket League",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#6c5ce7",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "/isotipo-kidstore.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/isotipo-kidstore.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

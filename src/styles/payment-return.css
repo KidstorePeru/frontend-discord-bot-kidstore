@@ -1,0 +1,190 @@
+/* ═══════════════════════════════════════════════════
+   PAYMENT RETURN PAGE
+   ═══════════════════════════════════════════════════ */
+
+.pr-page {
+  min-height: calc(100vh - var(--nav-height, 64px));
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 20px;
+  background: linear-gradient(160deg, var(--bg-base) 0%, var(--bg-elevated) 50%, var(--bg-base) 100%);
+}
+
+.pr-container {
+  width: 100%; max-width: 580px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+/* ── Stepper ── */
+.pr-stepper {
+  display: flex; align-items: flex-start; justify-content: center; gap: 0;
+  padding: 0 20px;
+}
+.pr-step-group {
+  display: flex; align-items: center; gap: 0;
+}
+.pr-step-group:last-child .pr-step-line { display: none; }
+
+.pr-step-circle {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-surface); border: 2.5px solid var(--border);
+  color: var(--text-muted); font-weight: 800; font-size: .85rem;
+  transition: all .4s ease; flex-shrink: 0; position: relative;
+}
+.pr-step-circle.active {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+.pr-step-circle.done {
+  background: #22c55e; border-color: #22c55e; color: #fff;
+}
+
+.pr-step-label {
+  position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
+  font-size: .72rem; font-weight: 600; color: var(--text-muted);
+  white-space: nowrap; transition: color .3s;
+}
+.pr-step-label.on { color: var(--text-primary); }
+
+/* Make step-group relative for label positioning */
+.pr-step-group { position: relative; }
+.pr-step-label { position: relative; top: auto; left: auto; transform: none;
+  display: block; text-align: center; margin-top: 8px; }
+
+/* Rewrite stepper as a cleaner layout */
+.pr-stepper {
+  display: flex; align-items: center; justify-content: center;
+}
+.pr-step-group {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.pr-step-line {
+  width: 60px; height: 3px; border-radius: 3px;
+  background: var(--border); margin: 0 8px; margin-bottom: 26px;
+  transition: background .4s;
+}
+.pr-step-line.done { background: #22c55e; }
+
+/* ── Card ── */
+.pr-card {
+  background: var(--bg-surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg); padding: 48px 40px;
+  box-shadow: var(--shadow-lg);
+}
+
+.pr-center {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 8px;
+}
+.pr-center h1 {
+  font-size: 1.5rem; font-weight: 900; margin: 8px 0 0; color: var(--text-primary);
+}
+.pr-center p {
+  font-size: .9rem; color: var(--text-secondary); line-height: 1.6; margin: 0;
+  max-width: 400px;
+}
+
+/* Icons */
+.pr-icon-accent { color: var(--accent); }
+.pr-icon-warning { color: #d97706; }
+.pr-icon-error { color: #dc2626; }
+
+/* Pulse ring for processing */
+.pr-pulse-ring {
+  position: relative; color: var(--accent);
+}
+.pr-pulse-ring::before {
+  content: ''; position: absolute; inset: -12px;
+  border-radius: 50%; border: 2px solid var(--accent);
+  animation: pr-pulse 1.5s ease-out infinite; opacity: 0;
+}
+@keyframes pr-pulse {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+/* Success icon */
+.pr-success-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(34,197,94,0.1); color: #22c55e;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid rgba(34,197,94,0.3);
+}
+
+/* Product name */
+.pr-product-name {
+  font-weight: 700 !important; color: var(--text-primary) !important;
+}
+
+/* KC badge */
+.pr-kc-badge {
+  font-size: 1.4rem; font-weight: 900; color: var(--accent);
+  padding: 6px 20px; border-radius: var(--radius-full);
+  background: var(--accent-soft); margin: 4px 0;
+}
+
+/* ── Activation box ── */
+.pr-activation-box {
+  width: 100%; margin: 16px 0; padding: 24px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated); border: 2px solid var(--accent);
+  text-align: center;
+}
+.pr-activation-label {
+  font-size: .82rem; color: var(--text-secondary); display: block; margin-bottom: 12px;
+}
+.pr-activation-code-row {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-bottom: 16px;
+}
+.pr-activation-code {
+  font-size: 2rem; font-weight: 900; letter-spacing: 5px;
+  color: var(--accent); font-family: monospace;
+}
+.pr-copy-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  background: var(--accent-soft); border: none; color: var(--accent);
+  font-weight: 700; font-size: .78rem; cursor: pointer;
+  transition: all .2s;
+}
+.pr-copy-btn:hover { background: var(--accent); color: #fff; }
+
+/* How to activate */
+.pr-how-to {
+  text-align: left; padding: 16px;
+  background: rgba(108,92,231,0.05); border-radius: var(--radius-sm);
+  border: 1px solid rgba(108,92,231,0.12);
+}
+.pr-how-to strong {
+  font-size: .82rem; color: var(--text-primary); display: block; margin-bottom: 10px;
+}
+.pr-steps-mini {
+  display: flex; flex-direction: column; gap: 8px;
+  font-size: .8rem; color: var(--text-secondary); line-height: 1.5;
+}
+.pr-mini-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); color: #fff; font-size: .68rem; font-weight: 800;
+  margin-right: 8px; flex-shrink: 0;
+}
+.pr-mini-hint { color: var(--text-muted); font-size: .72rem; }
+.pr-how-to code {
+  background: var(--accent-soft); color: var(--accent);
+  padding: 2px 7px; border-radius: 4px; font-size: .76rem; font-weight: 700;
+}
+
+/* Actions */
+.pr-actions {
+  display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; justify-content: center;
+}
+.pr-btn { gap: 6px; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .pr-card { padding: 32px 20px; }
+  .pr-activation-code { font-size: 1.5rem; letter-spacing: 3px; }
+  .pr-step-line { width: 36px; }
+  .pr-center h1 { font-size: 1.25rem; }
+}

@@ -20,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem('kc_token');
+    localStorage.removeItem('kc_refresh_token');
     setToken(null);
     setCustomer(null);
   }, []);
@@ -42,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout();
       } else {
         // Otro tipo de error (ej: red caída) — no cerrar sesión, solo loguear
-        console.warn('[AuthContext] Error refrescando sesión:', err);
+        // Session refresh failed (network error, etc.) — don't logout
       }
     }
   }, [logout]);

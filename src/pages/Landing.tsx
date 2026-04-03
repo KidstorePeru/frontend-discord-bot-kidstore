@@ -24,8 +24,7 @@ const KC_PACKAGES_BASE = [
   { id: 'legend',  name: 'Legend',  kc: 12500, price_soles: 200.0, image: '/12500-kc.png', color: '#ec4899', glow: '#ec489925', tag: 'prem', tagIcon: 'crown' },
 ];
 
-const RATES_API_KEY = 'b3b1e1bf6a9c0a14fd80e3fd';
-const RATES_API_URL = `https://v6.exchangerate-api.com/v6/${RATES_API_KEY}/latest/PEN`;
+import { getExchangeRates } from '../services/api';
 
 function useRotatingWord(words: string[]) {
   const [index, setIndex] = useState(0);
@@ -56,30 +55,10 @@ export default function Landing() {
   const [eurRate, setEurRate] = useState<number>(0.25);
 
   useEffect(() => {
-    // Intentar cargar desde caché local primero
-    const cached = localStorage.getItem('ksp_rates');
-    if (cached) {
-      try {
-        const { usd, eur, ts } = JSON.parse(cached);
-        // Usar caché si tiene menos de 24 horas
-        if (Date.now() - ts < 24 * 60 * 60 * 1000) {
-          setUsdRate(usd);
-          setEurRate(eur);
-          return;
-        }
-      } catch {}
-    }
-    // Fetch tasas frescas
-    fetch(RATES_API_URL)
-      .then(r => r.json())
+    getExchangeRates()
       .then(data => {
-        if (data.result === 'success') {
-          const usd = data.conversion_rates?.USD ?? 0.27;
-          const eur = data.conversion_rates?.EUR ?? 0.25;
-          setUsdRate(usd);
-          setEurRate(eur);
-          localStorage.setItem('ksp_rates', JSON.stringify({ usd, eur, ts: Date.now() }));
-        }
+        if (data.USD) setUsdRate(data.USD);
+        if (data.EUR) setEurRate(data.EUR);
       })
       .catch(() => {}); // Usar valores por defecto si falla
   }, []);

@@ -25,6 +25,8 @@ import Privacy from './pages/Privacy';
 import Refunds from './pages/Refunds';
 import FAQPage from './pages/FAQ';
 import Contact from './pages/Contact';
+import PaymentReturn from './pages/PaymentReturn';
+import ChatBot from './components/ChatBot';
 import { useState } from 'react';
 import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Toast } from './components/UI';
@@ -246,6 +248,7 @@ export default function App() {
             <CartProvider>
               <Navbar />
               <GlobalCart />
+              <ChatBot />
               <main className="main-content">
                 <Routes>
                   <Route path="/"               element={<Landing />} />
@@ -264,6 +267,7 @@ export default function App() {
                   <Route path="/refunds"        element={<Refunds />} />
                   <Route path="/faq"            element={<FAQPage />} />
                   <Route path="/contact"        element={<Contact />} />
+                  <Route path="/payment/return" element={<PaymentReturn />} />
                 </Routes>
               </main>
               <GlobalFooter />

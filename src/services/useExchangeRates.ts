@@ -1,8 +1,7 @@
 // frontend/src/services/useExchangeRates.ts
 import { useState, useEffect } from 'react';
+import { getExchangeRates } from './api';
 
-const API_KEY   = 'b3b1e1bf6a9c0a14fd80e3fd';
-const API_URL   = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest/PEN`;
 const CACHE_KEY = 'ksp_exchange_rates';
 const TTL_MS    = 24 * 60 * 60 * 1000; // 24 horas
 
@@ -40,14 +39,11 @@ export async function fetchRates(): Promise<ExchangeRates> {
   if (cached) return cached;
 
   try {
-    const res  = await fetch(API_URL);
-    const data = await res.json();
-    if (data.result !== 'success') throw new Error('API error');
-
+    const data = await getExchangeRates();
     const rates: ExchangeRates = {
-      USD:       data.conversion_rates.USD,
-      EUR:       data.conversion_rates.EUR,
-      fetchedAt: Date.now(),
+      USD:       data.USD,
+      EUR:       data.EUR,
+      fetchedAt: data.fetchedAt || Date.now(),
     };
     saveCache(rates);
     return rates;

@@ -2,6 +2,8 @@ import type { AuthResponse, Customer, Order, ShopResponse } from '../types';
 
 const BASE = import.meta.env.VITE_API_URL || '/api';
 
+let isRefreshing = false;
+
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('kc_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -9,6 +11,34 @@ function authHeaders(): Record<string, string> {
 
 function getLang(): string {
   return localStorage.getItem('kc_lang') || 'es';
+}
+
+async function tryRefreshToken(): Promise<boolean> {
+  const refreshToken = localStorage.getItem('kc_refresh_token');
+  if (!refreshToken || isRefreshing) return false;
+
+  isRefreshing = true;
+  try {
+    const res = await fetch(`${BASE}/store/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok && body.token) {
+      localStorage.setItem('kc_token', body.token);
+      localStorage.setItem('kc_refresh_token', body.refresh_token);
+      return true;
+    }
+    // Refresh failed — clear tokens
+    localStorage.removeItem('kc_token');
+    localStorage.removeItem('kc_refresh_token');
+    return false;
+  } catch {
+    return false;
+  } finally {
+    isRefreshing = false;
+  }
 }
 
 async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
@@ -25,9 +55,33 @@ async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
   const body = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    if (body?.code === 'TOKEN_EXPIRED' || res.status === 401) {
+    // Auto-refresh on TOKEN_EXPIRED
+    if (body?.code === 'TOKEN_EXPIRED' || (res.status === 401 && localStorage.getItem('kc_refresh_token'))) {
+      const refreshed = await tryRefreshToken();
+      if (refreshed) {
+        // Retry the original request with new token
+        const retryRes = await fetch(`${BASE}${url}`, {
+          ...opts,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Lang': getLang(),
+            ...authHeaders(),
+            ...(opts.headers as Record<string, string> || {}),
+          },
+        });
+        const retryBody = await retryRes.json().catch(() => ({}));
+        if (!retryRes.ok) {
+          throw new Error(retryBody.error || retryBody.message || `Error ${retryRes.status}`);
+        }
+        return retryBody as T;
+      }
       const err = new Error(body.error || 'Sesión expirada') as Error & { code?: string };
-      err.code = body.code || 'UNAUTHORIZED';
+      err.code = 'TOKEN_EXPIRED';
+      throw err;
+    }
+    if (res.status === 401) {
+      const err = new Error(body.error || 'No autorizado') as Error & { code?: string };
+      err.code = 'UNAUTHORIZED';
       throw err;
     }
     if (body?.code === 'EMAIL_NOT_VERIFIED' || res.status === 403) {
@@ -50,11 +104,14 @@ export async function register(epic_username: string, email: string, password: s
   return { requires_verification: res.requires_verification };
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  const res = await request<{ success: boolean; token: string; customer: Customer }>('/store/login', {
+export async function login(email: string, password: string): Promise<AuthResponse & { refresh_token?: string }> {
+  const res = await request<{ success: boolean; token: string; refresh_token: string; customer: Customer }>('/store/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
+  if (res.refresh_token) {
+    localStorage.setItem('kc_refresh_token', res.refresh_token);
+  }
   return { token: res.token, customer: res.customer };
 }
 
@@ -80,9 +137,9 @@ export async function getMe(): Promise<Customer> {
   return res.customer;
 }
 
-export async function getMyOrders(): Promise<Order[]> {
-  const res = await request<{ success: boolean; orders: Order[] }>('/store/orders');
-  return res.orders ?? [];
+export async function getMyOrders(page = 1, limit = 20): Promise<{ orders: Order[]; total: number; page: number }> {
+  const res = await request<{ success: boolean; orders: Order[]; total: number; page: number }>(`/store/orders?page=${page}&limit=${limit}`);
+  return { orders: res.orders ?? [], total: res.total, page: res.page };
 }
 
 export async function updateProfile(data: {
@@ -109,10 +166,33 @@ export async function unlinkDiscord(): Promise<void> {
   await request('/store/unlink-discord', { method: 'DELETE' });
 }
 
+/* ── Recharge History ── */
+
+export async function getMyRecharges(): Promise<{
+  recharges: { id: string; amount_kc: number; amount_soles: number | null; method: string; note: string | null; approved_by: string | null; created_at: string }[];
+  payments: { id: string; gateway: string; payment_type: string; product_name: string; amount_pen: number; amount_usd: number; kc_amount: number; status: string; created_at: string }[];
+}> {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const res = await request<{ success: boolean; recharges: any[]; payments: any[] }>('/store/recharges');
+  return { recharges: res.recharges ?? [], payments: res.payments ?? [] };
+}
+
 /* ── Shop ── */
 
 export async function getShop(lang: 'es-419' | 'en' = 'es-419'): Promise<ShopResponse> {
   return request<ShopResponse>(`/store/shop?lang=${lang}`);
+}
+
+/* ── Payment Info ── */
+
+export async function getPaymentInfo(): Promise<Record<string, Record<string, string>>> {
+  return request<Record<string, Record<string, string>>>('/store/payment-info');
+}
+
+/* ── Exchange Rates ── */
+
+export async function getExchangeRates(): Promise<{ USD: number; EUR: number; fetchedAt: number }> {
+  return request<{ USD: number; EUR: number; fetchedAt: number }>('/store/exchange-rates');
 }
 
 /* ── Orders ── */
@@ -129,6 +209,69 @@ export async function createOrder(data: {
     body: JSON.stringify(data),
   });
   return res.order;
+}
+
+/* ── Payments ── */
+
+export async function createPayment(
+  gateway: string, paymentType: string, productId: string,
+  custom?: { name: string; price: number; kc?: number }
+): Promise<{ payment_id: string; checkout_url: string }> {
+  return request<{ success: boolean; payment_id: string; checkout_url: string }>('/store/payment', {
+    method: 'POST',
+    body: JSON.stringify({
+      gateway, payment_type: paymentType, product_id: productId,
+      ...(custom ? { custom_name: custom.name, custom_price: custom.price, custom_kc: custom.kc || 0 } : {}),
+    }),
+  });
+}
+
+export async function getPaymentStatus(paymentId: string) {
+  return request<{ success: boolean; transaction: { id: string; status: string; payment_type: string; product_name: string; kc_amount: number } }>(`/store/payment-status/${paymentId}`);
+}
+
+export async function capturePayPalPayment(paymentId: string, token: string) {
+  return request<{ success: boolean }>(`/store/paypal-capture?id=${paymentId}&token=${token}`, { method: 'POST' });
+}
+
+/* ── Product Availability ── */
+
+export async function checkProductAvailable(productId: string): Promise<boolean> {
+  try {
+    const res = await request<{ success: boolean; available: boolean }>(`/store/product-available/${productId}`);
+    return res.available;
+  } catch { return true; } // default available if endpoint fails
+}
+
+/* ── Chat (Autobuyer V2 direct connection) ── */
+
+const AUTOBUYER = import.meta.env.VITE_AUTOBUYER_URL || 'http://localhost:7788';
+const AB_API = `${AUTOBUYER}/api/v1`;
+
+export async function chatStart(): Promise<string> {
+  const lang = localStorage.getItem('kc_lang') || 'es';
+  const res = await fetch(`${AB_API}/chat/start?lang=${lang}`, {
+    method: 'POST',
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail || `Error ${res.status}`);
+  return body.session_id as string;
+}
+
+export async function chatSendMessage(sessionId: string, text: string): Promise<void> {
+  const res = await fetch(`${AB_API}/chat/message`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, text }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Error ${res.status}`);
+  }
+}
+
+export function chatStreamURL(sessionId: string): string {
+  return `${AB_API}/chat/stream/${sessionId}`;
 }
 
 /* ── Admin ── */

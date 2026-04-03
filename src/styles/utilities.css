@@ -1,0 +1,36 @@
+
+/* ═══════════════════════════════════════════════════
+   KC BADGE + STATUS
+   ═══════════════════════════════════════════════════ */
+.kc-badge {
+  display: inline-flex; align-items: center; gap: 4px; font-weight: 800;
+  color: var(--kc-gold); background: var(--kc-gold-soft); border-radius: var(--radius-full);
+  white-space: nowrap; border: 1px solid color-mix(in srgb, var(--kc-gold) 20%, transparent);
+}
+.kc-sm { padding: 3px 9px;  font-size: 0.73rem; }
+.kc-md { padding: 5px 12px; font-size: 0.83rem; }
+.kc-lg { padding: 6px 16px; font-size: 1rem; }
+.status-badge {
+  display: inline-flex; align-items: center; padding: 3px 9px;
+  border-radius: var(--radius-full); font-size: 0.71rem; font-weight: 700;
+  color: var(--badge-color);
+  background: color-mix(in srgb, var(--badge-color) 12%, transparent);
+  white-space: nowrap;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   TOAST + LOADER
+   ═══════════════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 22px; right: 22px; display: flex; align-items: center;
+  gap: 10px; padding: 12px 18px; border-radius: var(--radius-md); font-size: 0.88rem;
+  font-weight: 600; z-index: 999; animation: fadeUp 0.3s ease-out both; cursor: pointer;
+  box-shadow: var(--shadow-lg); border: 1px solid transparent;
+}
+.toast button { font-size: 1.1rem; opacity: 0.7; }
+.toast-success { background: color-mix(in srgb, var(--green-500) 10%, var(--bg-surface)); color: var(--green-500); border-color: color-mix(in srgb, var(--green-500) 25%, transparent); }
+.toast-error   { background: color-mix(in srgb, var(--red-500) 10%, var(--bg-surface)); color: var(--red-500); border-color: color-mix(in srgb, var(--red-500) 25%, transparent); }
+.toast-info    { background: color-mix(in srgb, var(--blue-500) 10%, var(--bg-surface)); color: var(--blue-500); border-color: color-mix(in srgb, var(--blue-500) 25%, transparent); }
+.page-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: calc(100vh - var(--nav-height)); color: var(--text-muted); }
+

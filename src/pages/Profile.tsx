@@ -4,11 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getMyOrders, updateProfile, getDiscordAuthURL, unlinkDiscord } from '../services/api';
 import { KCBadge, StatusBadge, PageLoader, Toast } from '../components/UI';
-import type { Order } from '../types';
+import type { Order, Customer } from '../types';
 import {
   Package, Zap, User, Calendar, CheckCircle2,
   TrendingUp, ShoppingBag, MessageSquare, Copy, Award,
-  Shield, Mail, Key, AtSign, Lock, ExternalLink, Eye, EyeOff, Loader2, Camera, X, AlertCircle
+  Shield, Mail, Key, AtSign, Lock, Eye, EyeOff, Loader2, Camera, X, AlertCircle
 } from 'lucide-react';
 
 const DEFAULT_AVATARS = [
@@ -41,7 +41,7 @@ export default function Profile() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    Promise.all([refresh(), getMyOrders().then(setOrders).catch(() => [])]).finally(() => setLoading(false));
+    Promise.all([refresh(), getMyOrders().then(r => setOrders(r.orders)).catch(() => [])]).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -267,7 +267,7 @@ export default function Profile() {
 
 /* ── Security Tab ── */
 function SecurityTab({ customer, setAuth, refresh, setToast, lang, onDiscordOAuth }: {
-  customer: any; setAuth: any; refresh: any;
+  customer: Customer; setAuth: (token: string, customer: Customer) => void; refresh: () => Promise<void>;
   setToast: (v: { msg: string; type: 'success' | 'error' } | null) => void;
   lang: string; onDiscordOAuth: () => void;
 }) {
@@ -310,8 +310,8 @@ function SecurityTab({ customer, setAuth, refresh, setToast, lang, onDiscordOAut
       setAuth(res.token, res.customer);
       setToast({ msg: es ? '✅ Datos actualizados correctamente' : '✅ Account info updated successfully', type: 'success' });
       setEpicVal(''); setEmailVal(''); setPassForInfo('');
-    } catch (err: any) {
-      setToast({ msg: err.message || (es ? 'Error al actualizar' : 'Update error'), type: 'error' });
+    } catch (err: unknown) {
+      setToast({ msg: err instanceof Error ? err.message : (es ? 'Error al actualizar' : 'Update error'), type: 'error' });
     } finally { setSavingInfo(false); }
   }
 
@@ -333,8 +333,8 @@ function SecurityTab({ customer, setAuth, refresh, setToast, lang, onDiscordOAut
       setAuth(res.token, res.customer);
       setToast({ msg: es ? '✅ Contraseña actualizada correctamente' : '✅ Password updated successfully', type: 'success' });
       setCurrPass(''); setNewPass(''); setConfirmPass('');
-    } catch (err: any) {
-      setToast({ msg: err.message || (es ? 'Error al cambiar contraseña' : 'Password change error'), type: 'error' });
+    } catch (err: unknown) {
+      setToast({ msg: err instanceof Error ? err.message : (es ? 'Error al cambiar contraseña' : 'Password change error'), type: 'error' });
     } finally { setSavingPass(false); }
   }
 
@@ -345,8 +345,8 @@ function SecurityTab({ customer, setAuth, refresh, setToast, lang, onDiscordOAut
       await refresh();
       setConfirmUnlink(false);
       setToast({ msg: es ? '✅ Discord desvinculado correctamente' : '✅ Discord unlinked successfully', type: 'success' });
-    } catch (err: any) {
-      setToast({ msg: err.message || (es ? 'Error al desvincular Discord' : 'Error unlinking Discord'), type: 'error' });
+    } catch (err: unknown) {
+      setToast({ msg: err instanceof Error ? err.message : (es ? 'Error al desvincular Discord' : 'Error unlinking Discord'), type: 'error' });
     } finally { setUnlinking(false); }
   }
 

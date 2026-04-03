@@ -5,10 +5,25 @@ import {
   Users, Package, TrendingUp, Coins, Search, Loader2,
   CheckCircle2, RefreshCw, ShieldCheck, LogIn, Bot,
   Plus, Trash2, ExternalLink, Copy, Zap, X, Edit2,
-  AlertTriangle, Gamepad2, Mail, Clock, Moon, Sun, ToggleLeft, ToggleRight
+  AlertTriangle, Gamepad2, Mail, Clock, Moon, Sun, ToggleLeft, ToggleRight,
+  CreditCard
 } from 'lucide-react';
 
-type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule';
+type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments' | 'availability' | 'autobuyer';
+const ADMIN_PER_PAGE = 10;
+
+function AdminPagination({ page, total, setPage }: { page: number; total: number; setPage: (p: number) => void }) {
+  if (total <= 1) return null;
+  return (
+    <div className="admin-pagination">
+      <button disabled={page <= 1} onClick={() => setPage(page - 1)}>&laquo;</button>
+      {Array.from({ length: total }, (_, i) => i + 1).map(p => (
+        <button key={p} className={p === page ? 'active' : ''} onClick={() => setPage(p)}>{p}</button>
+      ))}
+      <button disabled={page >= total} onClick={() => setPage(page + 1)}>&raquo;</button>
+    </div>
+  );
+}
 const BASE = (import.meta.env.VITE_API_URL as string) || '/api';
 
 async function adminFetch(path: string, adminKey: string, opts: RequestInit = {}) {
@@ -51,10 +66,26 @@ export default function AdminPanel() {
   const [toast,    setToast]    = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [search,   setSearch]   = useState('');
 
-  const [stats,     setStats]     = useState<any>(null);
+  const [stats, setStats] = useState<{ total_customers: number; total_orders: number; total_sent: number; total_pending: number; total_kc_recharged: number } | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders,    setOrders]    = useState<Order[]>([]);
+  const [custPage,    setCustPage]    = useState(1);
+  const [orderPage,   setOrderPage]   = useState(1);
+  const [payments,    setPayments]    = useState<any[]>([]);
+  const [paymentPage, setPaymentPage] = useState(1);
+  const [_paymentTotal, setPaymentTotal] = useState(0);
   const [bots,      setBots]      = useState<BotAccount[]>([]);
+
+  // Product availability
+  interface ProdAvail { product_id: string; enabled: boolean; schedule_enabled: boolean; start_hour: number; end_hour: number; timezone: string }
+  const [availItems, setAvailItems] = useState<ProdAvail[]>([]);
+  const [availLoading, setAvailLoading] = useState(false);
+  const PRODUCT_LIST = [
+    { id: 'club-monthly', name: 'Fortnite Crew' },
+    { id: 'vb-800', name: '800 V-Bucks' }, { id: 'vb-2400', name: '2400 V-Bucks' }, { id: 'vb-4500', name: '4500 V-Bucks' }, { id: 'vb-12500', name: '12500 V-Bucks' },
+    { id: 'pack-koi', name: 'Pack de Reino Koi' }, { id: 'pack-drift', name: 'Pack Deriva Infinita' }, { id: 'pack-brite', name: 'Operation Brite' },
+    { id: 'rl-500', name: '500 RL Credits' }, { id: 'rl-1100', name: '1100 RL Credits' }, { id: 'rl-3000', name: '3000 RL Credits' }, { id: 'rl-6500', name: '6500 RL Credits' },
+  ];
 
   // Schedule
   const [schedule,        setSchedule]        = useState<BotSchedule | null>(null);
@@ -119,6 +150,15 @@ export default function AdminPanel() {
         const r = await adminFetch('/admin/customers', apiKey);
         setRCustomers(r.customers || []); setRCustLoaded(true);
       }
+      else if (t === 'payments') {
+        const r = await adminFetch('/admin/payments', apiKey);
+        setPayments(r.payments || []);
+        setPaymentTotal(r.total || 0);
+      }
+      else if (t === 'availability') {
+        const r = await adminFetch('/admin/product-availability', apiKey);
+        setAvailItems(r.items || []);
+      }
       else if (t === 'schedule') {
         const r = await adminFetch('/admin/bot-schedule', apiKey);
         const s: BotSchedule = r.schedule;
@@ -128,7 +168,7 @@ export default function AdminPanel() {
         setSchedEnd(s.end_hour);
         setSchedTimezone(s.timezone);
       }
-    } catch (err: any) { setToast({ msg: err.message || 'Error cargando datos', type: 'error' }); }
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message :'Error cargando datos', type: 'error' }); }
     finally { setLoading(false); }
   }
 
@@ -150,8 +190,8 @@ export default function AdminPanel() {
       setSchedSaved(true);
       setToast({ msg: `✅ Horario actualizado: ${schedEnabled ? `${pad(schedStart)}:00 — ${pad(schedEnd)}:00` : 'Deshabilitado'}`, type: 'success' });
       setTimeout(() => setSchedSaved(false), 3000);
-    } catch (err: any) {
-      setToast({ msg: err.message || 'Error guardando horario', type: 'error' });
+    } catch (err: unknown) {
+      setToast({ msg: err instanceof Error ? err.message : 'Error guardando horario', type: 'error' });
     } finally { setSchedLoading(false); }
   }
 
@@ -166,7 +206,7 @@ export default function AdminPanel() {
       setToast({ msg: `✅ ${res.message} — Nuevo balance: ${res.new_balance.toLocaleString()} KC`, type: 'success' });
       setRSelected(null); setRAmount(''); setRSoles(''); setRNote(''); setRSearch('');
       setRCustomers(prev => prev.map(c => c.id === rSelected.id ? {...c, kc_balance: res.new_balance} : c));
-    } catch (err: any) { setToast({ msg: err.message || 'Error recargando KC', type: 'error' }); }
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message :'Error recargando KC', type: 'error' }); }
     finally { setRLoading(false); }
   }
 
@@ -191,7 +231,7 @@ export default function AdminPanel() {
       setCustomers(prev => prev.map(c => c.id === editCustomer.id ? {...c, epic_username: editEpic, email: editEmail, kc_balance: parseInt(editKC)} : c));
       setRCustomers(prev => prev.map(c => c.id === editCustomer.id ? {...c, epic_username: editEpic, email: editEmail, kc_balance: parseInt(editKC)} : c));
       setEditCustomer(null);
-    } catch (err: any) { setToast({ msg: err.message || 'Error actualizando cliente', type: 'error' }); }
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message :'Error actualizando cliente', type: 'error' }); }
     finally { setEditCustLoading(false); }
   }
 
@@ -202,7 +242,7 @@ export default function AdminPanel() {
       setToast({ msg: `✅ Cliente ${deleteConfirm.epic_username} eliminado`, type: 'success' });
       setCustomers(prev => prev.filter(c => c.id !== deleteConfirm.id));
       setDeleteConfirm(null);
-    } catch (err: any) { setToast({ msg: err.message || 'Error eliminando cliente', type: 'error' }); }
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message :'Error eliminando cliente', type: 'error' }); }
     finally { setDeleteLoading(false); }
   }
 
@@ -213,7 +253,7 @@ export default function AdminPanel() {
       const res = await adminFetch('/admin/bots/connect', apiKey, { method: 'POST' });
       setConnectData({ login_url: res.login_url, user_code: res.user_code, device_code: res.device_code });
       setConnectStep('waiting'); window.open(res.login_url, '_blank');
-    } catch (err: any) { setToast({ msg: err.message || 'Error iniciando vinculación', type: 'error' }); }
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message :'Error iniciando vinculación', type: 'error' }); }
     finally { setConnectLoading(false); }
   }
   async function handleFinishConnect() {
@@ -222,7 +262,7 @@ export default function AdminPanel() {
       const res = await adminFetch('/admin/bots/finish', apiKey, { method: 'POST', body: JSON.stringify({ device_code: connectData.device_code }) });
       setToast({ msg: `✅ Cuenta ${res.display_name} vinculada correctamente`, type: 'success' });
       setConnectStep('idle'); setConnectData(null); loadTab('bots');
-    } catch (err: any) { setToast({ msg: err.message || 'Error. Asegúrate de haber iniciado sesión en Epic.', type: 'error' }); }
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message :'Error. Asegúrate de haber iniciado sesión en Epic.', type: 'error' }); }
     finally { setConnectLoading(false); }
   }
   async function handleVerifyTokens() {
@@ -231,7 +271,7 @@ export default function AdminPanel() {
       const res = await adminFetch('/admin/bots/verify', apiKey, { method: 'POST' });
       setToast({ msg: `🔍 ${res.message}`, type: 'success' });
       setTimeout(() => loadTab('bots'), 4000);
-    } catch (err: any) { setToast({ msg: err.message, type: 'error' }); }
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message : 'Error', type: 'error' }); }
     finally { setVerifying(false); }
   }
   async function handleDisconnect(accountId: string, displayName: string) {
@@ -239,7 +279,7 @@ export default function AdminPanel() {
     try {
       await adminFetch('/admin/bots/disconnect', apiKey, { method: 'POST', body: JSON.stringify({ account_id: accountId }) });
       setToast({ msg: `✅ ${displayName} desconectada`, type: 'success' }); loadTab('bots');
-    } catch (err: any) { setToast({ msg: err.message, type: 'error' }); }
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message : 'Error', type: 'error' }); }
   }
   function openEditBot(bot: BotAccount) { setEditBot(bot); setEditVbucks(String(bot.vbucks)); setEditGifts(String(bot.remaining_gifts)); }
   async function handleSaveBot(e: React.FormEvent) {
@@ -250,18 +290,28 @@ export default function AdminPanel() {
         await adminFetch('/admin/bots/vbucks', apiKey, { method: 'POST', body: JSON.stringify({ account_id: editBot.id, vbucks: parseInt(editVbucks) }) });
       setToast({ msg: `✅ ${editBot.display_name} actualizado`, type: 'success' });
       setEditBot(null); loadTab('bots');
-    } catch (err: any) { setToast({ msg: err.message, type: 'error' }); }
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message : 'Error', type: 'error' }); }
     finally { setEditLoading(false); }
   }
+
+  useEffect(() => { setCustPage(1); setOrderPage(1); }, [search]);
 
   const filteredCustomers = customers.filter(c =>
     c.epic_username.toLowerCase().includes(search.toLowerCase()) ||
     (c.email ?? '').toLowerCase().includes(search.toLowerCase())
   );
+  const custTotalPages = Math.max(1, Math.ceil(filteredCustomers.length / ADMIN_PER_PAGE));
+  const pagedCustomers = filteredCustomers.slice((custPage - 1) * ADMIN_PER_PAGE, custPage * ADMIN_PER_PAGE);
+
   const filteredOrders = orders.filter(o =>
     o.epic_username.toLowerCase().includes(search.toLowerCase()) ||
     o.item_name.toLowerCase().includes(search.toLowerCase())
   );
+  const orderTotalPages = Math.max(1, Math.ceil(filteredOrders.length / ADMIN_PER_PAGE));
+  const pagedOrders = filteredOrders.slice((orderPage - 1) * ADMIN_PER_PAGE, orderPage * ADMIN_PER_PAGE);
+
+  const paymentTotalPages = Math.max(1, Math.ceil(payments.length / ADMIN_PER_PAGE));
+  const pagedPayments = payments.slice((paymentPage - 1) * ADMIN_PER_PAGE, paymentPage * ADMIN_PER_PAGE);
   const filteredRCustomers = rCustomers.filter(c =>
     c.epic_username.toLowerCase().includes(rSearch.toLowerCase()) ||
     (c.email ?? '').toLowerCase().includes(rSearch.toLowerCase())
@@ -407,7 +457,10 @@ export default function AdminPanel() {
           ['orders',   'Pedidos',      <Package size={15}/>],
           ['recharge', 'Recargar KC',  <Coins size={15}/>],
           ['bots',     'Cuentas Bot',  <Bot size={15}/>],
+          ['payments', 'Pagos',        <CreditCard size={15}/>],
           ['schedule', 'Horario Bots', <Clock size={15}/>],
+          ['availability','Disponibilidad', <ToggleRight size={15}/>],
+          ['autobuyer','Autobuyer',    <Zap size={15}/>],
         ] as [AdminTab, string, React.ReactNode][]).map(([key, label, icon]) => (
           <button key={key} className={`admin-tab ${tab===key?'active':''}`} onClick={() => setTab(key)}>
             {icon} {label}
@@ -454,7 +507,7 @@ export default function AdminPanel() {
                 <th>Discord</th><th>Registrado</th><th>Acciones</th>
               </tr></thead>
               <tbody>
-                {filteredCustomers.map(c => (
+                {pagedCustomers.map(c => (
                   <tr key={c.id} className="adm-customer-row" onClick={() => openEditCustomer(c)}>
                     <td><div className="adm-user-cell"><div className="adm-user-avatar">{c.epic_username[0].toUpperCase()}</div><strong>{c.epic_username}</strong></div></td>
                     <td className="text-muted">{c.email}</td>
@@ -474,6 +527,7 @@ export default function AdminPanel() {
               </tbody>
             </table>
           </div>
+          <AdminPagination page={custPage} total={custTotalPages} setPage={setCustPage}/>
         </div>
       )}
 
@@ -493,12 +547,12 @@ export default function AdminPanel() {
                 <th>Usuario Epic</th><th>Item</th><th>KC</th><th>VBucks</th><th>Estado</th><th>Fecha</th>
               </tr></thead>
               <tbody>
-                {filteredOrders.map(o => (
+                {pagedOrders.map(o => (
                   <tr key={o.id}>
                     <td><div className="adm-user-cell"><div className="adm-user-avatar" style={{background:'rgba(59,130,246,0.15)',color:'#3b82f6'}}>{o.epic_username[0]}</div><strong>{o.epic_username}</strong></div></td>
                     <td>{o.item_name}</td>
                     <td><KCBadge amount={o.price_kc} size="sm"/></td>
-                    <td className="text-muted">{(o as any).price_vbucks || '—'}</td>
+                    <td className="text-muted">{o.price_vbucks || '—'}</td>
                     <td><StatusBadge status={o.status}/></td>
                     <td className="text-muted">{new Date(o.created_at).toLocaleDateString('es-PE')}</td>
                   </tr>
@@ -507,6 +561,43 @@ export default function AdminPanel() {
               </tbody>
             </table>
           </div>
+          <AdminPagination page={orderPage} total={orderTotalPages} setPage={setOrderPage}/>
+        </div>
+      )}
+
+      {/* ── PAYMENTS ── */}
+      {tab === 'payments' && !loading && (
+        <div className="admin-table-section">
+          <div className="adm-section-head">
+            <span className="adm-count">{payments.length} transacci{payments.length !== 1 ? 'ones' : 'ón'}</span>
+          </div>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead><tr>
+                <th>Gateway</th><th>Tipo</th><th>Producto</th><th>Monto PEN</th><th>KC</th><th>Estado</th><th>Fecha</th>
+              </tr></thead>
+              <tbody>
+                {/* eslint-disable @typescript-eslint/no-explicit-any */}
+              {pagedPayments.map((p: any) => (
+                  <tr key={p.id}>
+                    <td><span style={{textTransform:'capitalize', fontWeight:600}}>{p.gateway}</span></td>
+                    <td className="text-muted">{p.payment_type === 'kc_recharge' ? 'Recarga KC' : 'Compra producto'}</td>
+                    <td>{p.product_name}</td>
+                    <td><strong>S/ {Number(p.amount_pen).toFixed(2)}</strong></td>
+                    <td>{p.kc_amount > 0 ? <KCBadge amount={p.kc_amount} size="sm"/> : '—'}</td>
+                    <td>
+                      <span className="status-badge" style={{ '--badge-color': p.status === 'approved' ? '#22c55e' : p.status === 'pending' ? '#f59e0b' : '#dc2626' } as React.CSSProperties}>
+                        {p.status === 'approved' ? 'Aprobado' : p.status === 'pending' ? 'Pendiente' : p.status === 'failed' ? 'Fallido' : p.status}
+                      </span>
+                    </td>
+                    <td className="text-muted">{new Date(p.created_at).toLocaleDateString('es-PE')}</td>
+                  </tr>
+                ))}
+                {payments.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin transacciones</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <AdminPagination page={paymentPage} total={paymentTotalPages} setPage={setPaymentPage}/>
         </div>
       )}
 
@@ -852,6 +943,117 @@ export default function AdminPanel() {
               Los cambios en DB son efectivos de inmediato en el próximo tick del worker (cada 30s).
             </p>
           </div>
+        </div>
+      )}
+
+      {/* ── DISPONIBILIDAD ── */}
+      {tab === 'availability' && (
+        <div className="admin-table-section">
+          <div className="adm-section-head">
+            <h3 style={{fontWeight:800,fontSize:'1rem'}}>Control de disponibilidad de productos</h3>
+            <span className="adm-count">{availItems.filter(a => a.enabled).length} activos</span>
+          </div>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead><tr>
+                <th>Producto</th><th>Estado</th><th>Horario</th><th>Rango</th><th>Acciones</th>
+              </tr></thead>
+              <tbody>
+                {PRODUCT_LIST.map(p => {
+                  const avail = availItems.find(a => a.product_id === p.id);
+                  const enabled = avail ? avail.enabled : true;
+                  const schedOn = avail?.schedule_enabled || false;
+                  const startH = avail?.start_hour ?? 0;
+                  const endH = avail?.end_hour ?? 23;
+                  const tz = avail?.timezone || 'America/Lima';
+                  return (
+                    <tr key={p.id}>
+                      <td><strong>{p.name}</strong><br/><span className="text-muted" style={{fontSize:'.7rem'}}>{p.id}</span></td>
+                      <td>
+                        <button
+                          onClick={async () => {
+                            setAvailLoading(true);
+                            await adminFetch('/admin/product-availability', apiKey, {
+                              method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled: !enabled, schedule_enabled: schedOn, start_hour: startH, end_hour: endH, timezone: tz })
+                            });
+                            await loadTab('availability');
+                            setAvailLoading(false);
+                            setToast({ msg: `${p.name}: ${!enabled ? 'activado' : 'desactivado'}`, type: 'success' });
+                          }}
+                          disabled={availLoading}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                        >
+                          {enabled
+                            ? <ToggleRight size={32} style={{color:'var(--green-500)'}}/>
+                            : <ToggleLeft size={32} style={{color:'var(--text-muted)'}}/>}
+                        </button>
+                      </td>
+                      <td>
+                        <button
+                          onClick={async () => {
+                            setAvailLoading(true);
+                            await adminFetch('/admin/product-availability', apiKey, {
+                              method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled, schedule_enabled: !schedOn, start_hour: startH, end_hour: endH, timezone: tz })
+                            });
+                            await loadTab('availability');
+                            setAvailLoading(false);
+                          }}
+                          disabled={availLoading}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                        >
+                          {schedOn
+                            ? <ToggleRight size={24} style={{color:'var(--blue-500)'}}/>
+                            : <ToggleLeft size={24} style={{color:'var(--text-muted)'}}/>}
+                        </button>
+                        {schedOn && <span className="text-muted" style={{fontSize:'.7rem',display:'block'}}>Activo</span>}
+                      </td>
+                      <td>
+                        {schedOn ? (
+                          <div style={{display:'flex',gap:4,alignItems:'center',fontSize:'.82rem'}}>
+                            <select value={startH} onChange={async e => {
+                              setAvailLoading(true);
+                              await adminFetch('/admin/product-availability', apiKey, {
+                                method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled, schedule_enabled: schedOn, start_hour: parseInt(e.target.value), end_hour: endH, timezone: tz })
+                              });
+                              await loadTab('availability'); setAvailLoading(false);
+                            }} style={{padding:'4px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-surface)',color:'var(--text-primary)',fontSize:'.8rem'}}>
+                              {Array.from({length:24},(_,i)=>(<option key={i} value={i}>{String(i).padStart(2,'0')}:00</option>))}
+                            </select>
+                            <span>—</span>
+                            <select value={endH} onChange={async e => {
+                              setAvailLoading(true);
+                              await adminFetch('/admin/product-availability', apiKey, {
+                                method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled, schedule_enabled: schedOn, start_hour: startH, end_hour: parseInt(e.target.value), timezone: tz })
+                              });
+                              await loadTab('availability'); setAvailLoading(false);
+                            }} style={{padding:'4px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-surface)',color:'var(--text-primary)',fontSize:'.8rem'}}>
+                              {Array.from({length:24},(_,i)=>(<option key={i} value={i}>{String(i).padStart(2,'0')}:00</option>))}
+                            </select>
+                          </div>
+                        ) : <span className="text-muted" style={{fontSize:'.78rem'}}>Sin horario</span>}
+                      </td>
+                      <td>
+                        <span className="status-badge" style={{ '--badge-color': enabled ? '#22c55e' : '#dc2626' } as React.CSSProperties}>
+                          {enabled ? (schedOn ? `${String(startH).padStart(2,'0')}:00-${String(endH).padStart(2,'0')}:00` : 'Siempre activo') : 'Desactivado'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── AUTOBUYER ── */}
+      {tab === 'autobuyer' && (
+        <div style={{ borderRadius: 14, overflow: 'hidden', border: '1.5px solid var(--border)', height: 'calc(100vh - 220px)', minHeight: 500 }}>
+          <iframe
+            src={`${(import.meta.env.VITE_AUTOBUYER_URL as string) || 'http://localhost:7788'}/ui`}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title="KidStore Autobuyer"
+          />
         </div>
       )}
     </div>

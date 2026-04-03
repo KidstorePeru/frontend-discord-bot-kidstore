@@ -22,7 +22,7 @@ export default function Login() {
       setAuth(res.token, res.customer);
       navigate('/dashboard');
     } catch (err: unknown) {
-      if (err instanceof Error && (err as any).code === 'EMAIL_NOT_VERIFIED') {
+      if (err instanceof Error && (err as Error & { code?: string }).code === 'EMAIL_NOT_VERIFIED') {
         setError(es
           ? '📧 Debes verificar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.'
           : '📧 You must verify your email before logging in. Check your inbox.');

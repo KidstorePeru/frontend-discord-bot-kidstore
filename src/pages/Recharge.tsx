@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { KC_PACKAGES, PAYMENT_INFO, COMMISSIONS, withCommission } from '../services/constants';
+import { KC_PACKAGES, COMMISSIONS, withCommission } from '../services/constants';
+import type { PaymentInfo } from '../services/constants';
+import { getPaymentInfo, getExchangeRates, createPayment } from '../services/api';
 import type { KCPackage } from '../types';
-import { KCBadge } from '../components/UI';
-import { Coins, MessageCircle, Copy, CheckCircle, Zap, ArrowRight, RefreshCw, Instagram } from 'lucide-react';
+import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X } from 'lucide-react';
 
 type Currency = 'PEN' | 'USD' | 'EUR';
 type MethodId = 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'paypal' | 'binance' | 'bizum';
@@ -69,14 +70,22 @@ export default function Recharge() {
   const [customKC, setCustomKC]     = useState('');
   const [rates, setRates]           = useState<{usd:number;eur:number} | null>(null);
   const [ratesLoading, setRatesLoading] = useState(false);
+  const [payInfo, setPayInfo] = useState<PaymentInfo | null>(null);
+  const [payTab, setPayTab] = useState<'online' | 'manual'>('online');
+  const [payLoading, setPayLoading] = useState('');
+  const [payPending, setPayPending] = useState(false);
+  const [payResult, setPayResult] = useState<'success'|'error'|null>(null);
+  const [payKcCredited, setPayKcCredited] = useState(0);
 
   useEffect(() => {
     setRatesLoading(true);
-    fetch('https://open.er-api.com/v6/latest/PEN')
-      .then(r => r.json())
-      .then(d => { if (d.rates) setRates({ usd: d.rates.USD, eur: d.rates.EUR }); })
+    getExchangeRates()
+      .then(d => { if (d.USD) setRates({ usd: d.USD, eur: d.EUR }); })
       .catch(() => setRates({ usd: 0.267, eur: 0.246 }))
       .finally(() => setRatesLoading(false));
+    getPaymentInfo()
+      .then(setPayInfo)
+      .catch(() => {});
   }, []);
 
   function convertPrice(pen: number, cur: Currency): string {
@@ -128,6 +137,56 @@ export default function Recharge() {
     if (method && !METHODS.find(m => m.id === method)?.currency.includes(c)) setMethod(null);
   }
 
+  async function handleGateway(gateway: string) {
+    if (!selectedPkg || payLoading) return;
+    setPayLoading(gateway);
+    try {
+      const isCustom = selectedPkg.id === 'custom';
+      const res = await createPayment(gateway, 'kc_recharge', selectedPkg.id,
+        isCustom ? { name: `${selectedPkg.kc} KC (personalizado)`, price: selectedPkg.price_pen, kc: selectedPkg.kc } : undefined
+      );
+      // Open payment in new window
+      const payWindow = window.open(res.checkout_url, '_blank');
+      setPayLoading('');
+      setPayPending(true);
+
+      // Poll for payment completion
+      const BASE = import.meta.env.VITE_API_URL || '/api';
+      for (let i = 0; i < 120; i++) {
+        await new Promise(r => setTimeout(r, 3000));
+        try {
+          const statusRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
+          });
+          const data = await statusRes.json();
+          const st = data?.transaction?.status;
+          if (st === 'approved' || st === 'fulfilled') {
+            setPayResult('success');
+            setPayKcCredited(data.transaction.kc_amount || 0);
+            try { payWindow?.close(); } catch {}
+            break;
+          }
+          if (st === 'failed' || st === 'expired') { setPayResult('error'); break; }
+          if (payWindow?.closed) {
+            await new Promise(r => setTimeout(r, 5000));
+            const fRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
+              headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
+            });
+            const fData = await fRes.json();
+            const fSt = fData?.transaction?.status;
+            if (fSt === 'approved' || fSt === 'fulfilled') {
+              setPayResult('success'); setPayKcCredited(fData.transaction.kc_amount || 0);
+            } else { setPayResult('error'); }
+            break;
+          }
+        } catch {}
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : (es ? 'Error al crear el pago' : 'Error creating payment'));
+      setPayLoading('');
+    }
+  }
+
   function getMethodPrice(m: PayMethod): string {
     if (!selectedPkg) return '';
     const base = convertRaw(selectedPkg.price_pen, currency);
@@ -174,6 +233,9 @@ export default function Recharge() {
       ? 'El pago por PayPal se coordina manualmente. Contáctanos por nuestras redes sociales y te enviamos el enlace de pago con el monto exacto.'
       : 'PayPal payments are coordinated manually. Contact us on our social media and we\'ll send you the payment link with the exact amount.',
     paypalContact: es ? 'Contáctanos por nuestras redes' : 'Contact us on our socials',
+    tabOnline:  es ? 'Pago en linea' : 'Pay online',
+    tabManual:  es ? 'Manual' : 'Manual',
+    gatewayNote: es ? 'KC acreditados automaticamente al completar el pago' : 'KC credited automatically upon payment completion',
   };
 
   return (
@@ -303,6 +365,60 @@ export default function Recharge() {
             <h2>{t('rech.instructions')}</h2>
           </div>
 
+          {/* Payment tab selector */}
+          <div className="rc-pay-tabs">
+            <button className={`rc-pay-tab ${payTab==='online'?'on':''}`} onClick={()=>setPayTab('online')}>{txt.tabOnline}</button>
+            <button className={`rc-pay-tab ${payTab==='manual'?'on':''}`} onClick={()=>setPayTab('manual')}>{txt.tabManual}</button>
+          </div>
+
+          {/* ── Online tab ── */}
+          {payTab === 'online' && (
+            <>
+              <div className="rc-gateways">
+                <button
+                  className="rc-gateway-btn"
+                  style={{borderColor: payLoading==='mercadopago' ? '#009ee3' : undefined}}
+                  disabled={!!payLoading}
+                  onClick={() => handleGateway('mercadopago')}
+                >
+                  {payLoading==='mercadopago'
+                    ? <RefreshCw size={20} className="spin" style={{color:'#009ee3'}}/>
+                    : <img src="/mercadopago.png" alt="MercadoPago"/>}
+                  <span>MercadoPago</span>
+                  <span style={{fontSize:'.7rem',color:'var(--text-muted)',marginLeft:'auto'}}>PEN</span>
+                </button>
+                <button
+                  className="rc-gateway-btn"
+                  style={{borderColor: payLoading==='paypal' ? '#003087' : undefined}}
+                  disabled={!!payLoading}
+                  onClick={() => handleGateway('paypal')}
+                >
+                  {payLoading==='paypal'
+                    ? <RefreshCw size={20} className="spin" style={{color:'#003087'}}/>
+                    : <img src="/paypal.png" alt="PayPal"/>}
+                  <span>PayPal</span>
+                  <span style={{fontSize:'.7rem',color:'var(--text-muted)',marginLeft:'auto'}}>USD</span>
+                </button>
+                <button
+                  className="rc-gateway-btn"
+                  style={{borderColor: payLoading==='nowpayments' ? '#00c853' : undefined}}
+                  disabled={!!payLoading}
+                  onClick={() => handleGateway('nowpayments')}
+                >
+                  {payLoading==='nowpayments'
+                    ? <RefreshCw size={20} className="spin" style={{color:'#00c853'}}/>
+                    : <img src="/crypto.png" alt="Crypto" onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
+                  <span>Crypto</span>
+                  <span style={{fontSize:'.7rem',color:'var(--text-muted)',marginLeft:'auto'}}>BTC, ETH, USDT +150</span>
+                </button>
+              </div>
+              <p className="rc-gateway-note">{txt.gatewayNote}</p>
+            </>
+          )}
+
+          {/* ── Manual tab ── */}
+          {payTab === 'manual' && (
+            <>
           {/* Currency tabs */}
           <div className="rc-currency-row">
             <span className="rc-currency-lbl">{txt.divisa}</span>
@@ -371,12 +487,12 @@ export default function Recharge() {
                 <div className="rc-detail-fields">
 
                   {/* Yape / Plin */}
-                  {(method==='yape'||method==='plin') && <>
+                  {(method==='yape'||method==='plin') && payInfo?.[method] && <>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">{txt.numero}</span>
                       <div className="rc-copy-group">
-                        <code>{PAYMENT_INFO[method].number}</code>
-                        <button className="rc-copy-btn" onClick={()=>copyText(PAYMENT_INFO[method].raw, method)}>
+                        <code>{payInfo[method].number}</code>
+                        <button className="rc-copy-btn" onClick={()=>copyText(payInfo[method].raw, method)}>
                           {copied===method ? <CheckCircle size={13}/> : <Copy size={13}/>}
                           {copied===method ? txt.copiado : txt.copiar}
                         </button>
@@ -384,7 +500,7 @@ export default function Recharge() {
                     </div>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">{txt.nombre}</span>
-                      <span className="rc-field-val">{PAYMENT_INFO[method].owner}</span>
+                      <span className="rc-field-val">{payInfo[method].owner}</span>
                     </div>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">{txt.monto}</span>
@@ -393,39 +509,20 @@ export default function Recharge() {
                   </>}
 
                   {/* Bancos: BCP, Interbank, BBVA */}
-                  {(method==='bcp'||method==='interbank'||method==='bbva') && <>
+                  {(method==='bcp'||method==='interbank'||method==='bbva') && payInfo?.[method] && <>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">{txt.banco}</span>
                       <span className="rc-field-val">{activeMethod.label}</span>
                     </div>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">{txt.titular}</span>
-                      <span className="rc-field-val">
-                        {method==='bcp'
-                          ? PAYMENT_INFO.bcp.owner
-                          : method==='interbank'
-                          ? PAYMENT_INFO.interbank.owner
-                          : PAYMENT_INFO.bbva.owner}
-                      </span>
+                      <span className="rc-field-val">{payInfo[method].owner}</span>
                     </div>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">{txt.cuenta}</span>
                       <div className="rc-copy-group">
-                        <code>
-                          {method==='bcp'
-                            ? PAYMENT_INFO.bcp.account
-                            : method==='interbank'
-                            ? PAYMENT_INFO.interbank.account
-                            : PAYMENT_INFO.bbva.account}
-                        </code>
-                        <button className="rc-copy-btn" onClick={()=>copyText(
-                          method==='bcp'
-                            ? PAYMENT_INFO.bcp.raw
-                            : method==='interbank'
-                            ? PAYMENT_INFO.interbank.raw
-                            : PAYMENT_INFO.bbva.raw,
-                          method
-                        )}>
+                        <code>{payInfo[method].account}</code>
+                        <button className="rc-copy-btn" onClick={()=>copyText(payInfo[method].raw, method)}>
                           {copied===method ? <CheckCircle size={13}/> : <Copy size={13}/>}
                           {copied===method ? txt.copiado : txt.copiar}
                         </button>
@@ -456,12 +553,12 @@ export default function Recharge() {
                   )}
 
                   {/* Binance */}
-                  {method==='binance' && <>
+                  {method==='binance' && payInfo?.binance && <>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">Pay ID</span>
                       <div className="rc-copy-group">
-                        <code>{PAYMENT_INFO.binance.payId}</code>
-                        <button className="rc-copy-btn" onClick={()=>copyText(PAYMENT_INFO.binance.payId,'binance')}>
+                        <code>{payInfo.binance.payId}</code>
+                        <button className="rc-copy-btn" onClick={()=>copyText(payInfo.binance.payId,'binance')}>
                           {copied==='binance' ? <CheckCircle size={13}/> : <Copy size={13}/>}
                           {copied==='binance' ? txt.copiado : txt.copiar}
                         </button>
@@ -474,12 +571,12 @@ export default function Recharge() {
                   </>}
 
                   {/* Bizum */}
-                  {method==='bizum' && <>
+                  {method==='bizum' && payInfo?.bizum && <>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">{txt.numero}</span>
                       <div className="rc-copy-group">
-                        <code>{PAYMENT_INFO.bizum.number}</code>
-                        <button className="rc-copy-btn" onClick={()=>copyText(PAYMENT_INFO.bizum.number,'bizum')}>
+                        <code>{payInfo.bizum.number}</code>
+                        <button className="rc-copy-btn" onClick={()=>copyText(payInfo.bizum.number,'bizum')}>
                           {copied==='bizum' ? <CheckCircle size={13}/> : <Copy size={13}/>}
                           {copied==='bizum' ? txt.copiado : txt.copiar}
                         </button>
@@ -487,7 +584,7 @@ export default function Recharge() {
                     </div>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">{txt.nombre}</span>
-                      <span className="rc-field-val">{PAYMENT_INFO.bizum.owner}</span>
+                      <span className="rc-field-val">{payInfo.bizum.owner}</span>
                     </div>
                     <div className="rc-field-row">
                       <span className="rc-field-lbl">{txt.monto}</span>
@@ -514,7 +611,60 @@ export default function Recharge() {
               {txt.contactar} <ArrowRight size={13}/>
             </a>
           </div>
+            </>
+          )}
 
+        </div>
+      )}
+
+      {/* Payment overlay modal */}
+      {payPending && (
+        <div className="pc-modal-ov">
+          <div className="pc-modal" style={{ maxWidth: 420, textAlign: 'center', padding: '40px 32px' }}>
+            {!payResult && (
+              <>
+                <Loader2 size={40} className="spin" style={{ color: 'var(--accent)', marginBottom: 16 }}/>
+                <h3 style={{ margin: '0 0 8px', fontWeight: 800, fontSize: '1.1rem' }}>
+                  {es ? 'Completa el pago en la ventana abierta' : 'Complete payment in the opened window'}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: 0, lineHeight: 1.6 }}>
+                  {es ? 'No cierres esta ventana. Esperando confirmacion del pago...' : 'Don\'t close this window. Waiting for payment confirmation...'}
+                </p>
+              </>
+            )}
+            {payResult === 'success' && (
+              <>
+                <CheckCircle size={48} style={{ color: '#22c55e', marginBottom: 16 }}/>
+                <h3 style={{ margin: '0 0 8px', fontWeight: 800, fontSize: '1.1rem' }}>
+                  {es ? 'Pago confirmado!' : 'Payment confirmed!'}
+                </h3>
+                {payKcCredited > 0 && (
+                  <p style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--accent)', margin: '8px 0' }}>
+                    +{payKcCredited.toLocaleString()} KC
+                  </p>
+                )}
+                <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: '0 0 16px' }}>
+                  {es ? 'Tus KidCoins fueron acreditados a tu cuenta.' : 'Your KidCoins have been credited to your account.'}
+                </p>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                  <a href="/dashboard" className="btn btn-primary" style={{ gap: 6 }}>{es ? 'Ir al dashboard' : 'Go to dashboard'} <ArrowRight size={14}/></a>
+                  <button onClick={() => { setPayPending(false); setPayResult(null); window.location.reload(); }} className="btn btn-ghost">{es ? 'Seguir recargando' : 'Recharge more'}</button>
+                </div>
+              </>
+            )}
+            {payResult === 'error' && (
+              <>
+                <X size={48} style={{ color: '#dc2626', marginBottom: 16 }}/>
+                <h3 style={{ margin: '0 0 8px', fontWeight: 800, fontSize: '1.1rem' }}>
+                  {es ? 'Pago no completado' : 'Payment not completed'}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: '0 0 16px' }}>
+                  {es ? 'No se realizo ningun cargo. Puedes intentar de nuevo.' : 'No charges were made. You can try again.'}
+                </p>
+                <button onClick={() => { setPayPending(false); setPayResult(null); }} className="btn btn-ghost">{es ? 'Intentar de nuevo' : 'Try again'}</button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

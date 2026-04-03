@@ -18,6 +18,7 @@ export interface Order {
   item_name: string;
   item_image: string;
   price_kc: number;
+  price_vbucks?: number;
   status: 'pending' | 'processing' | 'sent' | 'failed' | 'refunded';
   created_at: string;
 }
