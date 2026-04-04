@@ -289,22 +289,29 @@ function renderContent(text: string | undefined) {
     <div className="chatbot-content">
       {paragraphs.map((para, pi) => {
         const lines = para.split('\n');
-        // Check if this paragraph is a bullet list
-        const bulletLines = lines.filter(l => l.trimStart().startsWith('•'));
-        if (bulletLines.length >= 2) {
-          // Render as styled command list
-          const nonBullets = lines.filter(l => !l.trimStart().startsWith('•'));
+        // Detect command list lines: start with emoji or • followed by backtick code
+        const isCmdLine = (l: string) => {
+          const t = l.trimStart();
+          return (t.startsWith('•') || /^[\p{Emoji_Presentation}\p{Extended_Pictographic}]/u.test(t)) && t.includes('`');
+        };
+        const cmdLines = lines.filter(isCmdLine);
+        if (cmdLines.length >= 2) {
+          const nonCmdLines = lines.filter(l => !isCmdLine(l));
           return (
             <div key={pi} className="chatbot-para">
-              {nonBullets.map((line, li) => (
-                <span key={`t${li}`}>{renderLine(line)}{li < nonBullets.length - 1 && <br/>}</span>
+              {nonCmdLines.map((line, li) => (
+                <span key={`t${li}`}>{renderLine(line)}{li < nonCmdLines.length - 1 && <br/>}</span>
               ))}
               <div className="chatbot-cmd-list">
-                {bulletLines.map((line, li) => {
-                  const content = line.replace(/^\s*•\s*/, '');
+                {cmdLines.map((line, li) => {
+                  // Extract emoji and rest of content
+                  const t = line.trimStart();
+                  const emojiMatch = t.match(/^([\p{Emoji_Presentation}\p{Extended_Pictographic}•]\s*)/u);
+                  const emoji = emojiMatch ? emojiMatch[1].trim() : '•';
+                  const content = emojiMatch ? t.slice(emojiMatch[0].length) : t.replace(/^\s*•\s*/, '');
                   return (
                     <div key={li} className="chatbot-cmd-item">
-                      <span className="chatbot-cmd-bullet">•</span>
+                      <span className="chatbot-cmd-bullet">{emoji}</span>
                       <span className="chatbot-cmd-text">{renderLine(content)}</span>
                     </div>
                   );

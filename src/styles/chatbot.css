@@ -237,40 +237,43 @@
 .chatbot-cmd-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-top: 6px;
-  padding: 8px 10px;
+  gap: 0;
+  margin-top: 8px;
+  padding: 6px 8px;
   background: rgba(124,58,237,.03);
   border-radius: 10px;
   border: 1px solid rgba(124,58,237,.08);
 }
 .chatbot-cmd-item {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 4px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
   border-radius: 6px;
   transition: background .15s;
+  border-bottom: 1px solid rgba(124,58,237,.05);
 }
+.chatbot-cmd-item:last-child { border-bottom: none; }
 .chatbot-cmd-item:hover {
-  background: rgba(124,58,237,.05);
+  background: rgba(124,58,237,.06);
 }
 .chatbot-cmd-bullet {
-  color: var(--accent);
-  font-weight: 700;
   flex-shrink: 0;
-  font-size: .85rem;
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1;
+  width: 22px;
+  text-align: center;
 }
 .chatbot-cmd-text {
   flex: 1;
-  font-size: .82rem;
-  line-height: 1.5;
+  font-size: .8rem;
+  line-height: 1.4;
   color: var(--text-secondary);
 }
 .chatbot-cmd-text code {
-  font-size: .76rem;
-  padding: 2px 7px;
+  font-size: .74rem;
+  padding: 2px 6px;
+  margin-right: 2px;
 }
 .chatbot-cmd-text .chatbot-cmd-dash {
   color: var(--text-muted);
