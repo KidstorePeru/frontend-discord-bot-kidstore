@@ -44,6 +44,19 @@ export default function ChatBot() {
         const res = await fetch(`${AB}/api/v1/chat/poll/${sid}`, {
           headers: { 'ngrok-skip-browser-warning': '1' },
         });
+        if (res.status === 404) {
+          // Session expired — create a new one
+          clearInterval(pollInterval);
+          sessionRef.current = null;
+          localStorage.removeItem('kc_chat_session');
+          try {
+            const newSid = await chatStart();
+            sessionRef.current = newSid;
+            localStorage.setItem('kc_chat_session', newSid);
+            connectSSE(newSid);
+          } catch { /* will retry on next message */ }
+          return;
+        }
         if (!res.ok) return;
         const data = await res.json();
         const msgs: { role?: string; text?: string }[] = data.messages || [];
