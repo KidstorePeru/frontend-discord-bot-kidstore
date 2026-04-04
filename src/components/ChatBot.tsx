@@ -181,14 +181,18 @@ export default function ChatBot() {
     }
   }
 
-  function clearChat() {
+  async function clearChat() {
     setMessages([]);
     localStorage.removeItem('kc_chat_messages');
-    // Also reset session so we get a fresh one
-    sessionRef.current = null;
-    localStorage.removeItem('kc_chat_session');
     if (sseRef.current) { clearInterval(sseRef.current as unknown as number); sseRef.current = null; }
     setLoading(false);
+    // Create a fresh session so the welcome message arrives again
+    try {
+      const sid = await chatStart();
+      sessionRef.current = sid;
+      localStorage.setItem('kc_chat_session', sid);
+      connectSSE(sid);
+    } catch { /* will retry on next message */ }
   }
 
   return (
@@ -216,12 +220,7 @@ export default function ChatBot() {
           <div className="chatbot-messages">
             {messages.length === 0 && (
               <div className="chatbot-welcome">
-                <Bot size={36} />
-                <div>
-                  <p style={{fontWeight: 700, fontSize: '.95rem', color: 'var(--text-primary)', marginBottom: 4}}>
-                    {es ? 'Cargando...' : 'Loading...'}
-                  </p>
-                </div>
+                <Loader2 size={20} className="spin" style={{color: 'var(--accent)'}} />
               </div>
             )}
 
@@ -241,6 +240,7 @@ export default function ChatBot() {
                 <button onClick={() => quickSend('!region')}><Globe size={12}/> Region</button>
                 <button onClick={() => quickSend(es ? '!verificar' : '!verify')}><ShieldCheck size={12}/> {es ? 'Verificar' : 'Verify'}</button>
                 <button onClick={() => quickSend(es ? '!soporte' : '!support')}><HelpCircle size={12}/> {es ? 'Soporte' : 'Support'}</button>
+                <button onClick={() => clearChat()}><HelpCircle size={12}/> {es ? 'Comandos' : 'Commands'}</button>
               </div>
             )}
 
