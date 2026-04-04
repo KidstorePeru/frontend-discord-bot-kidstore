@@ -66,7 +66,7 @@ export default function ChatBot() {
           }
         }
       } catch { /* retry next interval */ }
-    }, 1000);
+    }, 2500);
 
     // Store interval ID in sseRef for cleanup (reuse ref to avoid new state)
     sseRef.current = pollInterval as unknown as EventSource;

@@ -78,7 +78,7 @@ export default function Profile() {
   const memberSince  = new Date(customer!.created_at).toLocaleDateString(lang === 'es' ? 'es-PE' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' });
   const recentOrders = orders.slice(0, 5);
   const level = totalSpentKC >= 10000 ? 'Legend' : totalSpentKC >= 4000 ? 'Pro' : totalSpentKC >= 1000 ? 'Gamer' : 'Starter';
-  const levelColors: Record<string, string> = { Starter: '#3b82f6', Gamer: '#8b5cf6', Pro: '#f59e0b', Legend: '#f59e0b' };
+  const levelColors: Record<string, string> = { Starter: '#3b82f6', Gamer: '#8b5cf6', Pro: '#f59e0b', Legend: '#ec4899' };
   const levelEmojis: Record<string, string> = { Starter: '⚡', Gamer: '🎮', Pro: '🔥', Legend: '👑' };
 
   function handleCopyId() {
@@ -558,7 +558,7 @@ const LEVELS = [
   { name: 'Starter', min: 0,     color: '#3b82f6', emoji: '⚡' },
   { name: 'Gamer',   min: 1000,  color: '#8b5cf6', emoji: '🎮' },
   { name: 'Pro',     min: 4000,  color: '#f59e0b', emoji: '🔥' },
-  { name: 'Legend',  min: 10000, color: '#f59e0b', emoji: '👑' },
+  { name: 'Legend',  min: 10000, color: '#ec4899', emoji: '👑' },
 ];
 function LevelBar({ kc, lang }: { kc: number; lang: string }) {
   const currentIdx = kc >= 10000 ? 3 : kc >= 4000 ? 2 : kc >= 1000 ? 1 : 0;
