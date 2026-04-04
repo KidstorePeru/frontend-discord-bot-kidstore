@@ -14,6 +14,13 @@ export default function ChatBot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => {
     try {
+      const savedAt = localStorage.getItem('kc_chat_saved_at');
+      if (savedAt && Date.now() - Number(savedAt) > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem('kc_chat_messages');
+        localStorage.removeItem('kc_chat_session');
+        localStorage.removeItem('kc_chat_saved_at');
+        return [];
+      }
       const saved = localStorage.getItem('kc_chat_messages');
       if (saved) return JSON.parse(saved) as Message[];
     } catch {}
@@ -60,7 +67,10 @@ export default function ChatBot() {
   // Persist messages
   useEffect(() => {
     if (messages.length > 0) {
-      try { localStorage.setItem('kc_chat_messages', JSON.stringify(messages.slice(-80))); } catch {}
+      try {
+        localStorage.setItem('kc_chat_messages', JSON.stringify(messages.slice(-80)));
+        localStorage.setItem('kc_chat_saved_at', String(Date.now()));
+      } catch {}
     }
   }, [messages]);
 
