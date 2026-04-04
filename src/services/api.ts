@@ -248,10 +248,14 @@ export async function checkProductAvailable(productId: string): Promise<boolean>
 const AUTOBUYER = import.meta.env.VITE_AUTOBUYER_URL || 'http://localhost:7788';
 const AB_API = `${AUTOBUYER}/api/v1`;
 
+// Header required by ngrok free tier to skip browser warning page
+const AB_HEADERS: Record<string, string> = { 'ngrok-skip-browser-warning': '1' };
+
 export async function chatStart(): Promise<string> {
   const lang = localStorage.getItem('kc_lang') || 'es';
   const res = await fetch(`${AB_API}/chat/start?lang=${lang}`, {
     method: 'POST',
+    headers: AB_HEADERS,
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body.detail || `Error ${res.status}`);
@@ -261,7 +265,7 @@ export async function chatStart(): Promise<string> {
 export async function chatSendMessage(sessionId: string, text: string): Promise<void> {
   const res = await fetch(`${AB_API}/chat/message`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...AB_HEADERS },
     body: JSON.stringify({ session_id: sessionId, text }),
   });
   if (!res.ok) {

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Loader2, Bot, Globe, Rocket, HelpCircle, ShieldCheck, Trash2 } from 'lucide-react';
 import { useLang } from '../context/LangContext';
-import { chatStart, chatSendMessage, chatStreamURL } from '../services/api';
+import { chatStart, chatSendMessage } from '../services/api';
 
 interface Message {
   role: 'user' | 'bot';
@@ -26,31 +26,30 @@ export default function ChatBot() {
   const sseRef = useRef<EventSource | null>(null);
   const langRef = useRef(lang);
 
-  // Connect SSE when chat opens
+  // Poll for new messages (replaces SSE which doesn't work with ngrok free)
   const connectSSE = useCallback((sid: string) => {
-    if (sseRef.current) { sseRef.current.close(); }
-    const es2 = new EventSource(chatStreamURL(sid));
-    sseRef.current = es2;
+    // Stop any existing poll
+    if (sseRef.current) { clearInterval(sseRef.current as unknown as number); }
 
-    es2.onmessage = (event) => {
+    const AB = import.meta.env.VITE_AUTOBUYER_URL || 'http://localhost:7788';
+    const pollInterval = setInterval(async () => {
       try {
-        const data = JSON.parse(event.data);
-        if (data.role === 'bot' && data.text) {
-          setMessages(prev => [...prev, { role: 'bot', content: data.text }]);
+        const res = await fetch(`${AB}/api/v1/chat/poll/${sid}`, {
+          headers: { 'ngrok-skip-browser-warning': '1' },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const msgs: { role?: string; text?: string }[] = data.messages || [];
+        for (const msg of msgs) {
+          if (msg.role === 'bot' && msg.text) {
+            setMessages(prev => [...prev, { role: 'bot', content: msg.text! }]);
+          }
         }
-        // User echoes come back too — skip them (we already show the user's message)
-      } catch {}
-    };
+      } catch { /* retry next interval */ }
+    }, 1500);
 
-    es2.onopen = () => {};
-    es2.onerror = () => {
-      // Try to reconnect after 3s
-      setTimeout(() => {
-        if (sseRef.current === es2 && sessionRef.current === sid) {
-          connectSSE(sid);
-        }
-      }, 3000);
-    };
+    // Store interval ID in sseRef for cleanup (reuse ref to avoid new state)
+    sseRef.current = pollInterval as unknown as EventSource;
   }, []);
 
   // Scroll to bottom
@@ -69,7 +68,7 @@ export default function ChatBot() {
   useEffect(() => {
     if (lang !== langRef.current) {
       langRef.current = lang;
-      if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+      if (sseRef.current) { clearInterval(sseRef.current as unknown as number); sseRef.current = null; }
       sessionRef.current = null;
       localStorage.removeItem('kc_chat_session');
       setMessages([]);
@@ -106,7 +105,7 @@ export default function ChatBot() {
     initSession();
 
     return () => {
-      if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+      if (sseRef.current) { clearInterval(sseRef.current as unknown as number); sseRef.current = null; }
     };
   }, [open, connectSSE]);
 
@@ -188,7 +187,7 @@ export default function ChatBot() {
     // Also reset session so we get a fresh one
     sessionRef.current = null;
     localStorage.removeItem('kc_chat_session');
-    if (sseRef.current) { sseRef.current.close(); sseRef.current = null; }
+    if (sseRef.current) { clearInterval(sseRef.current as unknown as number); sseRef.current = null; }
     setLoading(false);
   }
 
