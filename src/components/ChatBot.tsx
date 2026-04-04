@@ -46,7 +46,7 @@ export default function ChatBot() {
           }
         }
       } catch { /* retry next interval */ }
-    }, 1500);
+    }, 1000);
 
     // Store interval ID in sseRef for cleanup (reuse ref to avoid new state)
     sseRef.current = pollInterval as unknown as EventSource;
@@ -219,23 +219,8 @@ export default function ChatBot() {
                 <Bot size={36} />
                 <div>
                   <p style={{fontWeight: 700, fontSize: '.95rem', color: 'var(--text-primary)', marginBottom: 4}}>
-                    {es ? 'Hola! Bienvenido' : 'Hi! Welcome'}
+                    {es ? 'Cargando...' : 'Loading...'}
                   </p>
-                  <p>{es ? 'Selecciona una opcion o escribe un comando' : 'Select an option or type a command'}</p>
-                </div>
-                <div className="chatbot-quick-actions">
-                  <button className="chatbot-quick-btn" onClick={() => quickSend('!activar')}>
-                    <Rocket size={16}/> {es ? 'Activar compra' : 'Activate purchase'}
-                  </button>
-                  <button className="chatbot-quick-btn" onClick={() => quickSend('!region')}>
-                    <Globe size={16}/> {es ? 'Ver region' : 'Check region'}
-                  </button>
-                  <button className="chatbot-quick-btn" onClick={() => quickSend('!verificar')}>
-                    <ShieldCheck size={16}/> {es ? 'Verificar' : 'Verify eligibility'}
-                  </button>
-                  <button className="chatbot-quick-btn" onClick={() => quickSend('!soporte')}>
-                    <HelpCircle size={16}/> {es ? 'Soporte' : 'Support'}
-                  </button>
                 </div>
               </div>
             )}
@@ -256,7 +241,6 @@ export default function ChatBot() {
                 <button onClick={() => quickSend('!region')}><Globe size={12}/> Region</button>
                 <button onClick={() => quickSend(es ? '!verificar' : '!verify')}><ShieldCheck size={12}/> {es ? 'Verificar' : 'Verify'}</button>
                 <button onClick={() => quickSend(es ? '!soporte' : '!support')}><HelpCircle size={12}/> {es ? 'Soporte' : 'Support'}</button>
-                <button onClick={() => quickSend('help')}><HelpCircle size={12}/> {es ? 'Comandos' : 'Commands'}</button>
               </div>
             )}
 
