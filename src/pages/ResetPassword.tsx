@@ -65,7 +65,7 @@ export default function ResetPassword() {
                     : '⏰ The link expires in 10 minutes. Also check your spam folder.'}
                 </p>
               </div>
-              <Link to="/login" className="btn btn-ghost btn-full" style={{ marginBottom: 0 }}>
+              <Link to="/login" className="btn btn-primary btn-full" style={{ marginBottom: 0 }}>
                 <ArrowLeft size={16} /> {es ? 'Volver al login' : 'Back to login'}
               </Link>
             </div>

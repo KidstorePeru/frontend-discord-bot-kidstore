@@ -83,7 +83,7 @@ export default function AdminPanel() {
   const PRODUCT_LIST = [
     { id: 'club-monthly', name: 'Fortnite Crew' },
     { id: 'vb-800', name: '800 V-Bucks' }, { id: 'vb-2400', name: '2400 V-Bucks' }, { id: 'vb-4500', name: '4500 V-Bucks' }, { id: 'vb-12500', name: '12500 V-Bucks' },
-    { id: 'pack-koi', name: 'Pack de Reino Koi' }, { id: 'pack-drift', name: 'Pack Deriva Infinita' }, { id: 'pack-brite', name: 'Operation Brite' },
+    { id: 'pack-koi', name: 'Pack de Reino Koi' }, { id: 'pack-drift', name: 'Pack Deriva Infinita' }, { id: 'pack-brite', name: 'Pack de inicio de Operación brillante' },
     { id: 'rl-500', name: '500 RL Credits' }, { id: 'rl-1100', name: '1100 RL Credits' }, { id: 'rl-3000', name: '3000 RL Credits' }, { id: 'rl-6500', name: '6500 RL Credits' },
   ];
 

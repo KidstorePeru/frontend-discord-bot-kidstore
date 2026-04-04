@@ -308,7 +308,7 @@ export const PACKS_PRODUCTS: StoreProduct[] = [
     description: 'Prepara tus tacticas con 3 trajes (Calavera Derivada, Deriva de la Grieta, Palito de Deriva), mochilas retro y picos. Todos con estilo LEGO.',
     description_en: 'Gear up with 3 outfits (Skull Drift, Rift Strider, Fishdrift), back blings and pickaxes. All with LEGO style.',
     amount: 1, price_pen: 55.90, originalPrice_pen: 68.90, image: '/pack-drift.png', color: '#7c4dff' },
-  { id: 'pack-brite', name: 'Operation Brite',
+  { id: 'pack-brite', name: 'Pack de inicio de Operación brillante', name_en: 'Operation Brite Starter Pack',
     subtitle: 'Outfit + Mochila + Lote de decoracion (13 objetos)',
     subtitle_en: 'Outfit + Back Bling + Decoration Bundle (13 items)',
     description: 'Agente Brillante esta lista para explorar. Incluye traje con estilo LEGO, mochila retro Brillo Estelar y lote de decoracion con 13 objetos para LEGO Fortnite.',
@@ -323,27 +323,27 @@ export const CLUB_PRODUCTS: StoreProduct[] = [
     subtitle_en: 'Monthly subscription',
     description: 'Incluye 1,000 V-Bucks, Pase de Batalla y un pack exclusivo de skin + accesorios cada mes.',
     description_en: 'Includes 1,000 V-Bucks, Battle Pass and an exclusive skin + accessories pack each month.',
-    amount: 1, price_pen: 0.10, originalPrice_pen: 39.90, image: '/fortnite-club.png', color: '#651fff' },
+    amount: 1, price_pen: 0.10, originalPrice_pen: 39.90, image: '/fortnite-club.avif', color: '#651fff' },
 ];
 
 // ── Rocket League Credits ──
 export const ROCKET_PRODUCTS: StoreProduct[] = [
   { id: 'rl-500',  name: '500 — RL Credits',
     description: 'Para items basicos y blueprints.', description_en: 'For basic items and blueprints.',
-    amount: 500, price_pen: 15.90, originalPrice_pen: 19.90, image: '/rl-500.png', color: '#0091ea' },
+    amount: 500, price_pen: 15.90, originalPrice_pen: 19.90, image: '/rl-500.webp', color: '#0091ea' },
   { id: 'rl-1100', name: '1100 — RL Credits',
     description: 'Alcanza para el Rocket Pass y mas.', description_en: 'Enough for the Rocket Pass and more.',
-    amount: 1100, price_pen: 29.90, originalPrice_pen: 38.90, image: '/rl-1100.png', color: '#00bfa5' },
+    amount: 1100, price_pen: 29.90, originalPrice_pen: 38.90, image: '/rl-1100.webp', color: '#00bfa5' },
   { id: 'rl-3000', name: '3000 — RL Credits',
     description: 'Ideal para trading y tienda de items.', description_en: 'Great for trading and the item shop.',
-    amount: 3000, price_pen: 69.90, originalPrice_pen: 89.90, image: '/rl-3000.png', color: '#ffab00' },
+    amount: 3000, price_pen: 69.90, originalPrice_pen: 89.90, image: '/rl-3000.webp', color: '#ffab00' },
   { id: 'rl-6500', name: '6500 — RL Credits',
     description: 'El mejor valor. Para coleccionistas.', description_en: 'Best value. For collectors.',
-    amount: 6500, price_pen: 129.90, originalPrice_pen: 169.90, image: '/rl-6500.png', color: '#dd2c00' },
+    amount: 6500, price_pen: 129.90, originalPrice_pen: 169.90, image: '/rl-6500.webp', color: '#dd2c00' },
 ];
 
 export const ROCKET_BULK: BulkProduct = {
-  id: 'rl-custom', name: '— RL Credits', image: '/rl-custom.png', color: '#00b8d4',
+  id: 'rl-custom', name: '— RL Credits', image: '/rl-custom.webp', color: '#00b8d4',
   tiers: [], // using explicit values instead
   values: [
     50, 100, 150, 200, 250, 300, 350, 400, 450,

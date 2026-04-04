@@ -345,11 +345,13 @@ function renderLine(line: string) {
     const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
     const codeMatch = remaining.match(/`([^`]+)`/);
     const linkMatch = remaining.match(/\[([^\]]+)\]\((https?:[^)]+)\)/);
+    const urlMatch = remaining.match(/(https?:\/\/[^\s]+)/);
 
     const matches = [
       boldMatch ? { type: 'bold', index: boldMatch.index!, length: boldMatch[0].length, content: boldMatch[1] } : null,
       codeMatch ? { type: 'code', index: codeMatch.index!, length: codeMatch[0].length, content: codeMatch[1] } : null,
       linkMatch ? { type: 'link', index: linkMatch.index!, length: linkMatch[0].length, content: linkMatch[1], url: linkMatch[2] } : null,
+      urlMatch && !linkMatch ? { type: 'url', index: urlMatch.index!, length: urlMatch[0].length, content: urlMatch[1], url: urlMatch[1] } : null,
     ].filter(Boolean).sort((a, b) => a!.index - b!.index);
 
     if (matches.length === 0) {
@@ -368,6 +370,14 @@ function renderLine(line: string) {
       parts.push(<code key={key++}>{first.content}</code>);
     } else if (first.type === 'link') {
       parts.push(<a key={key++} href={(first as {url:string}).url} target="_blank" rel="noopener noreferrer">{first.content}</a>);
+    } else if (first.type === 'url') {
+      const url = (first as {url:string}).url;
+      const isEpic = url.includes('epicgames.com/activate');
+      parts.push(
+        <a key={key++} href={url} target="_blank" rel="noopener noreferrer" className={isEpic ? 'chatbot-epic-btn' : ''}>
+          {isEpic ? '🔐 Epic Games Login' : url.length > 50 ? url.slice(0, 50) + '...' : url}
+        </a>
+      );
     }
 
     remaining = remaining.slice(first.index + first.length);

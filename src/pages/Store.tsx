@@ -125,6 +125,11 @@ function PayModal({ product, onClose, lang }: PayModalProps) {
   const [paymentActivationCode, setPaymentActivationCode] = useState('');
 
   async function handleGateway(gateway: string) {
+    if (!localStorage.getItem('kc_token')) {
+      onClose();
+      window.dispatchEvent(new CustomEvent('show-login-modal'));
+      return;
+    }
     setLoading(gateway);
     setError('');
     try {
@@ -302,7 +307,7 @@ function PayModal({ product, onClose, lang }: PayModalProps) {
             </button>
 
             <button className="pc-gateway-btn" onClick={() => handleGateway('nowpayments')} disabled={!!loading}>
-              <img src="/crypto.png" alt="Crypto" onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>
+              <img src="/nowpayments.png" alt="Crypto" onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>
               <div>
                 <strong>Crypto</strong>
                 <span>BTC, ETH, USDT +150</span>
@@ -547,6 +552,7 @@ export default function StorePage() {
   const [navOpen, setNavOpen] = useState(false);
   const countdown = useCountdown(allItems[0]?.outDate);
   const [activeSec, setActiveSec] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const es = lang === 'es';
 
@@ -566,10 +572,16 @@ export default function StorePage() {
 
   function handleAddToCart(item: ShopItem) {
     const result = addToCart(item);
-    if (result === 'not_logged_in') { setToast({ msg: t('store.login'), type: 'error' }); return; }
+    if (result === 'not_logged_in') { setShowLoginModal(true); return; }
     if (result === 'already_in_cart') { setToast({ msg: es ? 'Ya está en el carrito' : 'Already in cart', type: 'error' }); return; }
     if (cartCount === 0) setCartOpen(true);
   }
+
+  useEffect(() => {
+    const handler = () => setShowLoginModal(true);
+    window.addEventListener('show-login-modal', handler);
+    return () => window.removeEventListener('show-login-modal', handler);
+  }, []);
 
   useEffect(() => { load(); }, [lang]);
 
@@ -804,6 +816,33 @@ export default function StorePage() {
 
       {/* ── Tab: Epic Games ── */}
       {activeTab === 'epicgames' && <ComingSoon t={t}/>}
+
+      {/* ── Login Required Modal ── */}
+      {showLoginModal && (
+        <div className="login-modal-overlay" onClick={() => setShowLoginModal(false)}>
+          <div className="login-modal" onClick={e => e.stopPropagation()}>
+            <button className="login-modal-close" onClick={() => setShowLoginModal(false)}>
+              <X size={18}/>
+            </button>
+            <div className="login-modal-icon">
+              <ShoppingBag size={32}/>
+            </div>
+            <h3>{es ? '¡Inicia sesión para comprar!' : 'Log in to purchase!'}</h3>
+            <p>{es
+              ? 'Necesitas una cuenta para comprar productos. Inicia sesión o crea una cuenta gratis.'
+              : 'You need an account to purchase products. Log in or create a free account.'
+            }</p>
+            <div className="login-modal-buttons">
+              <a href="/login" className="btn btn-primary btn-full">
+                {es ? 'Iniciar sesión' : 'Log in'}
+              </a>
+              <a href="/login" className="btn btn-ghost btn-full">
+                {es ? 'Crear cuenta gratis' : 'Create free account'}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
