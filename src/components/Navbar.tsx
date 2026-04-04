@@ -3,11 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCart } from '../context/CartContext';
-import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart } from 'lucide-react';
+import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart, Shield } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
-  const { customer, logout } = useAuth();
+  const { customer, logout, isAdmin } = useAuth();
   const { lang, setLang, t } = useLang();
   const { toggleTheme, isDark } = useTheme();
   const { cartCount, setCartOpen } = useCart();
@@ -21,6 +21,7 @@ export default function Navbar() {
         { to: '/recharge',  label: t('nav.recharge'), icon: <Zap size={17} /> },
         { to: '/bots',      label: t('nav.bots'),     icon: <Bot size={17} /> },
         { to: '/profile',   label: t('nav.profile'),  icon: <User size={17} /> },
+        ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: <Shield size={17} /> }] : []),
       ]
     : [
         { to: '/store', label: t('nav.store'), icon: <Store size={17} /> },

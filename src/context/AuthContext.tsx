@@ -6,6 +6,7 @@ interface AuthState {
   customer: Customer | null;
   token: string | null;
   loading: boolean;
+  isAdmin: boolean;
   setAuth: (token: string, customer: Customer) => void;
   logout: () => void;
   refresh: () => Promise<void>;
@@ -56,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []); // Solo al montar — refresh y token se estabilizan con useCallback/useState
 
   return (
-    <AuthContext.Provider value={{ customer, token, loading, setAuth, logout, refresh }}>
+    <AuthContext.Provider value={{ customer, token, loading, isAdmin: customer?.is_admin ?? false, setAuth, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

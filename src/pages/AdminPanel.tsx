@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { KCBadge, StatusBadge, Toast } from '../components/UI';
 import type { Customer, Order } from '../types';
 import {
   Users, Package, TrendingUp, Coins, Search, Loader2,
-  CheckCircle2, RefreshCw, ShieldCheck, LogIn, Bot,
+  CheckCircle2, RefreshCw, ShieldCheck, Bot,
   Plus, Trash2, ExternalLink, Copy, Zap, X, Edit2,
   AlertTriangle, Gamepad2, Mail, Clock, Moon, Sun, ToggleLeft, ToggleRight,
   CreditCard
@@ -26,12 +28,15 @@ function AdminPagination({ page, total, setPage }: { page: number; total: number
 }
 const BASE = (import.meta.env.VITE_API_URL as string) || '/api';
 
-async function adminFetch(path: string, adminKey: string, opts: RequestInit = {}) {
+async function adminFetch(path: string, _adminKey?: string, opts: RequestInit = {}) {
+  const token = localStorage.getItem('kc_token') || '';
+  const apiKey = _adminKey || sessionStorage.getItem('kc_admin_key') || '';
   const res = await fetch(`${BASE}${path}`, {
     ...opts,
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-Key': adminKey,
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...(apiKey ? { 'X-Admin-Key': apiKey } : {}),
       ...(opts.headers as Record<string, string> || {}),
     },
   });
@@ -57,23 +62,23 @@ interface BotSchedule {
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
 export default function AdminPanel() {
-  const [apiKey,   setApiKey]   = useState(() => sessionStorage.getItem('kc_admin_key') || '');
-  const [authed,   setAuthed]   = useState(!!sessionStorage.getItem('kc_admin_key'));
-  const [keyInput, setKeyInput] = useState('');
-  const [authErr,  setAuthErr]  = useState('');
+  const { isAdmin, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const authed = isAdmin;
   const [tab,      setTab]      = useState<AdminTab>('stats');
   const [loading,  setLoading]  = useState(false);
   const [toast,    setToast]    = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [search,   setSearch]   = useState('');
 
-  const [stats, setStats] = useState<{ total_customers: number; total_orders: number; total_sent: number; total_pending: number; total_kc_recharged: number } | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders,    setOrders]    = useState<Order[]>([]);
   const [custPage,    setCustPage]    = useState(1);
   const [orderPage,   setOrderPage]   = useState(1);
   const [payments,    setPayments]    = useState<any[]>([]);
   const [paymentPage, setPaymentPage] = useState(1);
-  const [_paymentTotal, setPaymentTotal] = useState(0);
+  const [payFilter,   setPayFilter]   = useState('all');
+  const [orderFilter, setOrderFilter] = useState('all');
   const [bots,      setBots]      = useState<BotAccount[]>([]);
 
   // Product availability
@@ -128,39 +133,34 @@ export default function AdminPanel() {
   const [deleteConfirm,   setDeleteConfirm]   = useState<Customer|null>(null);
   const [deleteLoading,   setDeleteLoading]   = useState(false);
 
-  async function handleAuth(e: React.FormEvent) {
-    e.preventDefault(); setAuthErr('');
-    try {
-      await adminFetch('/admin/stats', keyInput);
-      sessionStorage.setItem('kc_admin_key', keyInput);
-      setApiKey(keyInput); setAuthed(true);
-    } catch { setAuthErr('API Key incorrecta'); }
-  }
+  // Redirect non-admin users
+  useEffect(() => {
+    if (!authLoading && !isAdmin) navigate('/dashboard');
+  }, [authLoading, isAdmin, navigate]);
 
   useEffect(() => { if (authed) loadTab(tab); }, [authed, tab]);
 
   async function loadTab(t: AdminTab) {
     setLoading(true);
     try {
-      if (t === 'stats')    setStats(await adminFetch('/admin/stats', apiKey));
-      else if (t === 'customers') { const r = await adminFetch('/admin/customers', apiKey); setCustomers(r.customers || []); }
-      else if (t === 'orders')    { const r = await adminFetch('/admin/orders', apiKey); setOrders(r.orders || []); }
-      else if (t === 'bots')      { const r = await adminFetch('/admin/bots', apiKey); setBots(r.accounts || []); }
+      if (t === 'stats')    setStats(await adminFetch('/admin/stats'));
+      else if (t === 'customers') { const r = await adminFetch('/admin/customers'); setCustomers(r.customers || []); }
+      else if (t === 'orders')    { const r = await adminFetch('/admin/orders'); setOrders(r.orders || []); }
+      else if (t === 'bots')      { const r = await adminFetch('/admin/bots'); setBots(r.accounts || []); }
       else if (t === 'recharge' && !rCustLoaded) {
-        const r = await adminFetch('/admin/customers', apiKey);
+        const r = await adminFetch('/admin/customers');
         setRCustomers(r.customers || []); setRCustLoaded(true);
       }
       else if (t === 'payments') {
-        const r = await adminFetch('/admin/payments', apiKey);
+        const r = await adminFetch('/admin/payments');
         setPayments(r.payments || []);
-        setPaymentTotal(r.total || 0);
       }
       else if (t === 'availability') {
-        const r = await adminFetch('/admin/product-availability', apiKey);
+        const r = await adminFetch('/admin/product-availability');
         setAvailItems(r.items || []);
       }
       else if (t === 'schedule') {
-        const r = await adminFetch('/admin/bot-schedule', apiKey);
+        const r = await adminFetch('/admin/bot-schedule');
         const s: BotSchedule = r.schedule;
         setSchedule(s);
         setSchedEnabled(s.enabled);
@@ -177,7 +177,7 @@ export default function AdminPanel() {
     e.preventDefault();
     setSchedLoading(true); setSchedSaved(false);
     try {
-      const res = await adminFetch('/admin/bot-schedule', apiKey, {
+      const res = await adminFetch('/admin/bot-schedule', undefined, {
         method: 'PUT',
         body: JSON.stringify({
           enabled:    schedEnabled,
@@ -199,7 +199,7 @@ export default function AdminPanel() {
   async function handleRecharge(e: React.FormEvent) {
     e.preventDefault(); if (!rSelected) return; setRLoading(true);
     try {
-      const res = await adminFetch('/admin/recharge', apiKey, {
+      const res = await adminFetch('/admin/recharge', undefined, {
         method: 'POST', headers: { 'X-Approved-By': 'admin-panel' },
         body: JSON.stringify({ customer_id: rSelected.id, amount_kc: parseInt(rAmount), amount_soles: rSoles ? parseFloat(rSoles) : undefined, note: rNote || undefined }),
       });
@@ -219,7 +219,7 @@ export default function AdminPanel() {
   async function handleSaveCustomer(e: React.FormEvent) {
     e.preventDefault(); if (!editCustomer) return; setEditCustLoading(true);
     try {
-      await adminFetch(`/admin/customers/${editCustomer.id}`, apiKey, {
+      await adminFetch(`/admin/customers/${editCustomer.id}`, undefined, {
         method: 'PUT',
         body: JSON.stringify({
           epic_username: editEpic !== editCustomer.epic_username ? editEpic : undefined,
@@ -238,7 +238,7 @@ export default function AdminPanel() {
   async function handleDeleteCustomer() {
     if (!deleteConfirm) return; setDeleteLoading(true);
     try {
-      await adminFetch(`/admin/customers/${deleteConfirm.id}`, apiKey, { method: 'DELETE' });
+      await adminFetch(`/admin/customers/${deleteConfirm.id}`, undefined, { method: 'DELETE' });
       setToast({ msg: `✅ Cliente ${deleteConfirm.epic_username} eliminado`, type: 'success' });
       setCustomers(prev => prev.filter(c => c.id !== deleteConfirm.id));
       setDeleteConfirm(null);
@@ -250,7 +250,7 @@ export default function AdminPanel() {
   async function handleStartConnect() {
     setConnectLoading(true);
     try {
-      const res = await adminFetch('/admin/bots/connect', apiKey, { method: 'POST' });
+      const res = await adminFetch('/admin/bots/connect', undefined, { method: 'POST' });
       setConnectData({ login_url: res.login_url, user_code: res.user_code, device_code: res.device_code });
       setConnectStep('waiting'); window.open(res.login_url, '_blank');
     } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message :'Error iniciando vinculación', type: 'error' }); }
@@ -259,7 +259,7 @@ export default function AdminPanel() {
   async function handleFinishConnect() {
     if (!connectData) return; setConnectLoading(true);
     try {
-      const res = await adminFetch('/admin/bots/finish', apiKey, { method: 'POST', body: JSON.stringify({ device_code: connectData.device_code }) });
+      const res = await adminFetch('/admin/bots/finish', undefined, { method: 'POST', body: JSON.stringify({ device_code: connectData.device_code }) });
       setToast({ msg: `✅ Cuenta ${res.display_name} vinculada correctamente`, type: 'success' });
       setConnectStep('idle'); setConnectData(null); loadTab('bots');
     } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message :'Error. Asegúrate de haber iniciado sesión en Epic.', type: 'error' }); }
@@ -268,7 +268,7 @@ export default function AdminPanel() {
   async function handleVerifyTokens() {
     setVerifying(true);
     try {
-      const res = await adminFetch('/admin/bots/verify', apiKey, { method: 'POST' });
+      const res = await adminFetch('/admin/bots/verify', undefined, { method: 'POST' });
       setToast({ msg: `🔍 ${res.message}`, type: 'success' });
       setTimeout(() => loadTab('bots'), 4000);
     } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message : 'Error', type: 'error' }); }
@@ -277,7 +277,7 @@ export default function AdminPanel() {
   async function handleDisconnect(accountId: string, displayName: string) {
     if (!confirm(`¿Desconectar ${displayName}?`)) return;
     try {
-      await adminFetch('/admin/bots/disconnect', apiKey, { method: 'POST', body: JSON.stringify({ account_id: accountId }) });
+      await adminFetch('/admin/bots/disconnect', undefined, { method: 'POST', body: JSON.stringify({ account_id: accountId }) });
       setToast({ msg: `✅ ${displayName} desconectada`, type: 'success' }); loadTab('bots');
     } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message : 'Error', type: 'error' }); }
   }
@@ -285,9 +285,9 @@ export default function AdminPanel() {
   async function handleSaveBot(e: React.FormEvent) {
     e.preventDefault(); if (!editBot) return; setEditLoading(true);
     try {
-      await adminFetch('/admin/bots/gifts', apiKey, { method: 'POST', body: JSON.stringify({ account_id: editBot.id, remaining_gifts: parseInt(editGifts) }) });
+      await adminFetch('/admin/bots/gifts', undefined, { method: 'POST', body: JSON.stringify({ account_id: editBot.id, remaining_gifts: parseInt(editGifts) }) });
       if (parseInt(editVbucks) !== editBot.vbucks)
-        await adminFetch('/admin/bots/vbucks', apiKey, { method: 'POST', body: JSON.stringify({ account_id: editBot.id, vbucks: parseInt(editVbucks) }) });
+        await adminFetch('/admin/bots/vbucks', undefined, { method: 'POST', body: JSON.stringify({ account_id: editBot.id, vbucks: parseInt(editVbucks) }) });
       setToast({ msg: `✅ ${editBot.display_name} actualizado`, type: 'success' });
       setEditBot(null); loadTab('bots');
     } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message : 'Error', type: 'error' }); }
@@ -307,30 +307,24 @@ export default function AdminPanel() {
     o.epic_username.toLowerCase().includes(search.toLowerCase()) ||
     o.item_name.toLowerCase().includes(search.toLowerCase())
   );
-  const orderTotalPages = Math.max(1, Math.ceil(filteredOrders.length / ADMIN_PER_PAGE));
-  const pagedOrders = filteredOrders.slice((orderPage - 1) * ADMIN_PER_PAGE, orderPage * ADMIN_PER_PAGE);
+  const statusFilteredOrders = orderFilter === 'all' ? filteredOrders : filteredOrders.filter(o => o.status === orderFilter);
+  const displayedOrders = statusFilteredOrders.slice((orderPage - 1) * ADMIN_PER_PAGE, orderPage * ADMIN_PER_PAGE);
 
-  const paymentTotalPages = Math.max(1, Math.ceil(payments.length / ADMIN_PER_PAGE));
-  const pagedPayments = payments.slice((paymentPage - 1) * ADMIN_PER_PAGE, paymentPage * ADMIN_PER_PAGE);
+  const filteredPayments = payFilter === 'all' ? payments : payments.filter((p: any) => p.status === payFilter);
   const filteredRCustomers = rCustomers.filter(c =>
     c.epic_username.toLowerCase().includes(rSearch.toLowerCase()) ||
     (c.email ?? '').toLowerCase().includes(rSearch.toLowerCase())
   );
 
-  // ── LOGIN ──
+  // ── NOT ADMIN → redirect (handled by useEffect) ──
   if (!authed) return (
     <div className="admin-login-page">
-      <form className="auth-card" onSubmit={handleAuth}>
+      <div className="auth-card" style={{ textAlign: 'center' }}>
         <div className="auth-icon"><ShieldCheck size={28}/></div>
         <h1>Panel de Administrador</h1>
-        <p className="auth-sub">Ingresa tu API Key para continuar.</p>
-        {authErr && <div className="auth-error">{authErr}</div>}
-        <label className="field">
-          <span>API Key Admin</span>
-          <input type="password" placeholder="••••••••••••" value={keyInput} onChange={e => setKeyInput(e.target.value)} required autoFocus/>
-        </label>
-        <button className="btn btn-primary btn-full" type="submit"><LogIn size={18}/> Acceder</button>
-      </form>
+        <p className="auth-sub">Verificando permisos...</p>
+        <Loader2 size={24} className="spin" style={{ margin: '16px auto', color: 'var(--accent)' }}/>
+      </div>
     </div>
   );
 
@@ -474,19 +468,93 @@ export default function AdminPanel() {
 
       {/* ── STATS ── */}
       {tab === 'stats' && stats && !loading && (
-        <div className="admin-stats-grid">
-          {[
-            { label:'Clientes activos',    value: stats.total_customers,  icon:<Users size={22}/>,        color:'#6c5ce7' },
-            { label:'Pedidos totales',     value: stats.total_orders,     icon:<Package size={22}/>,      color:'#3b82f6' },
-            { label:'Enviados',            value: stats.total_sent,       icon:<CheckCircle2 size={22}/>, color:'#22c55e' },
-            { label:'Pendientes',          value: stats.total_pending,    icon:<Package size={22}/>,      color:'#f59e0b' },
-            { label:'KC recargados total', value:`${(stats.total_kc_recharged||0).toLocaleString()} KC`, icon:<Coins size={22}/>, color:'#f59e0b' },
-          ].map(s => (
-            <div className="admin-stat-card" key={s.label} style={{'--stat-color':s.color} as React.CSSProperties}>
-              <div className="admin-stat-icon">{s.icon}</div>
-              <div><span className="admin-stat-label">{s.label}</span><span className="admin-stat-value">{s.value}</span></div>
+        <div className="admin-stats-section">
+          {/* Revenue cards row */}
+          <div className="admin-stats-row">
+            <div className="admin-revenue-card admin-revenue-main">
+              <div className="admin-revenue-header">
+                <span className="admin-revenue-label">Revenue Total</span>
+                <CreditCard size={18} style={{color:'var(--accent)'}}/>
+              </div>
+              <span className="admin-revenue-value">S/ {(stats.revenue_total_pen || 0).toFixed(2)}</span>
+              <div className="admin-revenue-sub">
+                <span>Hoy: <strong>S/ {(stats.revenue_today_pen || 0).toFixed(2)}</strong></span>
+                <span>Semana: <strong>S/ {(stats.revenue_week_pen || 0).toFixed(2)}</strong></span>
+                <span>Mes: <strong>S/ {(stats.revenue_month_pen || 0).toFixed(2)}</strong></span>
+              </div>
             </div>
-          ))}
+          </div>
+
+          {/* Main metrics grid */}
+          <div className="admin-stats-grid">
+            {[
+              { label:'Clientes',     value: stats.total_customers,  sub: `+${stats.new_customers_week || 0} esta semana`, icon:<Users size={20}/>,        color:'#6c5ce7' },
+              { label:'Pedidos KC',   value: stats.total_orders,     sub: `${stats.total_sent} enviados`, icon:<Package size={20}/>,      color:'#3b82f6' },
+              { label:'Pagos',        value: stats.total_payments || 0, sub: `${stats.fulfilled_payments || 0} completados`, icon:<CreditCard size={20}/>,   color:'#22c55e' },
+              { label:'KC recargados', value:`${(stats.total_kc_recharged||0).toLocaleString()}`, sub: 'total histórico', icon:<Coins size={20}/>, color:'#f59e0b' },
+            ].map(s => (
+              <div className="admin-stat-card" key={s.label} style={{'--stat-color':s.color} as React.CSSProperties}>
+                <div className="admin-stat-icon">{s.icon}</div>
+                <div>
+                  <span className="admin-stat-label">{s.label}</span>
+                  <span className="admin-stat-value">{s.value}</span>
+                  <span className="admin-stat-sub">{s.sub}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom row: Gateway breakdown + Recent payments */}
+          <div className="admin-stats-bottom">
+            {/* Gateway breakdown */}
+            <div className="admin-card">
+              <h4 className="admin-card-title"><CreditCard size={16}/> Pagos por pasarela</h4>
+              {(stats.gateway_stats || []).length === 0 && <p className="admin-empty-text">Sin datos de pasarelas</p>}
+              {(stats.gateway_stats || []).map((g: any) => (
+                <div key={g.gateway} className="admin-gw-row">
+                  <span className="admin-gw-name" style={{textTransform:'capitalize'}}>{g.gateway}</span>
+                  <span className="admin-gw-count">{g.count} pagos</span>
+                  <span className="admin-gw-total">S/ {g.total_pen.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Payment status breakdown */}
+            <div className="admin-card">
+              <h4 className="admin-card-title"><Package size={16}/> Estado de pagos</h4>
+              {[
+                { label: 'Pendientes', value: stats.pending_payments || 0, color: '#f59e0b' },
+                { label: 'Aprobados', value: stats.approved_payments || 0, color: '#22c55e' },
+                { label: 'Completados', value: stats.fulfilled_payments || 0, color: '#3b82f6' },
+                { label: 'Expirados', value: stats.expired_payments || 0, color: '#6b7280' },
+                { label: 'Fallidos', value: stats.failed_payments || 0, color: '#dc2626' },
+              ].map(s => (
+                <div key={s.label} className="admin-status-row">
+                  <span className="admin-status-dot" style={{background:s.color}}/>
+                  <span className="admin-status-label">{s.label}</span>
+                  <span className="admin-status-value">{s.value}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Recent payments */}
+            <div className="admin-card">
+              <h4 className="admin-card-title"><Clock size={16}/> Pagos recientes</h4>
+              {(stats.recent_payments || []).length === 0 && <p className="admin-empty-text">Sin pagos recientes</p>}
+              {(stats.recent_payments || []).map((p: any, i: number) => (
+                <div key={i} className="admin-recent-row">
+                  <div>
+                    <span className="admin-recent-product">{p.product_name}</span>
+                    <span className="admin-recent-gateway">{p.gateway}</span>
+                  </div>
+                  <div style={{textAlign:'right'}}>
+                    <span className="admin-recent-amount">S/ {Number(p.amount_pen).toFixed(2)}</span>
+                    <span className={`admin-recent-status admin-st-${p.status}`}>{p.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -504,7 +572,7 @@ export default function AdminPanel() {
             <table className="admin-table">
               <thead><tr>
                 <th>Usuario Epic</th><th>Email</th><th>Balance KC</th>
-                <th>Discord</th><th>Registrado</th><th>Acciones</th>
+                <th>Discord</th><th>Rol</th><th>Registrado</th><th>Acciones</th>
               </tr></thead>
               <tbody>
                 {pagedCustomers.map(c => (
@@ -513,17 +581,36 @@ export default function AdminPanel() {
                     <td className="text-muted">{c.email}</td>
                     <td><KCBadge amount={c.kc_balance} size="sm"/></td>
                     <td className="text-muted">{c.discord_username || '—'}</td>
+                    <td>
+                      {c.is_admin
+                        ? <span className="adm-role-badge adm-role-admin"><ShieldCheck size={12}/> Admin</span>
+                        : <span className="adm-role-badge adm-role-user">Cliente</span>
+                      }
+                    </td>
                     <td className="text-muted">{new Date(c.created_at).toLocaleDateString('es-PE')}</td>
                     <td onClick={e => e.stopPropagation()}>
                       <div className="adm-row-actions">
                         <button className="adm-action-icon edit" title="Editar" onClick={() => openEditCustomer(c)}><Edit2 size={13}/></button>
+                        <button className="adm-action-btn" title={c.is_admin ? 'Quitar admin' : 'Hacer admin'}
+                          style={{color: c.is_admin ? '#f59e0b' : '#6b7280'}}
+                          onClick={async () => {
+                            try {
+                              await adminFetch(`/admin/customers/${c.id}`, undefined, {
+                                method: 'PUT', body: JSON.stringify({ is_admin: !c.is_admin })
+                              });
+                              loadTab('customers');
+                              setToast({msg: c.is_admin ? 'Admin removido' : 'Admin asignado', type:'success'});
+                            } catch (e: any) { setToast({msg: e.message, type:'error'}); }
+                          }}>
+                          <ShieldCheck size={13}/>
+                        </button>
                         <button className="adm-action-icon delete" title="Eliminar" onClick={() => setDeleteConfirm(c)}><Trash2 size={13}/></button>
                         <button className="admin-id-copy" onClick={() => { navigator.clipboard.writeText(String(c.id)); setToast({msg:'ID copiado',type:'success'}); }}><Copy size={11}/> ID</button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {filteredCustomers.length === 0 && <tr><td colSpan={6} className="adm-empty-row">Sin resultados</td></tr>}
+                {filteredCustomers.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin resultados</td></tr>}
               </tbody>
             </table>
           </div>
@@ -534,12 +621,24 @@ export default function AdminPanel() {
       {/* ── ORDERS ── */}
       {tab === 'orders' && !loading && (
         <div className="admin-table-section">
-          <div className="adm-section-head">
+          <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="admin-search-bar">
               <Search size={15}/>
               <input placeholder="Buscar por usuario o item..." value={search} onChange={e => setSearch(e.target.value)}/>
             </div>
             <span className="adm-count">{filteredOrders.length} pedido{filteredOrders.length !== 1 ? 's' : ''}</span>
+            <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+              {['all','pending','processing','sent','failed','refunded'].map(s => (
+                <button key={s} onClick={() => setOrderFilter(s)}
+                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: '.75rem', fontWeight: 600,
+                    border: '1px solid var(--border)', cursor: 'pointer',
+                    background: orderFilter === s ? 'var(--accent)' : 'var(--bg-elevated)',
+                    color: orderFilter === s ? '#fff' : 'var(--text-muted)' }}>
+                  {s === 'all' ? 'Todos' : s === 'sent' ? 'Enviados' : s === 'pending' ? 'Pendientes' :
+                   s === 'processing' ? 'Procesando' : s === 'failed' ? 'Fallidos' : s === 'refunded' ? 'Reembolsados' : s}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="admin-table-wrap">
             <table className="admin-table">
@@ -547,7 +646,7 @@ export default function AdminPanel() {
                 <th>Usuario Epic</th><th>Item</th><th>KC</th><th>VBucks</th><th>Estado</th><th>Fecha</th>
               </tr></thead>
               <tbody>
-                {pagedOrders.map(o => (
+                {displayedOrders.map(o => (
                   <tr key={o.id}>
                     <td><div className="adm-user-cell"><div className="adm-user-avatar" style={{background:'rgba(59,130,246,0.15)',color:'#3b82f6'}}>{o.epic_username[0]}</div><strong>{o.epic_username}</strong></div></td>
                     <td>{o.item_name}</td>
@@ -557,47 +656,82 @@ export default function AdminPanel() {
                     <td className="text-muted">{new Date(o.created_at).toLocaleDateString('es-PE')}</td>
                   </tr>
                 ))}
-                {filteredOrders.length === 0 && <tr><td colSpan={6} className="adm-empty-row">Sin resultados</td></tr>}
+                {displayedOrders.length === 0 && <tr><td colSpan={6} className="adm-empty-row">Sin resultados</td></tr>}
               </tbody>
             </table>
           </div>
-          <AdminPagination page={orderPage} total={orderTotalPages} setPage={setOrderPage}/>
+          <AdminPagination page={orderPage} total={Math.max(1, Math.ceil(statusFilteredOrders.length / ADMIN_PER_PAGE))} setPage={setOrderPage}/>
         </div>
       )}
 
       {/* ── PAYMENTS ── */}
       {tab === 'payments' && !loading && (
         <div className="admin-table-section">
-          <div className="adm-section-head">
+          <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="adm-count">{payments.length} transacci{payments.length !== 1 ? 'ones' : 'ón'}</span>
+            <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+              {['all','pending','approved','fulfilled','expired','failed'].map(s => (
+                <button key={s} className={`adm-filter-btn ${payFilter === s ? 'active' : ''}`}
+                  onClick={() => setPayFilter(s)}
+                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: '.75rem', fontWeight: 600,
+                    border: '1px solid var(--border)', cursor: 'pointer',
+                    background: payFilter === s ? 'var(--accent)' : 'var(--bg-elevated)',
+                    color: payFilter === s ? '#fff' : 'var(--text-muted)' }}>
+                  {s === 'all' ? 'Todos' : s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead><tr>
-                <th>Gateway</th><th>Tipo</th><th>Producto</th><th>Monto PEN</th><th>KC</th><th>Estado</th><th>Fecha</th>
+                <th>Gateway</th><th>Producto</th><th>Monto</th><th>Código</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
               </tr></thead>
               <tbody>
-                {/* eslint-disable @typescript-eslint/no-explicit-any */}
-              {pagedPayments.map((p: any) => (
+              {filteredPayments.slice((paymentPage-1)*ADMIN_PER_PAGE, paymentPage*ADMIN_PER_PAGE).map((p: any) => (
                   <tr key={p.id}>
                     <td><span style={{textTransform:'capitalize', fontWeight:600}}>{p.gateway}</span></td>
-                    <td className="text-muted">{p.payment_type === 'kc_recharge' ? 'Recarga KC' : 'Compra producto'}</td>
                     <td>{p.product_name}</td>
                     <td><strong>S/ {Number(p.amount_pen).toFixed(2)}</strong></td>
-                    <td>{p.kc_amount > 0 ? <KCBadge amount={p.kc_amount} size="sm"/> : '—'}</td>
+                    <td style={{fontFamily:'monospace', fontSize:'.8rem'}}>{p.activation_code || '—'}</td>
                     <td>
-                      <span className="status-badge" style={{ '--badge-color': p.status === 'approved' ? '#22c55e' : p.status === 'pending' ? '#f59e0b' : '#dc2626' } as React.CSSProperties}>
-                        {p.status === 'approved' ? 'Aprobado' : p.status === 'pending' ? 'Pendiente' : p.status === 'failed' ? 'Fallido' : p.status}
+                      <span className="status-badge" style={{ '--badge-color':
+                        p.status === 'approved' ? '#22c55e' : p.status === 'fulfilled' ? '#3b82f6' :
+                        p.status === 'pending' ? '#f59e0b' : p.status === 'expired' ? '#6b7280' : '#dc2626'
+                      } as React.CSSProperties}>
+                        {p.status === 'approved' ? 'Aprobado' : p.status === 'pending' ? 'Pendiente' :
+                         p.status === 'fulfilled' ? 'Entregado' : p.status === 'expired' ? 'Expirado' :
+                         p.status === 'failed' ? 'Fallido' : p.status === 'activating' ? 'Activando' : p.status}
                       </span>
                     </td>
                     <td className="text-muted">{new Date(p.created_at).toLocaleDateString('es-PE')}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {p.status === 'pending' && (
+                          <>
+                            <button className="adm-action-btn adm-approve" title="Aprobar"
+                              onClick={async () => { try { await adminFetch(`/admin/payments/${p.id}`, undefined, { method: 'PUT', body: JSON.stringify({ status: 'approved' }) }); loadTab('payments'); setToast({ msg: 'Pago aprobado', type: 'success' }); } catch (e: any) { setToast({ msg: e.message, type: 'error' }); } }}>
+                              <CheckCircle2 size={14}/>
+                            </button>
+                            <button className="adm-action-btn adm-cancel" title="Cancelar"
+                              onClick={async () => { try { await adminFetch(`/admin/payments/${p.id}`, undefined, { method: 'PUT', body: JSON.stringify({ status: 'expired' }) }); loadTab('payments'); setToast({ msg: 'Pago cancelado', type: 'success' }); } catch (e: any) { setToast({ msg: e.message, type: 'error' }); } }}>
+                              <X size={14}/>
+                            </button>
+                          </>
+                        )}
+                        <button className="adm-action-btn adm-delete" title="Eliminar"
+                          onClick={async () => { if (!confirm('¿Eliminar este pago permanentemente?')) return; try { await adminFetch(`/admin/payments/${p.id}`, undefined, { method: 'DELETE' }); loadTab('payments'); setToast({ msg: 'Pago eliminado', type: 'success' }); } catch (e: any) { setToast({ msg: e.message, type: 'error' }); } }}>
+                          <Trash2 size={14}/>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
-                {payments.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin transacciones</td></tr>}
+                {filteredPayments.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin transacciones</td></tr>}
               </tbody>
             </table>
           </div>
-          <AdminPagination page={paymentPage} total={paymentTotalPages} setPage={setPaymentPage}/>
+          <AdminPagination page={paymentPage} total={Math.ceil(filteredPayments.length / ADMIN_PER_PAGE)} setPage={setPaymentPage}/>
         </div>
       )}
 
@@ -973,7 +1107,7 @@ export default function AdminPanel() {
                         <button
                           onClick={async () => {
                             setAvailLoading(true);
-                            await adminFetch('/admin/product-availability', apiKey, {
+                            await adminFetch('/admin/product-availability', undefined, {
                               method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled: !enabled, schedule_enabled: schedOn, start_hour: startH, end_hour: endH, timezone: tz })
                             });
                             await loadTab('availability');
@@ -992,7 +1126,7 @@ export default function AdminPanel() {
                         <button
                           onClick={async () => {
                             setAvailLoading(true);
-                            await adminFetch('/admin/product-availability', apiKey, {
+                            await adminFetch('/admin/product-availability', undefined, {
                               method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled, schedule_enabled: !schedOn, start_hour: startH, end_hour: endH, timezone: tz })
                             });
                             await loadTab('availability');
@@ -1012,7 +1146,7 @@ export default function AdminPanel() {
                           <div style={{display:'flex',gap:4,alignItems:'center',fontSize:'.82rem'}}>
                             <select value={startH} onChange={async e => {
                               setAvailLoading(true);
-                              await adminFetch('/admin/product-availability', apiKey, {
+                              await adminFetch('/admin/product-availability', undefined, {
                                 method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled, schedule_enabled: schedOn, start_hour: parseInt(e.target.value), end_hour: endH, timezone: tz })
                               });
                               await loadTab('availability'); setAvailLoading(false);
@@ -1022,7 +1156,7 @@ export default function AdminPanel() {
                             <span>—</span>
                             <select value={endH} onChange={async e => {
                               setAvailLoading(true);
-                              await adminFetch('/admin/product-availability', apiKey, {
+                              await adminFetch('/admin/product-availability', undefined, {
                                 method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled, schedule_enabled: schedOn, start_hour: startH, end_hour: parseInt(e.target.value), timezone: tz })
                               });
                               await loadTab('availability'); setAvailLoading(false);

@@ -7,6 +7,7 @@ export interface Customer {
   kc_balance: number;
   discord_id?: string;
   discord_username?: string;
+  is_admin?: boolean;
   created_at: string;
 }
 
