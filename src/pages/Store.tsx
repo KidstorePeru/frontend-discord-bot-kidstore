@@ -410,6 +410,10 @@ function ProductCatalog({ products, bulkProduct, lang, categoryKey }: {
     getExchangeRates().then(r => setRates({ USD: r.USD, EUR: r.EUR })).catch(() => {});
   }, []);
 
+  const getBulkPrice = (bp: BulkProduct, amount: number): number => {
+    if (bp.prices && bp.prices[amount] !== undefined) return bp.prices[amount];
+    return amount * bp.pricePerUnit_pen;
+  };
   const formatPrice = (pen: number) => {
     if (pen <= 0) return es ? 'Precio por definir' : 'Price TBD';
     return es ? `S/ ${pen.toFixed(2)}` : `$${roundCents(pen * rates.USD).toFixed(2)}`;
@@ -496,19 +500,19 @@ function ProductCatalog({ products, bulkProduct, lang, categoryKey }: {
                     }
                   }}><Plus size={14}/></button>
                 </div>
-                {bulkAmount > 0 && bulkProduct.pricePerUnit_pen > 0 && (
+                {bulkAmount > 0 && getBulkPrice(bulkProduct, bulkAmount) > 0 && (
                   <div className="pc-card-prices" style={{ marginTop: 6 }}>
-                    <span className="pc-price-pen">{formatPrice(bulkAmount * bulkProduct.pricePerUnit_pen)}</span>
-                    <span className="pc-price-usd">{formatAlt(bulkAmount * bulkProduct.pricePerUnit_pen)}</span>
+                    <span className="pc-price-pen">{formatPrice(getBulkPrice(bulkProduct, bulkAmount))}</span>
+                    <span className="pc-price-usd">{formatAlt(getBulkPrice(bulkProduct, bulkAmount))}</span>
                   </div>
                 )}
               </div>
               {bulkAmount > 0 && (
                 <button className="pc-buy-btn" onClick={() => setBuyProduct({
                   name: `${bulkAmount} ${bulkProduct.name}`,
-                  price_pen: bulkAmount * bulkProduct.pricePerUnit_pen,
+                  price_pen: getBulkPrice(bulkProduct, bulkAmount),
                   productId: bulkProduct.id,
-                })} disabled={bulkProduct.pricePerUnit_pen <= 0}>
+                })} disabled={getBulkPrice(bulkProduct, bulkAmount) <= 0}>
                   <ShoppingBag size={14}/> {es ? `Comprar ${bulkAmount}` : `Buy ${bulkAmount}`}
                 </button>
               )}
