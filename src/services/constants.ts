@@ -263,19 +263,19 @@ export const VBUCKS_PRODUCTS: StoreProduct[] = [
   { id: 'vb-800',   name: '800 V-Bucks',
     description: 'Ideal para comprar 1 outfit basico o varios gestos en la tienda.',
     description_en: 'Great for buying 1 basic outfit or several emotes from the shop.',
-    amount: 800, price_pen: 20.90, originalPrice_pen: 26.32, image: '/vbucks-800.png', color: '#2196f3' },
+    amount: 800, price_pen: 23.20, originalPrice_pen: 26.32, image: '/vbucks-800.png', color: '#2196f3' },
   { id: 'vb-2400',  name: '2400 V-Bucks',
     description: 'El paquete mas popular. Alcanza para outfits de temporada y accesorios.',
     description_en: 'The most popular pack. Enough for seasonal outfits and accessories.',
-    amount: 2400, price_pen: 52.90, originalPrice_pen: 63.92, image: '/vbucks-2400.png', color: '#7c4dff' },
+    amount: 2400, price_pen: 53.60, originalPrice_pen: 63.92, image: '/vbucks-2400.png', color: '#7c4dff' },
   { id: 'vb-4500',  name: '4500 V-Bucks',
     description: 'Perfecto para el Pase de Batalla + varios cosmeticos extra.',
     description_en: 'Perfect for the Battle Pass + several extra cosmetics.',
-    amount: 4500, price_pen: 76.90, originalPrice_pen: 103.92, image: '/vbucks-4800.png', color: '#ff9800' },
+    amount: 4500, price_pen: 79.80, originalPrice_pen: 103.92, image: '/vbucks-4800.png', color: '#ff9800' },
   { id: 'vb-12500', name: '12500 V-Bucks',
     description: 'El mejor precio por V-Buck. Para coleccionistas y jugadores frecuentes.',
     description_en: 'Best price per V-Buck. For collectors and frequent players.',
-    amount: 12500, price_pen: 179.90, originalPrice_pen: 263.92, image: '/vbucks-12500.png', color: '#f44336' },
+    amount: 12500, price_pen: 190.00, originalPrice_pen: 263.92, image: '/vbucks-12500.png', color: '#f44336' },
 ];
 
 export const VBUCKS_BULK: BulkProduct = {
@@ -301,19 +301,19 @@ export const PACKS_PRODUCTS: StoreProduct[] = [
     subtitle_en: '3 Outfits + 3 Back Blings + 3 Pickaxes + Wrap + Loading Screen',
     description: 'Protege al Koi con 3 trajes exclusivos (Koi Striker Envoy, Koi Brawler Zero, Koi Agent Chigusa), mochilas retro, picos, envoltorio y pantalla de carga. Todos con estilo LEGO.',
     description_en: 'Protect the Koi with 3 exclusive outfits (Koi Striker Envoy, Koi Brawler Zero, Koi Agent Chigusa), back blings, pickaxes, wrap and loading screen. All with LEGO style.',
-    amount: 1, price_pen: 59.90, originalPrice_pen: 72.50, image: '/pack-koi.png', color: '#e91e63' },
+    amount: 1, price_pen: 23.20, originalPrice_pen: 72.50, image: '/pack-koi.png', color: '#e91e63' },
   { id: 'pack-drift', name: 'Pack de Deriva Infinita', name_en: 'Infinite Drift Pack',
     subtitle: '3 Outfits + 3 Mochilas + 3 Picos',
     subtitle_en: '3 Outfits + 3 Back Blings + 3 Pickaxes',
     description: 'Prepara tus tacticas con 3 trajes (Calavera Derivada, Deriva de la Grieta, Palito de Deriva), mochilas retro y picos. Todos con estilo LEGO.',
     description_en: 'Gear up with 3 outfits (Skull Drift, Rift Strider, Fishdrift), back blings and pickaxes. All with LEGO style.',
-    amount: 1, price_pen: 55.90, originalPrice_pen: 68.90, image: '/pack-drift.png', color: '#7c4dff' },
+    amount: 1, price_pen: 23.20, originalPrice_pen: 68.90, image: '/pack-drift.png', color: '#7c4dff' },
   { id: 'pack-brite', name: 'Pack de inicio de Operación brillante', name_en: 'Operation Brite Starter Pack',
     subtitle: 'Outfit + Mochila + Lote de decoracion (13 objetos)',
     subtitle_en: 'Outfit + Back Bling + Decoration Bundle (13 items)',
     description: 'Agente Brillante esta lista para explorar. Incluye traje con estilo LEGO, mochila retro Brillo Estelar y lote de decoracion con 13 objetos para LEGO Fortnite.',
     description_en: 'Brite Agent is ready to explore. Includes outfit with LEGO style, Starshine back bling and decoration bundle with 13 items for LEGO Fortnite.',
-    amount: 1, price_pen: 11.90, originalPrice_pen: 14.99, image: '/pack-brite.png', color: '#ff9800' },
+    amount: 1, price_pen: 13.70, originalPrice_pen: 14.99, image: '/pack-brite.png', color: '#ff9800' },
 ];
 
 // ── Club de Fortnite ──
@@ -323,23 +323,23 @@ export const CLUB_PRODUCTS: StoreProduct[] = [
     subtitle_en: 'Monthly subscription',
     description: 'Incluye 1,000 V-Bucks, Pase de Batalla y un pack exclusivo de skin + accesorios cada mes.',
     description_en: 'Includes 1,000 V-Bucks, Battle Pass and an exclusive skin + accessories pack each month.',
-    amount: 1, price_pen: 0.10, originalPrice_pen: 39.90, image: '/fortnite-club.avif', color: '#651fff' },
+    amount: 1, price_pen: 22.10, originalPrice_pen: 39.90, image: '/fortnite-club.avif', color: '#651fff' },
 ];
 
 // ── Rocket League Credits ──
 export const ROCKET_PRODUCTS: StoreProduct[] = [
   { id: 'rl-500',  name: '500 — RL Credits',
     description: 'Para items basicos y blueprints.', description_en: 'For basic items and blueprints.',
-    amount: 500, price_pen: 15.90, originalPrice_pen: 19.90, image: '/rl-500.webp', color: '#0091ea' },
+    amount: 500, price_pen: 13.70, originalPrice_pen: 19.90, image: '/rl-500.webp', color: '#0091ea' },
   { id: 'rl-1100', name: '1100 — RL Credits',
     description: 'Alcanza para el Rocket Pass y mas.', description_en: 'Enough for the Rocket Pass and more.',
-    amount: 1100, price_pen: 29.90, originalPrice_pen: 38.90, image: '/rl-1100.webp', color: '#00bfa5' },
+    amount: 1100, price_pen: 26.30, originalPrice_pen: 38.90, image: '/rl-1100.webp', color: '#00bfa5' },
   { id: 'rl-3000', name: '3000 — RL Credits',
     description: 'Ideal para trading y tienda de items.', description_en: 'Great for trading and the item shop.',
-    amount: 3000, price_pen: 69.90, originalPrice_pen: 89.90, image: '/rl-3000.webp', color: '#ffab00' },
+    amount: 3000, price_pen: 59.90, originalPrice_pen: 89.90, image: '/rl-3000.webp', color: '#ffab00' },
   { id: 'rl-6500', name: '6500 — RL Credits',
     description: 'El mejor valor. Para coleccionistas.', description_en: 'Best value. For collectors.',
-    amount: 6500, price_pen: 129.90, originalPrice_pen: 169.90, image: '/rl-6500.webp', color: '#dd2c00' },
+    amount: 6500, price_pen: 116.50, originalPrice_pen: 169.90, image: '/rl-6500.webp', color: '#dd2c00' },
 ];
 
 export const ROCKET_BULK: BulkProduct = {
@@ -351,7 +351,6 @@ export const ROCKET_BULK: BulkProduct = {
     1200, 1400, 1600, 1800, 2000,
     2100, 2300, 2400, 2500, 2800, 2900, 2950,
     3200, 3500, 3800, 3900,
-    4550, 4650, 4850, 4950, 5000,
   ],
   pricePerUnit_pen: 0.002,
 };
