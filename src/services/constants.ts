@@ -10,7 +10,7 @@ import { FALLBACK_RATES } from './useExchangeRates';
 export const KC_PACKAGES: KCPackage[] = [
   { id: 'starter', name: 'Starter', kc: 800,   price_pen: 12.80,  price_pen_online: 14.70,  price_usd: 0, price_eur: 0, emoji: '⚡', color: '#3b82f6' },
   { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_pen: 38.40,  price_pen_online: 41.60,  price_usd: 0, price_eur: 0, emoji: '🎮', color: '#8b5cf6', popular: true },
-  { id: 'pro',     name: 'Pro',     kc: 4500,  price_pen: 76.80,  price_pen_online: 81.90,  price_usd: 0, price_eur: 0, emoji: '🔥', color: '#f59e0b' },
+  { id: 'pro',     name: 'Pro',     kc: 4500,  price_pen: 72.0,  price_pen_online: 81.90,  price_usd: 0, price_eur: 0, emoji: '🔥', color: '#f59e0b' },
   { id: 'legend',  name: 'Legend',  kc: 12500, price_pen: 200.00, price_pen_online: 211.30, price_usd: 0, price_eur: 0, emoji: '👑', color: '#f59e0b', premium: true },
 ];
 
