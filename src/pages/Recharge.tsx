@@ -106,7 +106,7 @@ export default function Recharge() {
   }
 
   function pkgImg(kc: number) {
-    const m: Record<number,string> = {800:'800-kc',2400:'2400-kc',4800:'4800-kc',12500:'12500-kc'};
+    const m: Record<number,string> = {800:'800-kc',2400:'2400-kc',4500:'4500-kc',12500:'12500-kc'};
     return m[kc] ? `/${m[kc]}.png` : '';
   }
 
