@@ -21,7 +21,7 @@ const PAYMENT_METHODS = [
 const KC_PACKAGES_BASE = [
   { id: 'starter', name: 'Starter', kc: 800,   price_soles: 12.8,  image: '/800-kc.png',   color: '#3b82f6', glow: '#3b82f625', tag: null,   tagIcon: null },
   { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_soles: 38.4,  image: '/2400-kc.png',  color: '#8b5cf6', glow: '#8b5cf625', tag: 'pop',  tagIcon: 'star' },
-  { id: 'pro',     name: 'Pro',     kc: 4500,  price_soles: 72.0,  image: '/4800-kc.png',  color: '#f59e0b', glow: '#f59e0b25', tag: 'sell', tagIcon: 'fire' },
+  { id: 'pro',     name: 'Pro',     kc: 4500,  price_soles: 72.0,  image: '/4500-kc.png',  color: '#f59e0b', glow: '#f59e0b25', tag: 'sell', tagIcon: 'fire' },
   { id: 'legend',  name: 'Legend',  kc: 12500, price_soles: 200.0, image: '/12500-kc.png', color: '#ec4899', glow: '#ec489925', tag: 'prem', tagIcon: 'crown' },
 ];
 
