@@ -95,6 +95,7 @@ export interface KCPackage {
   name: string;
   kc: number;
   price_pen: number;
+  price_pen_online?: number;
   price_usd: number;
   price_eur: number;
   emoji: string;

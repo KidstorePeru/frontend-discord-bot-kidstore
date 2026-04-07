@@ -71,7 +71,7 @@ export default function Recharge() {
   const [rates, setRates]           = useState<{usd:number;eur:number} | null>(null);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [payInfo, setPayInfo] = useState<PaymentInfo | null>(null);
-  const [payTab, setPayTab] = useState<'online' | 'manual'>('online');
+  const [payTab, setPayTab] = useState<'online' | 'manual'>('manual');
   const [payLoading, setPayLoading] = useState('');
   const [payPending, setPayPending] = useState(false);
   const [payResult, setPayResult] = useState<'success'|'error'|null>(null);
@@ -113,6 +113,14 @@ export default function Recharge() {
   const KC_RATE = 0.016;
   const customKCNum = parseInt(customKC) || 0;
   const customPricePen = parseFloat((customKCNum * KC_RATE).toFixed(2));
+  const customPricePenOnline = parseFloat(((customKCNum * KC_RATE + 1.18) / 0.9529).toFixed(2));
+
+  // Get the active price based on payment tab
+  const getPrice = (pkg: KCPackage): number => {
+    if (payTab === 'online' && pkg.price_pen_online) return pkg.price_pen_online;
+    if (payTab === 'online' && pkg.id === 'custom') return customPricePenOnline;
+    return pkg.price_pen;
+  };
 
   const customPkg: KCPackage | undefined = customMode && customKCNum >= 100 ? {
     id: 'custom',
@@ -142,8 +150,9 @@ export default function Recharge() {
     setPayLoading(gateway);
     try {
       const isCustom = selectedPkg.id === 'custom';
+      const onlinePrice = getPrice(selectedPkg);
       const res = await createPayment(gateway, 'kc_recharge', selectedPkg.id,
-        isCustom ? { name: `${selectedPkg.kc} KC (personalizado)`, price: selectedPkg.price_pen, kc: selectedPkg.kc } : undefined
+        isCustom ? { name: `${selectedPkg.kc} KC (personalizado)`, price: onlinePrice, kc: selectedPkg.kc } : undefined
       );
       // Open payment in new window
       const payWindow = window.open(res.checkout_url, '_blank');
@@ -189,7 +198,7 @@ export default function Recharge() {
 
   function getMethodPrice(m: PayMethod): string {
     if (!selectedPkg) return '';
-    const base = convertRaw(selectedPkg.price_pen, currency);
+    const base = convertRaw(getPrice(selectedPkg), currency);
     const rate = m.commission ? COMMISSIONS[m.commission] : 0;
     const total = rate > 0 ? withCommission(base, rate) : base;
     if (currency === 'PEN') return `S/ ${total.toFixed(2)}`;
@@ -288,9 +297,9 @@ export default function Recharge() {
                 <div className="rc-pkg-name">{pkg.name}</div>
                 <div className="rc-pkg-kc">{pkg.kc.toLocaleString()} KC</div>
                 <div className="rc-pkg-divider"/>
-                <div className="rc-pkg-pen">S/ {pkg.price_pen.toFixed(2)}</div>
+                <div className="rc-pkg-pen">S/ {getPrice(pkg).toFixed(2)}</div>
                 <div className="rc-pkg-alt">
-                  {ratesLoading ? '...' : `${convertPrice(pkg.price_pen,'USD')} · ${convertPrice(pkg.price_pen,'EUR')}`}
+                  {ratesLoading ? '...' : `${convertPrice(getPrice(pkg),'USD')} · ${convertPrice(getPrice(pkg),'EUR')}`}
                 </div>
                 {isSel && <div className="rc-pkg-check-ring"><CheckCircle size={18}/></div>}
               </button>
@@ -324,8 +333,8 @@ export default function Recharge() {
                 </div>
                 {customKCNum >= 100 && (
                   <div className="rc-custom-price">
-                    S/ {customPricePen.toFixed(2)}
-                    {rates && <span> · ${(customPricePen*rates.usd).toFixed(2)}</span>}
+                    S/ {(payTab === 'online' ? customPricePenOnline : customPricePen).toFixed(2)}
+                    {rates && <span> · ${((payTab === 'online' ? customPricePenOnline : customPricePen)*rates.usd).toFixed(2)}</span>}
                   </div>
                 )}
                 {customKCNum > 0 && customKCNum < 100 && (
@@ -352,9 +361,9 @@ export default function Recharge() {
               <span>{txt.pkgSel}</span>
             </div>
             <div className="rc-summary-prices">
-              <span className="rc-summary-pen">S/ {selectedPkg.price_pen.toFixed(2)}</span>
+              <span className="rc-summary-pen">S/ {getPrice(selectedPkg).toFixed(2)}</span>
               {!ratesLoading && rates && (
-                <span className="rc-summary-alt">${(selectedPkg.price_pen*rates.usd).toFixed(2)} · €{(selectedPkg.price_pen*rates.eur).toFixed(2)}</span>
+                <span className="rc-summary-alt">${(getPrice(selectedPkg)*rates.usd).toFixed(2)} · €{(getPrice(selectedPkg)*rates.eur).toFixed(2)}</span>
               )}
               {ratesLoading && <span className="rc-summary-alt"><RefreshCw size={10} className="spin"/> {txt.loading}</span>}
             </div>
@@ -367,8 +376,8 @@ export default function Recharge() {
 
           {/* Payment tab selector */}
           <div className="rc-pay-tabs">
-            <button className={`rc-pay-tab ${payTab==='online'?'on':''}`} onClick={()=>setPayTab('online')}>{txt.tabOnline}</button>
             <button className={`rc-pay-tab ${payTab==='manual'?'on':''}`} onClick={()=>setPayTab('manual')}>{txt.tabManual}</button>
+            <button className={`rc-pay-tab ${payTab==='online'?'on':''}`} onClick={()=>setPayTab('online')}>{txt.tabOnline}</button>
           </div>
 
           {/* ── Online tab ── */}

@@ -8,11 +8,15 @@ import { FALLBACK_RATES } from './useExchangeRates';
 // USD y EUR se calculan dinámicamente con la API
 // ─────────────────────────────────────────────────────────────
 export const KC_PACKAGES: KCPackage[] = [
-  { id: 'starter', name: 'Starter', kc: 800,   price_pen: 12.80,  price_usd: 0, price_eur: 0, emoji: '⚡', color: '#3b82f6' },
-  { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_pen: 38.40,  price_usd: 0, price_eur: 0, emoji: '🎮', color: '#8b5cf6', popular: true },
-  { id: 'pro',     name: 'Pro',     kc: 4800,  price_pen: 76.80,  price_usd: 0, price_eur: 0, emoji: '🔥', color: '#f59e0b' },
-  { id: 'legend',  name: 'Legend',  kc: 12500, price_pen: 200.00, price_usd: 0, price_eur: 0, emoji: '👑', color: '#f59e0b', premium: true },
+  { id: 'starter', name: 'Starter', kc: 800,   price_pen: 12.80,  price_pen_online: 14.70,  price_usd: 0, price_eur: 0, emoji: '⚡', color: '#3b82f6' },
+  { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_pen: 38.40,  price_pen_online: 41.60,  price_usd: 0, price_eur: 0, emoji: '🎮', color: '#8b5cf6', popular: true },
+  { id: 'pro',     name: 'Pro',     kc: 4800,  price_pen: 76.80,  price_pen_online: 81.90,  price_usd: 0, price_eur: 0, emoji: '🔥', color: '#f59e0b' },
+  { id: 'legend',  name: 'Legend',  kc: 12500, price_pen: 200.00, price_pen_online: 211.30, price_usd: 0, price_eur: 0, emoji: '👑', color: '#f59e0b', premium: true },
 ];
+
+// KC price per unit for custom amounts
+export const KC_PRICE_PER_UNIT_MANUAL = 0.016;  // S/ 0.016 per KC (manual payment)
+export const KC_PRICE_PER_UNIT_ONLINE = 0.017;  // approximate, actual = (amount * 0.016 + 1.18) / 0.9529
 
 // ─────────────────────────────────────────────────────────────
 // COMISIONES
