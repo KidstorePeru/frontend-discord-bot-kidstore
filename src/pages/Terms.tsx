@@ -13,7 +13,7 @@ export default function Terms() {
           <div className="legal-icon"><FileText size={28}/></div>
           <div>
             <h1>{es ? 'Términos y Condiciones' : 'Terms and Conditions'}</h1>
-            <p className="legal-updated">{es ? 'Última actualización: 30 de marzo de 2026' : 'Last updated: March 30, 2026'}</p>
+            <p className="legal-updated">{es ? 'Última actualización: 8 de abril de 2026' : 'Last updated: April 8, 2026'}</p>
           </div>
         </div>
         {es ? (<div className="legal-body"><p>Estos Términos y Condiciones regulan el uso del sitio web KidStorePeru y la compra de productos digitales ofrecidos. Al acceder, navegar o comprar, aceptas estos Términos.</p>

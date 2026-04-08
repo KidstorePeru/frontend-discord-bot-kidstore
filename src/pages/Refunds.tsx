@@ -13,7 +13,7 @@ export default function Refunds() {
           <div className="legal-icon" style={{background:'rgba(245,158,11,0.1)',color:'#f59e0b',borderColor:'rgba(245,158,11,0.2)'}}><RefreshCw size={28}/></div>
           <div>
             <h1>{es ? 'Política de Reembolsos' : 'Refund Policy'}</h1>
-            <p className="legal-updated">{es ? 'Última actualización: 30 de marzo de 2026' : 'Last updated: March 30, 2026'}</p>
+            <p className="legal-updated">{es ? 'Última actualización: 8 de abril de 2026' : 'Last updated: April 8, 2026'}</p>
           </div>
         </div>
         {es ? (<div className="legal-body"><div className="legal-highlight legal-highlight-warning"><strong>Importante:</strong> Al comprar en KidStorePeru, aceptas esta política.</div>
