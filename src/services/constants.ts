@@ -276,7 +276,7 @@ export const VBUCKS_PRODUCTS: StoreProduct[] = [
   { id: 'vb-4500',  name: '4500 V-Bucks',
     description: 'Perfecto para el Pase de Batalla + varios cosmeticos extra.',
     description_en: 'Perfect for the Battle Pass + several extra cosmetics.',
-    amount: 4500, price_pen: 79.80, originalPrice_pen: 103.92, image: '/vbucks-4800.png', color: '#ff9800' },
+    amount: 4500, price_pen: 79.80, originalPrice_pen: 103.92, image: '/vbucks-4500.png', color: '#ff9800' },
   { id: 'vb-12500', name: '12500 V-Bucks',
     description: 'El mejor precio por V-Buck. Para coleccionistas y jugadores frecuentes.',
     description_en: 'Best price per V-Buck. For collectors and frequent players.',
