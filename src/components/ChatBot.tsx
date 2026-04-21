@@ -119,7 +119,12 @@ export default function ChatBot() {
           localStorage.setItem('kc_chat_session', sid);
         }
         connectSSE(sid);
-      } catch { /* session init failed — will retry on next message */ }
+      } catch {
+        const offline = langRef.current === 'es'
+          ? '⚠️ El asistente no está disponible en este momento. Por favor intenta más tarde.'
+          : '⚠️ The assistant is not available right now. Please try again later.';
+        setMessages([{ role: 'bot', content: offline }]);
+      }
     }
 
     initSession();
