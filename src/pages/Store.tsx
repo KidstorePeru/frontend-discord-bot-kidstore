@@ -139,48 +139,65 @@ function PayModal({ product, onClose, lang }: PayModalProps) {
       );
       // Open payment in new window
       const payWindow = window.open(res.checkout_url, '_blank');
+      if (!payWindow) {
+        setError(es
+          ? 'Tu navegador bloqueó la ventana de pago. Permite las ventanas emergentes (popups) e intenta de nuevo.'
+          : 'Your browser blocked the payment window. Please allow popups and try again.');
+        setLoading('');
+        return;
+      }
       setLoading('');
       setPaymentPending(true);
 
-      // Poll for payment completion
+      // Poll for payment completion (120 × 3 s = 6 min max)
       const BASE = import.meta.env.VITE_API_URL || '/api';
+      let settled = false;
       for (let i = 0; i < 120; i++) {
         await new Promise(r => setTimeout(r, 3000));
         try {
           const statusRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
           });
+          if (!statusRes.ok) continue; // transient server error — retry
           const data = await statusRes.json();
           const st = data?.transaction?.status;
           if (st === 'approved' || st === 'fulfilled') {
             setPaymentResult('success');
             if (data.transaction.activation_code) setPaymentActivationCode(data.transaction.activation_code);
-            try { payWindow?.close(); } catch {}
+            try { payWindow.close(); } catch {}
+            settled = true;
             break;
           }
           if (st === 'failed' || st === 'expired') {
             setPaymentResult('error');
+            settled = true;
             break;
           }
-          // Check if window was closed
-          if (payWindow?.closed) {
-            // Wait a bit more for webhook
+          // User closed the payment window — do one final status check
+          if (payWindow.closed) {
             await new Promise(r => setTimeout(r, 5000));
-            const finalRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
-              headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
-            });
-            const finalData = await finalRes.json();
-            const finalSt = finalData?.transaction?.status;
-            if (finalSt === 'approved' || finalSt === 'fulfilled') {
-              setPaymentResult('success');
-              if (finalData.transaction.activation_code) setPaymentActivationCode(finalData.transaction.activation_code);
-            } else {
+            try {
+              const finalRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
+              });
+              const finalData = await finalRes.json();
+              const finalSt = finalData?.transaction?.status;
+              if (finalSt === 'approved' || finalSt === 'fulfilled') {
+                setPaymentResult('success');
+                if (finalData.transaction.activation_code) setPaymentActivationCode(finalData.transaction.activation_code);
+              } else {
+                setPaymentResult('error');
+              }
+            } catch {
               setPaymentResult('error');
             }
+            settled = true;
             break;
           }
-        } catch {}
+        } catch { /* transient network error — retry next iteration */ }
       }
+      // Polling timed out without a definitive status — show error so user is not left hanging
+      if (!settled) setPaymentResult('error');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : (es ? 'Error creando pago' : 'Payment error'));
       setLoading('');

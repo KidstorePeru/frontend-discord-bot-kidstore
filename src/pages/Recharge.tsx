@@ -156,40 +156,56 @@ export default function Recharge() {
       );
       // Open payment in new window
       const payWindow = window.open(res.checkout_url, '_blank');
+      if (!payWindow) {
+        alert(es
+          ? 'Tu navegador bloqueó la ventana de pago. Permite las ventanas emergentes (popups) e intenta de nuevo.'
+          : 'Your browser blocked the payment window. Please allow popups and try again.');
+        setPayLoading('');
+        return;
+      }
       setPayLoading('');
       setPayPending(true);
 
-      // Poll for payment completion
+      // Poll for payment completion (120 × 3 s = 6 min max)
       const BASE = import.meta.env.VITE_API_URL || '/api';
+      let settled = false;
       for (let i = 0; i < 120; i++) {
         await new Promise(r => setTimeout(r, 3000));
         try {
           const statusRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
           });
+          if (!statusRes.ok) continue; // transient server error — retry
           const data = await statusRes.json();
           const st = data?.transaction?.status;
           if (st === 'approved' || st === 'fulfilled') {
             setPayResult('success');
             setPayKcCredited(data.transaction.kc_amount || 0);
-            try { payWindow?.close(); } catch {}
+            try { payWindow.close(); } catch {}
+            settled = true;
             break;
           }
-          if (st === 'failed' || st === 'expired') { setPayResult('error'); break; }
-          if (payWindow?.closed) {
+          if (st === 'failed' || st === 'expired') { setPayResult('error'); settled = true; break; }
+          // User closed the payment window — do one final status check
+          if (payWindow.closed) {
             await new Promise(r => setTimeout(r, 5000));
-            const fRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
-              headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
-            });
-            const fData = await fRes.json();
-            const fSt = fData?.transaction?.status;
-            if (fSt === 'approved' || fSt === 'fulfilled') {
-              setPayResult('success'); setPayKcCredited(fData.transaction.kc_amount || 0);
-            } else { setPayResult('error'); }
+            try {
+              const fRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
+              });
+              const fData = await fRes.json();
+              const fSt = fData?.transaction?.status;
+              if (fSt === 'approved' || fSt === 'fulfilled') {
+                setPayResult('success'); setPayKcCredited(fData.transaction.kc_amount || 0);
+              } else { setPayResult('error'); }
+            } catch { setPayResult('error'); }
+            settled = true;
             break;
           }
-        } catch {}
+        } catch { /* transient network error — retry next iteration */ }
       }
+      // Polling timed out without a definitive status — show error so user is not left hanging
+      if (!settled) setPayResult('error');
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : (es ? 'Error al crear el pago' : 'Error creating payment'));
       setPayLoading('');
