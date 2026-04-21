@@ -243,39 +243,32 @@ export async function checkProductAvailable(productId: string): Promise<boolean>
   } catch { return true; } // default available if endpoint fails
 }
 
-/* ── Chat (Autobuyer V2 direct connection) ── */
-
-const AUTOBUYER = import.meta.env.VITE_AUTOBUYER_URL || 'http://localhost:7788';
-const AB_API = `${AUTOBUYER}/api/v1`;
-
-// Header required by ngrok free tier to skip browser warning page
-const AB_HEADERS: Record<string, string> = { 'ngrok-skip-browser-warning': '1' };
+/* ── Chat (proxied through Go backend — avoids ngrok URL expiry) ── */
 
 export async function chatStart(): Promise<string> {
   const lang = localStorage.getItem('kc_lang') || 'es';
-  const res = await fetch(`${AB_API}/chat/start?lang=${lang}`, {
+  const res = await fetch(`${BASE}/store/chat/start?lang=${lang}`, {
     method: 'POST',
-    headers: AB_HEADERS,
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.detail || `Error ${res.status}`);
+  if (!res.ok) throw new Error(body.error || body.detail || `Error ${res.status}`);
   return body.session_id as string;
 }
 
 export async function chatSendMessage(sessionId: string, text: string): Promise<void> {
-  const res = await fetch(`${AB_API}/chat/message`, {
+  const res = await fetch(`${BASE}/store/chat/message`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...AB_HEADERS },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ session_id: sessionId, text }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || `Error ${res.status}`);
+    throw new Error(body.error || body.detail || `Error ${res.status}`);
   }
 }
 
-export function chatStreamURL(sessionId: string): string {
-  return `${AB_API}/chat/stream/${sessionId}`;
+export function chatPollURL(sessionId: string): string {
+  return `${BASE}/store/chat/poll/${sessionId}`;
 }
 
 /* ── Admin ── */

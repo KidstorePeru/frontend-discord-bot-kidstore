@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Loader2, Bot, Globe, Rocket, HelpCircle, ShieldCheck, Trash2 } from 'lucide-react';
 import { useLang } from '../context/LangContext';
-import { chatStart, chatSendMessage } from '../services/api';
+import { chatStart, chatSendMessage, chatPollURL } from '../services/api';
 
 interface Message {
   role: 'user' | 'bot';
@@ -33,17 +33,14 @@ export default function ChatBot() {
   const sseRef = useRef<EventSource | null>(null);
   const langRef = useRef(lang);
 
-  // Poll for new messages (replaces SSE which doesn't work with ngrok free)
+  // Poll for new messages (proxied through Go backend — no ngrok URL needed)
   const connectSSE = useCallback((sid: string) => {
     // Stop any existing poll
     if (sseRef.current) { clearInterval(sseRef.current as unknown as number); }
 
-    const AB = import.meta.env.VITE_AUTOBUYER_URL || 'http://localhost:7788';
     const pollInterval = setInterval(async () => {
       try {
-        const res = await fetch(`${AB}/api/v1/chat/poll/${sid}`, {
-          headers: { 'ngrok-skip-browser-warning': '1' },
-        });
+        const res = await fetch(chatPollURL(sid));
         if (res.status === 404) {
           // Session expired — create a new one
           clearInterval(pollInterval);
