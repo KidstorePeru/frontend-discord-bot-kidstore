@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { KC_PACKAGES, COMMISSIONS, withCommission, formatReferencePrice } from '../services/constants';
 import type { PaymentInfo } from '../services/constants';
-import { getPaymentInfo, getExchangeRates, createPayment } from '../services/api';
+import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment } from '../services/api';
 import type { KCPackage } from '../types';
 import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
@@ -194,7 +194,12 @@ export default function Recharge() {
               const fSt = fData?.transaction?.status;
               if (fSt === 'approved' || fSt === 'fulfilled') {
                 setPayResult('success'); setPayKcCredited(fData.transaction.kc_amount || 0);
-              } else { setPayResult('error'); }
+              } else {
+                setPayResult('error');
+                // El usuario cerró la ventana sin completar el pago — avisar al
+                // backend para que no se quede "pendiente" en su historial.
+                cancelPayment(res.payment_id).catch(() => {});
+              }
             } catch { setPayResult('error'); }
             settled = true;
             break;
@@ -202,7 +207,10 @@ export default function Recharge() {
         } catch { /* transient network error — retry next iteration */ }
       }
       // Polling timed out without a definitive status — show error so user is not left hanging
-      if (!settled) setPayResult('error');
+      if (!settled) {
+        setPayResult('error');
+        cancelPayment(res.payment_id).catch(() => {});
+      }
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : (es ? 'Error al crear el pago' : 'Error creating payment'));
       setPayLoading('');

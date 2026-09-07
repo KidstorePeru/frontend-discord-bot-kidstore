@@ -275,6 +275,13 @@ export async function getPaymentStatus(paymentId: string) {
   return request<{ success: boolean; transaction: { id: string; status: string; payment_type: string; product_name: string; kc_amount: number } }>(`/store/payment-status/${paymentId}`);
 }
 
+// Marca un pago propio como cancelado en cuanto la pasarela nos redirige con
+// status=failure — sin esto se queda "pendiente" en el historial hasta que
+// el barrido automático del backend lo expira (hasta 30 min después).
+export async function cancelPayment(paymentId: string): Promise<{ success: boolean; cancelled: boolean }> {
+  return request<{ success: boolean; cancelled: boolean }>(`/store/payment/${paymentId}/cancel`, { method: 'POST' });
+}
+
 /* ── Product Availability ── */
 
 export async function checkProductAvailable(productId: string): Promise<boolean> {

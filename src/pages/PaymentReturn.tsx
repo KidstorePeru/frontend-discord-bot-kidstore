@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { useAuth } from '../context/AuthContext';
-import { getPaymentStatus } from '../services/api';
+import { getPaymentStatus, cancelPayment } from '../services/api';
 import { CheckCircle, XCircle, Loader2, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
 
@@ -38,8 +38,14 @@ export default function PaymentReturn() {
           // falló (status=failure en la URL) — el backend puede tardar hasta 30
           // min en marcar la transacción como expirada por su cuenta, así que no
           // tiene sentido reintentar 8 veces (~20s) y terminar mostrando "pago
-          // pendiente" para siempre en cada recarga de la página.
-          if (status === 'failure') { setState('error'); return; }
+          // pendiente" para siempre en cada recarga de la página. Se le avisa
+          // al backend para que quede reflejado ya mismo en el historial de
+          // recargas del cliente, no recién cuando la expire el barrido.
+          if (status === 'failure') {
+            setState('error');
+            cancelPayment(paymentId).catch(() => {});
+            return;
+          }
           if (attempts > 0) { await new Promise(r => setTimeout(r, 2500)); return check(attempts - 1); }
           setState('pending');
         };
