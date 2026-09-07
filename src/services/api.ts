@@ -144,7 +144,7 @@ export async function getMyOrders(page = 1, limit = 20): Promise<{ orders: Order
 
 export async function updateProfile(data: {
   epic_username?: string;
-  email?: string;
+  phone?: string | null;
   current_password?: string;
   new_password?: string;
 }): Promise<{ token: string; customer: Customer }> {
@@ -155,15 +155,43 @@ export async function updateProfile(data: {
   return { token: res.token, customer: res.customer };
 }
 
-export async function linkDiscord(discord_id: string, discord_username: string): Promise<void> {
-  await request('/store/link-discord', {
+export async function updateAvatar(avatarDataUrl: string): Promise<Customer> {
+  const res = await request<{ success: boolean; customer: Customer }>('/store/avatar', {
+    method: 'PUT',
+    body: JSON.stringify({ avatar: avatarDataUrl }),
+  });
+  return res.customer;
+}
+
+export async function requestEmailChange(newEmail: string, currentPassword?: string): Promise<void> {
+  await request('/store/email/request-change', {
     method: 'POST',
-    body: JSON.stringify({ discord_id, discord_username }),
+    body: JSON.stringify({ new_email: newEmail, current_password: currentPassword || '' }),
   });
 }
 
-export async function unlinkDiscord(): Promise<void> {
-  await request('/store/unlink-discord', { method: 'DELETE' });
+export async function confirmEmailChange(code: string): Promise<{ token: string; customer: Customer }> {
+  const res = await request<{ success: boolean; token: string; customer: Customer }>('/store/email/confirm-change', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+  return { token: res.token, customer: res.customer };
+}
+
+/* ── Account linking (Google / Discord) ── */
+
+export async function startAccountLink(provider: 'google' | 'discord'): Promise<string> {
+  const res = await request<{ success: boolean; link_token: string }>(`/store/link/${provider}/start`, {
+    method: 'POST',
+  });
+  return res.link_token;
+}
+
+export async function unlinkAccount(provider: 'google' | 'discord'): Promise<Customer> {
+  const res = await request<{ success: boolean; customer: Customer }>(`/store/link/${provider}`, {
+    method: 'DELETE',
+  });
+  return res.customer;
 }
 
 /* ── Recharge History ── */
@@ -189,10 +217,25 @@ export async function getPaymentInfo(): Promise<Record<string, Record<string, st
   return request<Record<string, Record<string, string>>>('/store/payment-info');
 }
 
+/* ── Bots status (público) ── */
+
+export interface BotsStatusResponse {
+  success: boolean;
+  accounts: { id: string; display_name: string; remaining_gifts: number; vbucks: number; is_active: boolean; created_at: string }[];
+  in_schedule: boolean;
+  reason: string;
+  schedule: { enabled: boolean; start_hour: number; end_hour: number; timezone: string };
+  current_time: string;
+}
+
+export async function getBotsStatus(): Promise<BotsStatusResponse> {
+  return request<BotsStatusResponse>('/store/bots-status');
+}
+
 /* ── Exchange Rates ── */
 
-export async function getExchangeRates(): Promise<{ USD: number; EUR: number; fetchedAt: number }> {
-  return request<{ USD: number; EUR: number; fetchedAt: number }>('/store/exchange-rates');
+export async function getExchangeRates(): Promise<{ USD: number; EUR: number; rates: Record<string, number>; fetchedAt: number }> {
+  return request<{ USD: number; EUR: number; rates: Record<string, number>; fetchedAt: number }>('/store/exchange-rates');
 }
 
 /* ── Orders ── */
@@ -215,23 +258,21 @@ export async function createOrder(data: {
 
 export async function createPayment(
   gateway: string, paymentType: string, productId: string,
-  custom?: { name: string; price: number; kc?: number }
+  custom?: { name: string; price: number; kc?: number },
+  currency?: string
 ): Promise<{ payment_id: string; checkout_url: string }> {
   return request<{ success: boolean; payment_id: string; checkout_url: string }>('/store/payment', {
     method: 'POST',
     body: JSON.stringify({
       gateway, payment_type: paymentType, product_id: productId,
       ...(custom ? { custom_name: custom.name, custom_price: custom.price, custom_kc: custom.kc || 0 } : {}),
+      ...(currency ? { currency } : {}),
     }),
   });
 }
 
 export async function getPaymentStatus(paymentId: string) {
   return request<{ success: boolean; transaction: { id: string; status: string; payment_type: string; product_name: string; kc_amount: number } }>(`/store/payment-status/${paymentId}`);
-}
-
-export async function capturePayPalPayment(paymentId: string, token: string) {
-  return request<{ success: boolean }>(`/store/paypal-capture?id=${paymentId}&token=${token}`, { method: 'POST' });
 }
 
 /* ── Product Availability ── */
@@ -241,34 +282,6 @@ export async function checkProductAvailable(productId: string): Promise<boolean>
     const res = await request<{ success: boolean; available: boolean }>(`/store/product-available/${productId}`);
     return res.available;
   } catch { return true; } // default available if endpoint fails
-}
-
-/* ── Chat (proxied through Go backend — avoids ngrok URL expiry) ── */
-
-export async function chatStart(): Promise<string> {
-  const lang = localStorage.getItem('kc_lang') || 'es';
-  const res = await fetch(`${BASE}/store/chat/start?lang=${lang}`, {
-    method: 'POST',
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || body.detail || `Error ${res.status}`);
-  return body.session_id as string;
-}
-
-export async function chatSendMessage(sessionId: string, text: string): Promise<void> {
-  const res = await fetch(`${BASE}/store/chat/message`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, text }),
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || body.detail || `Error ${res.status}`);
-  }
-}
-
-export function chatPollURL(sessionId: string): string {
-  return `${BASE}/store/chat/poll/${sessionId}`;
 }
 
 /* ── Admin ── */
@@ -311,16 +324,6 @@ export async function adminRechargeKC(adminKey: string, data: {
   });
 }
 
-/* ── Discord OAuth ── */
-
-export async function getDiscordAuthURL(): Promise<string> {
-  const token = localStorage.getItem('kc_token') || '';
-  const res = await request<{ success: boolean; url: string }>(
-    `/discord/auth?token=${encodeURIComponent(token)}`
-  );
-  return res.url;
-}
-
 /* ── Email verification ── */
 
 export async function verifyEmail(token: string): Promise<{ token: string; customer: Customer }> {
@@ -336,4 +339,27 @@ export async function resendVerification(email: string, lang?: string): Promise<
     headers: { 'X-Lang': lang || getLang() },
     body: JSON.stringify({ email, lang: lang || getLang() }),
   });
+}
+
+/* ── OAuth (Google / Discord) ── */
+
+export async function getPendingOAuthRegistration(token: string): Promise<{
+  provider: string;
+  display_name: string | null;
+  email: string | null;
+}> {
+  const res = await request<{ success: boolean; provider: string; display_name: string | null; email: string | null }>(
+    `/auth/pending/${token}`
+  );
+  return { provider: res.provider, display_name: res.display_name, email: res.email };
+}
+
+export async function completeOAuthRegistration(
+  token: string, epic_username: string
+): Promise<{ token: string; refresh_token: string; customer: Customer }> {
+  const res = await request<{ success: boolean; token: string; refresh_token: string; customer: Customer }>(
+    '/auth/complete-registration',
+    { method: 'POST', body: JSON.stringify({ token, epic_username }) }
+  );
+  return { token: res.token, refresh_token: res.refresh_token, customer: res.customer };
 }

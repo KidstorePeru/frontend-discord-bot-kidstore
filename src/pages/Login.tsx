@@ -1,9 +1,16 @@
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, type FormEvent } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { login } from '../services/api';
 import { LogIn, Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
+import OAuthButtons from '../components/OAuthButtons';
+
+const OAUTH_ERROR_MESSAGES: Record<string, { es: string; en: string }> = {
+  invalid_state:      { es: 'La sesión de inicio expiró, intenta de nuevo.', en: 'The login session expired, please try again.' },
+  exchange_failed:    { es: 'No se pudo verificar tu cuenta. Intenta de nuevo.', en: "We couldn't verify your account. Please try again." },
+  user_fetch_failed:  { es: 'No se pudo obtener tu perfil. Intenta de nuevo.', en: "We couldn't fetch your profile. Please try again." },
+};
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,7 +20,17 @@ export default function Login() {
   const { setAuth } = useAuth();
   const { t, lang } = useLang();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const es = lang === 'es';
+
+  useEffect(() => {
+    const oauthError = params.get('oauth_error');
+    if (!oauthError) return;
+    const msg = OAUTH_ERROR_MESSAGES[oauthError];
+    setError(msg ? (es ? msg.es : msg.en) : (es ? 'Error al iniciar sesión. Intenta de nuevo.' : 'Login error. Please try again.'));
+    window.history.replaceState({}, '', '/login');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault(); setError(''); setLoading(true);
@@ -49,7 +66,7 @@ export default function Login() {
         <div className="auth-panel-features">
           <div className="auth-panel-feat"><div className="auth-panel-feat-dot" />{es ? '+200 items disponibles a diario' : '+200 items available daily'}</div>
           <div className="auth-panel-feat"><div className="auth-panel-feat-dot" />{es ? 'Entrega automática en menos de 48h' : 'Automatic delivery in less than 48h'}</div>
-          <div className="auth-panel-feat"><div className="auth-panel-feat-dot" />{es ? 'Pago con Yape, Plin, PayPal y más' : 'Pay with Yape, Plin, PayPal and more'}</div>
+          <div className="auth-panel-feat"><div className="auth-panel-feat-dot" />{es ? 'Pago con Yape, Plin, MercadoPago y más' : 'Pay with Yape, Plin, MercadoPago and more'}</div>
         </div>
       </div>
 
@@ -63,6 +80,9 @@ export default function Login() {
           {error && (
             <div className="auth-error"><AlertCircle size={15} />{error}</div>
           )}
+
+          <OAuthButtons />
+          <div className="oauth-divider"><span>{es ? 'o continúa con tu correo' : 'or continue with email'}</span></div>
 
           <label className="field">
             <span><Mail size={11} style={{ display: 'inline', marginRight: 4 }} />{t('auth.register.email')}</span>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { KCBadge, StatusBadge, Toast } from '../components/UI';
 import type { Customer, Order } from '../types';
@@ -11,7 +11,8 @@ import {
   CreditCard
 } from 'lucide-react';
 
-type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments' | 'availability' | 'autobuyer';
+type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments';
+const ADMIN_TABS: AdminTab[] = ['stats', 'customers', 'orders', 'recharge', 'bots', 'schedule', 'payments'];
 const ADMIN_PER_PAGE = 10;
 
 function AdminPagination({ page, total, setPage }: { page: number; total: number; setPage: (p: number) => void }) {
@@ -61,16 +62,31 @@ interface BotSchedule {
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
+// Tiempo relativo simple (ej. "hace 3 días") para no mostrar solo la fecha cruda.
+function timeAgo(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diffMs / 86400000);
+  if (days <= 0) return 'hoy';
+  if (days === 1) return 'ayer';
+  if (days < 30) return `hace ${days} días`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `hace ${months} mes${months > 1 ? 'es' : ''}`;
+  const years = Math.floor(months / 12);
+  return `hace ${years} año${years > 1 ? 's' : ''}`;
+}
+
 export default function AdminPanel() {
   const { isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { tab: tabParam } = useParams<{ tab: string }>();
+  const tab: AdminTab = (tabParam && ADMIN_TABS.includes(tabParam as AdminTab)) ? (tabParam as AdminTab) : 'stats';
   const authed = isAdmin;
-  const [tab,      setTab]      = useState<AdminTab>('stats');
   const [loading,  setLoading]  = useState(false);
   const [toast,    setToast]    = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [search,   setSearch]   = useState('');
 
   const [stats, setStats] = useState<any>(null);
+  const [slotPeriod, setSlotPeriod] = useState<'today' | 'week' | 'month' | 'all_time'>('all_time');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders,    setOrders]    = useState<Order[]>([]);
   const [custPage,    setCustPage]    = useState(1);
@@ -80,17 +96,6 @@ export default function AdminPanel() {
   const [payFilter,   setPayFilter]   = useState('all');
   const [orderFilter, setOrderFilter] = useState('all');
   const [bots,      setBots]      = useState<BotAccount[]>([]);
-
-  // Product availability
-  interface ProdAvail { product_id: string; enabled: boolean; schedule_enabled: boolean; start_hour: number; end_hour: number; timezone: string }
-  const [availItems, setAvailItems] = useState<ProdAvail[]>([]);
-  const [availLoading, setAvailLoading] = useState(false);
-  const PRODUCT_LIST = [
-    { id: 'club-monthly', name: 'Fortnite Crew' },
-    { id: 'vb-800', name: '800 V-Bucks' }, { id: 'vb-2400', name: '2400 V-Bucks' }, { id: 'vb-4500', name: '4500 V-Bucks' }, { id: 'vb-12500', name: '12500 V-Bucks' },
-    { id: 'pack-koi', name: 'Pack de Reino Koi' }, { id: 'pack-drift', name: 'Pack Deriva Infinita' }, { id: 'pack-brite', name: 'Pack de inicio de Operación brillante' },
-    { id: 'rl-500', name: '500 RL Credits' }, { id: 'rl-1100', name: '1100 RL Credits' }, { id: 'rl-3000', name: '3000 RL Credits' }, { id: 'rl-6500', name: '6500 RL Credits' },
-  ];
 
   // Schedule
   const [schedule,        setSchedule]        = useState<BotSchedule | null>(null);
@@ -154,10 +159,6 @@ export default function AdminPanel() {
       else if (t === 'payments') {
         const r = await adminFetch('/admin/payments');
         setPayments(r.payments || []);
-      }
-      else if (t === 'availability') {
-        const r = await adminFetch('/admin/product-availability');
-        setAvailItems(r.items || []);
       }
       else if (t === 'schedule') {
         const r = await adminFetch('/admin/bot-schedule');
@@ -328,6 +329,10 @@ export default function AdminPanel() {
     </div>
   );
 
+  if (!tabParam || !ADMIN_TABS.includes(tabParam as AdminTab)) {
+    return <Navigate to="/admin/stats" replace />;
+  }
+
   return (
     <div className="admin-page">
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)}/>}
@@ -453,12 +458,10 @@ export default function AdminPanel() {
           ['bots',     'Cuentas Bot',  <Bot size={15}/>],
           ['payments', 'Pagos',        <CreditCard size={15}/>],
           ['schedule', 'Horario Bots', <Clock size={15}/>],
-          ['availability','Disponibilidad', <ToggleRight size={15}/>],
-          ['autobuyer','Autobuyer',    <Zap size={15}/>],
         ] as [AdminTab, string, React.ReactNode][]).map(([key, label, icon]) => (
-          <button key={key} className={`admin-tab ${tab===key?'active':''}`} onClick={() => setTab(key)}>
+          <Link key={key} to={`/admin/${key}`} className={`admin-tab ${tab===key?'active':''}`}>
             {icon} {label}
-          </button>
+          </Link>
         ))}
       </div>
 
@@ -473,7 +476,7 @@ export default function AdminPanel() {
           <div className="admin-stats-row">
             <div className="admin-revenue-card admin-revenue-main">
               <div className="admin-revenue-header">
-                <span className="admin-revenue-label">Revenue Total</span>
+                <span className="admin-revenue-label">Ingresos Totales</span>
                 <CreditCard size={18} style={{color:'var(--accent)'}}/>
               </div>
               <span className="admin-revenue-value">S/ {(stats.revenue_total_pen || 0).toFixed(2)}</span>
@@ -555,12 +558,110 @@ export default function AdminPanel() {
               ))}
             </div>
           </div>
+
+          {/* Slot (/slot en Discord) — ganancia/pérdida de la casa */}
+          {(() => {
+            const periods: Record<string, any> = {
+              today: stats.slot_stats?.today,
+              week: stats.slot_stats?.week,
+              month: stats.slot_stats?.month,
+              all_time: stats.slot_stats?.all_time,
+            };
+            const p = periods[slotPeriod] || {};
+            const plays = p.plays ?? 0;
+            const wagered = p.wagered ?? 0;
+            const gain = p.gain ?? 0;
+            const loss = p.loss ?? 0;
+            const net = p.net ?? 0;
+            const winRate = p.win_rate_pct ?? 0;
+            const netColor = net >= 0 ? '#22c55e' : '#dc2626';
+            const periodLabels: [string, string][] = [
+              ['today', 'Hoy'], ['week', 'Últimos 7 días'], ['month', 'Últimos 30 días'], ['all_time', 'Histórico total'],
+            ];
+
+            return (
+              <div className="admin-card" style={{ marginTop: 20 }}>
+                <h4 className="admin-card-title"><Gamepad2 size={16}/> Slot de Discord (/slot) — Cuánto te deja el juego</h4>
+
+                <div className="admin-info-box">
+                  Cada vez que un cliente <strong>pierde</strong> su apuesta, ese KC se queda contigo — eso es <strong style={{ color: '#22c55e' }}>ganancia</strong>.
+                  Cada vez que <strong>gana</strong>, tienes que pagarle KC de vuelta — eso es <strong style={{ color: '#dc2626' }}>pérdida</strong>.
+                  El <strong>Balance neto</strong> es la resta de ambos: si es positivo (verde), el juego te está dejando KC a favor; si es negativo (rojo), le has pagado más de lo que has ganado.
+                  <div style={{ marginTop: 6, opacity: .7 }}>Probabilidad configurada: 3% de que el cliente gane, y paga 2x lo que apostó.</div>
+                </div>
+
+                {/* Selector de período */}
+                <div className="admin-period-tabs">
+                  {periodLabels.map(([key, label]) => (
+                    <button key={key} className={`admin-period-btn ${slotPeriod === key ? 'active' : ''}`} onClick={() => setSlotPeriod(key as any)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Balance neto — número principal */}
+                <div className="admin-revenue-card" style={{ marginTop: 14, borderColor: net >= 0 ? 'rgba(34,197,94,.3)' : 'rgba(220,38,38,.3)' }}>
+                  <div className="admin-revenue-header">
+                    <span className="admin-revenue-label">Balance neto — {periodLabels.find(([k]) => k === slotPeriod)?.[1]}</span>
+                    <Gamepad2 size={18} style={{ color: netColor }}/>
+                  </div>
+                  <span className="admin-revenue-value" style={{ color: netColor }}>
+                    {net >= 0 ? '+' : ''}{net.toLocaleString()} KC
+                  </span>
+                  <div className="admin-revenue-sub">
+                    <span>Ganancia: <strong style={{ color: '#22c55e' }}>+{gain.toLocaleString()} KC</strong></span>
+                    <span>Pérdida: <strong style={{ color: '#dc2626' }}>-{loss.toLocaleString()} KC</strong></span>
+                  </div>
+                </div>
+
+                {/* Datos de apoyo */}
+                <div className="admin-stats-grid" style={{ marginTop: 14, padding: 0 }}>
+                  {[
+                    { label: 'Jugadas', value: plays.toLocaleString(), sub: `en este período`, icon: <Gamepad2 size={20}/>, color: '#6c5ce7' },
+                    { label: 'KC apostado', value: wagered.toLocaleString(), sub: 'total apostado', icon: <Coins size={20}/>, color: '#f59e0b' },
+                    { label: '% de victoria real', value: `${winRate.toFixed(1)}%`, sub: 'lo configurado es 3%', icon: <TrendingUp size={20}/>, color: '#3b82f6' },
+                  ].map(s => (
+                    <div className="admin-stat-card" key={s.label} style={{ '--stat-color': s.color } as React.CSSProperties}>
+                      <div className="admin-stat-icon">{s.icon}</div>
+                      <div>
+                        <span className="admin-stat-label">{s.label}</span>
+                        <span className="admin-stat-value">{s.value}</span>
+                        <span className="admin-stat-sub">{s.sub}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Top ganadores */}
+                {(stats.slot_stats?.top_winners || []).length > 0 && (
+                  <>
+                    <h4 className="admin-card-title" style={{ marginTop: 20 }}><TrendingUp size={16}/> Clientes que más te han ganado (histórico)</h4>
+                    <p className="admin-empty-text" style={{ margin: '-4px 0 10px' }}>
+                      Cuánto KC neto se ha llevado cada uno jugando /slot — útil para detectar rachas de suerte fuera de lo normal.
+                    </p>
+                    {stats.slot_stats.top_winners.map((w: any) => (
+                      <div key={w.customer_id} className="admin-recent-row">
+                        <div>
+                          <span className="admin-recent-product">{w.epic_username}</span>
+                          <span className="admin-recent-gateway">{w.plays} jugada{w.plays === 1 ? '' : 's'}</span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span className="admin-recent-amount" style={{ color: '#dc2626' }}>+{Number(w.net_kc).toLocaleString()} KC</span>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
       {/* ── CUSTOMERS ── */}
       {tab === 'customers' && !loading && (
         <div className="admin-table-section">
+          <p className="admin-tab-sub">Todos los clientes registrados. Click en una fila para editar su cuenta o hacerlo administrador.</p>
           <div className="adm-section-head">
             <div className="admin-search-bar">
               <Search size={15}/>
@@ -572,7 +673,7 @@ export default function AdminPanel() {
             <table className="admin-table">
               <thead><tr>
                 <th>Usuario Epic</th><th>Email</th><th>Balance KC</th>
-                <th>Discord</th><th>Rol</th><th>Registrado</th><th>Acciones</th>
+                <th>Rol</th><th>Registrado</th><th>Acciones</th>
               </tr></thead>
               <tbody>
                 {pagedCustomers.map(c => (
@@ -580,7 +681,6 @@ export default function AdminPanel() {
                     <td><div className="adm-user-cell"><div className="adm-user-avatar">{c.epic_username[0].toUpperCase()}</div><strong>{c.epic_username}</strong></div></td>
                     <td className="text-muted">{c.email}</td>
                     <td><KCBadge amount={c.kc_balance} size="sm"/></td>
-                    <td className="text-muted">{c.discord_username || '—'}</td>
                     <td>
                       {c.is_admin
                         ? <span className="adm-role-badge adm-role-admin"><ShieldCheck size={12}/> Admin</span>
@@ -610,7 +710,7 @@ export default function AdminPanel() {
                     </td>
                   </tr>
                 ))}
-                {filteredCustomers.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin resultados</td></tr>}
+                {filteredCustomers.length === 0 && <tr><td colSpan={6} className="adm-empty-row">Sin resultados</td></tr>}
               </tbody>
             </table>
           </div>
@@ -621,19 +721,16 @@ export default function AdminPanel() {
       {/* ── ORDERS ── */}
       {tab === 'orders' && !loading && (
         <div className="admin-table-section">
+          <p className="admin-tab-sub">Pedidos de ítems de la tienda pagados con KC. "Procesando" significa que el bot todavía está enviando el regalo en Fortnite.</p>
           <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="admin-search-bar">
               <Search size={15}/>
               <input placeholder="Buscar por usuario o item..." value={search} onChange={e => setSearch(e.target.value)}/>
             </div>
             <span className="adm-count">{filteredOrders.length} pedido{filteredOrders.length !== 1 ? 's' : ''}</span>
-            <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+            <div className="adm-filter-row">
               {['all','pending','processing','sent','failed','refunded'].map(s => (
-                <button key={s} onClick={() => setOrderFilter(s)}
-                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: '.75rem', fontWeight: 600,
-                    border: '1px solid var(--border)', cursor: 'pointer',
-                    background: orderFilter === s ? 'var(--accent)' : 'var(--bg-elevated)',
-                    color: orderFilter === s ? '#fff' : 'var(--text-muted)' }}>
+                <button key={s} className={`adm-filter-btn ${orderFilter === s ? 'active' : ''}`} onClick={() => setOrderFilter(s)}>
                   {s === 'all' ? 'Todos' : s === 'sent' ? 'Enviados' : s === 'pending' ? 'Pendientes' :
                    s === 'processing' ? 'Procesando' : s === 'failed' ? 'Fallidos' : s === 'refunded' ? 'Reembolsados' : s}
                 </button>
@@ -667,16 +764,12 @@ export default function AdminPanel() {
       {/* ── PAYMENTS ── */}
       {tab === 'payments' && !loading && (
         <div className="admin-table-section">
+          <p className="admin-tab-sub">Recargas de KC pagadas por pasarela automática (MercadoPago, dLocal Go, PayPal, cripto). Los pagos manuales (Yape, Plin, banco) no aparecen aquí — esos se acreditan desde la pestaña "Recargar KC".</p>
           <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="adm-count">{payments.length} transacci{payments.length !== 1 ? 'ones' : 'ón'}</span>
-            <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+            <div className="adm-filter-row">
               {['all','pending','approved','fulfilled','expired','failed'].map(s => (
-                <button key={s} className={`adm-filter-btn ${payFilter === s ? 'active' : ''}`}
-                  onClick={() => setPayFilter(s)}
-                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: '.75rem', fontWeight: 600,
-                    border: '1px solid var(--border)', cursor: 'pointer',
-                    background: payFilter === s ? 'var(--accent)' : 'var(--bg-elevated)',
-                    color: payFilter === s ? '#fff' : 'var(--text-muted)' }}>
+                <button key={s} className={`adm-filter-btn ${payFilter === s ? 'active' : ''}`} onClick={() => setPayFilter(s)}>
                   {s === 'all' ? 'Todos' : s.charAt(0).toUpperCase() + s.slice(1)}
                 </button>
               ))}
@@ -685,7 +778,7 @@ export default function AdminPanel() {
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead><tr>
-                <th>Gateway</th><th>Producto</th><th>Monto</th><th>Código</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
+                <th>Pasarela</th><th>Producto</th><th>Monto</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
               </tr></thead>
               <tbody>
               {filteredPayments.slice((paymentPage-1)*ADMIN_PER_PAGE, paymentPage*ADMIN_PER_PAGE).map((p: any) => (
@@ -693,7 +786,6 @@ export default function AdminPanel() {
                     <td><span style={{textTransform:'capitalize', fontWeight:600}}>{p.gateway}</span></td>
                     <td>{p.product_name}</td>
                     <td><strong>S/ {Number(p.amount_pen).toFixed(2)}</strong></td>
-                    <td style={{fontFamily:'monospace', fontSize:'.8rem'}}>{p.activation_code || '—'}</td>
                     <td>
                       <span className="status-badge" style={{ '--badge-color':
                         p.status === 'approved' ? '#22c55e' : p.status === 'fulfilled' ? '#3b82f6' :
@@ -727,7 +819,7 @@ export default function AdminPanel() {
                     </td>
                   </tr>
                 ))}
-                {filteredPayments.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin transacciones</td></tr>}
+                {filteredPayments.length === 0 && <tr><td colSpan={6} className="adm-empty-row">Sin transacciones</td></tr>}
               </tbody>
             </table>
           </div>
@@ -740,6 +832,9 @@ export default function AdminPanel() {
         <div className="admin-recharge-layout">
           <div className="admin-recharge-customers">
             <h3><Users size={15}/> Seleccionar cliente</h3>
+            <p className="admin-tab-sub" style={{ marginTop: -8 }}>
+              Usa esto para acreditar KC manualmente — pagos por Yape, Plin, transferencia bancaria o cualquier otro que verifiques tú mismo.
+            </p>
             <div className="admin-search-bar" style={{marginBottom:12}}>
               <Search size={15}/>
               <input placeholder="Buscar por usuario Epic o email..." value={rSearch} onChange={e => setRSearch(e.target.value)} autoFocus/>
@@ -813,6 +908,9 @@ export default function AdminPanel() {
                 <button className="btn btn-ghost btn-sm" onClick={() => loadTab('bots')}><RefreshCw size={13}/> Actualizar</button>
               </div>
             </div>
+            <p className="admin-bots-sub">
+              Cuentas de Fortnite que envían los regalos a tus clientes. Cada una permite hasta 5 regalos por día — cuando una queda "Inactiva", su sesión con Epic Games expiró y hay que vincularla de nuevo.
+            </p>
             {loading ? <div className="admin-loading"><Loader2 className="spin" size={24}/></div>
             : bots.length === 0 ? <div className="empty-state"><Bot size={40} strokeWidth={1}/><p>No hay cuentas bot vinculadas</p></div>
             : (
@@ -824,17 +922,20 @@ export default function AdminPanel() {
                       <div className="bca-info">
                         <strong>{bot.display_name}</strong>
                         <span className={`bca-status ${bot.is_active ? 'active' : 'inactive'}`}>
-                          {bot.is_active ? '● Activa' : '● Inactiva — requiere nueva vinculación'}
+                          {bot.is_active ? 'Activa' : 'Inactiva'}
                         </span>
+                        {!bot.is_active && (
+                          <span style={{ fontSize: '.7rem', color: 'var(--text-muted)' }}>Requiere reconexión con Epic Games</span>
+                        )}
                       </div>
                       <div className="bca-actions">
-                        <button className="admin-action-btn" title="Editar" onClick={() => openEditBot(bot)}><Zap size={13}/></button>
+                        <button className="admin-action-btn" title="Editar" onClick={() => openEditBot(bot)}><Edit2 size={13}/></button>
                         <button className="admin-action-btn danger" title="Desconectar" onClick={() => handleDisconnect(bot.id, bot.display_name)}><Trash2 size={13}/></button>
                       </div>
                     </div>
                     <div className="bca-stats">
                       <div className="bca-stat">
-                        <span>Gifts restantes</span>
+                        <span>Gifts restantes hoy</span>
                         <div className="bca-gifts">
                           {Array.from({length:5}).map((_,i) => <div key={i} className={`bca-gift-dot ${i < bot.remaining_gifts ? 'filled' : ''}`}/>)}
                           <strong>{bot.remaining_gifts}/5</strong>
@@ -849,7 +950,7 @@ export default function AdminPanel() {
                       </div>
                       <div className="bca-stat">
                         <span>Vinculada</span>
-                        <strong>{new Date(bot.created_at).toLocaleDateString('es-PE')}</strong>
+                        <strong title={new Date(bot.created_at).toLocaleString('es-PE')}>{timeAgo(bot.created_at)}</strong>
                       </div>
                     </div>
                   </div>
@@ -906,6 +1007,9 @@ export default function AdminPanel() {
                 <RefreshCw size={13}/> Actualizar
               </button>
             </div>
+            <p className="admin-tab-sub">
+              Define en qué horas del día tus bots entregan pedidos. Fuera de ese horario, un cliente puede seguir navegando la tienda, pero al intentar comprar le sale un aviso de que debe esperar a que abras de nuevo.
+            </p>
 
             {loading ? <div className="admin-loading"><Loader2 className="spin" size={24}/></div> : (
               <form onSubmit={handleSaveSchedule} style={{display:'flex',flexDirection:'column',gap:24}}>
@@ -1021,7 +1125,7 @@ export default function AdminPanel() {
                       <option value="UTC">UTC</option>
                     </select>
                     <span style={{fontSize:'0.75rem',color:'var(--text-muted)',marginTop:4}}>
-                      La hora Lima actual es la referencia base del sistema.
+                      Las horas de inicio y fin se calculan según la zona horaria que elijas aquí — no según la tuya.
                     </span>
                   </div>
                 )}
@@ -1080,116 +1184,6 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {/* ── DISPONIBILIDAD ── */}
-      {tab === 'availability' && (
-        <div className="admin-table-section">
-          <div className="adm-section-head">
-            <h3 style={{fontWeight:800,fontSize:'1rem'}}>Control de disponibilidad de productos</h3>
-            <span className="adm-count">{availItems.filter(a => a.enabled).length} activos</span>
-          </div>
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead><tr>
-                <th>Producto</th><th>Estado</th><th>Horario</th><th>Rango</th><th>Acciones</th>
-              </tr></thead>
-              <tbody>
-                {PRODUCT_LIST.map(p => {
-                  const avail = availItems.find(a => a.product_id === p.id);
-                  const enabled = avail ? avail.enabled : true;
-                  const schedOn = avail?.schedule_enabled || false;
-                  const startH = avail?.start_hour ?? 0;
-                  const endH = avail?.end_hour ?? 23;
-                  const tz = avail?.timezone || 'America/Lima';
-                  return (
-                    <tr key={p.id}>
-                      <td><strong>{p.name}</strong><br/><span className="text-muted" style={{fontSize:'.7rem'}}>{p.id}</span></td>
-                      <td>
-                        <button
-                          onClick={async () => {
-                            setAvailLoading(true);
-                            await adminFetch('/admin/product-availability', undefined, {
-                              method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled: !enabled, schedule_enabled: schedOn, start_hour: startH, end_hour: endH, timezone: tz })
-                            });
-                            await loadTab('availability');
-                            setAvailLoading(false);
-                            setToast({ msg: `${p.name}: ${!enabled ? 'activado' : 'desactivado'}`, type: 'success' });
-                          }}
-                          disabled={availLoading}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
-                        >
-                          {enabled
-                            ? <ToggleRight size={32} style={{color:'var(--green-500)'}}/>
-                            : <ToggleLeft size={32} style={{color:'var(--text-muted)'}}/>}
-                        </button>
-                      </td>
-                      <td>
-                        <button
-                          onClick={async () => {
-                            setAvailLoading(true);
-                            await adminFetch('/admin/product-availability', undefined, {
-                              method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled, schedule_enabled: !schedOn, start_hour: startH, end_hour: endH, timezone: tz })
-                            });
-                            await loadTab('availability');
-                            setAvailLoading(false);
-                          }}
-                          disabled={availLoading}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
-                        >
-                          {schedOn
-                            ? <ToggleRight size={24} style={{color:'var(--blue-500)'}}/>
-                            : <ToggleLeft size={24} style={{color:'var(--text-muted)'}}/>}
-                        </button>
-                        {schedOn && <span className="text-muted" style={{fontSize:'.7rem',display:'block'}}>Activo</span>}
-                      </td>
-                      <td>
-                        {schedOn ? (
-                          <div style={{display:'flex',gap:4,alignItems:'center',fontSize:'.82rem'}}>
-                            <select value={startH} onChange={async e => {
-                              setAvailLoading(true);
-                              await adminFetch('/admin/product-availability', undefined, {
-                                method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled, schedule_enabled: schedOn, start_hour: parseInt(e.target.value), end_hour: endH, timezone: tz })
-                              });
-                              await loadTab('availability'); setAvailLoading(false);
-                            }} style={{padding:'4px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-surface)',color:'var(--text-primary)',fontSize:'.8rem'}}>
-                              {Array.from({length:24},(_,i)=>(<option key={i} value={i}>{String(i).padStart(2,'0')}:00</option>))}
-                            </select>
-                            <span>—</span>
-                            <select value={endH} onChange={async e => {
-                              setAvailLoading(true);
-                              await adminFetch('/admin/product-availability', undefined, {
-                                method: 'PUT', body: JSON.stringify({ product_id: p.id, enabled, schedule_enabled: schedOn, start_hour: startH, end_hour: parseInt(e.target.value), timezone: tz })
-                              });
-                              await loadTab('availability'); setAvailLoading(false);
-                            }} style={{padding:'4px 8px',borderRadius:6,border:'1px solid var(--border)',background:'var(--bg-surface)',color:'var(--text-primary)',fontSize:'.8rem'}}>
-                              {Array.from({length:24},(_,i)=>(<option key={i} value={i}>{String(i).padStart(2,'0')}:00</option>))}
-                            </select>
-                          </div>
-                        ) : <span className="text-muted" style={{fontSize:'.78rem'}}>Sin horario</span>}
-                      </td>
-                      <td>
-                        <span className="status-badge" style={{ '--badge-color': enabled ? '#22c55e' : '#dc2626' } as React.CSSProperties}>
-                          {enabled ? (schedOn ? `${String(startH).padStart(2,'0')}:00-${String(endH).padStart(2,'0')}:00` : 'Siempre activo') : 'Desactivado'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ── AUTOBUYER ── */}
-      {tab === 'autobuyer' && (
-        <div style={{ borderRadius: 14, overflow: 'hidden', border: '1.5px solid var(--border)', height: 'calc(100vh - 220px)', minHeight: 500 }}>
-          <iframe
-            src={`${(import.meta.env.VITE_AUTOBUYER_URL as string) || 'http://localhost:7788'}/ui`}
-            style={{ width: '100%', height: '100%', border: 'none' }}
-            title="KidStore Autobuyer"
-          />
-        </div>
-      )}
     </div>
   );
 }

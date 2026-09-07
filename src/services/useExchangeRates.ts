@@ -8,6 +8,7 @@ const TTL_MS    = 24 * 60 * 60 * 1000; // 24 horas
 export interface ExchangeRates {
   USD:       number; // 1 PEN = X USD
   EUR:       number; // 1 PEN = X EUR
+  rates:     Record<string, number>; // 1 PEN = X <código ISO>, para cualquier divisa
   fetchedAt: number;
 }
 
@@ -15,6 +16,7 @@ export interface ExchangeRates {
 export const FALLBACK_RATES: ExchangeRates = {
   USD: 0.27,
   EUR: 0.25,
+  rates: { PEN: 1, USD: 0.27, EUR: 0.25 },
   fetchedAt: 0,
 };
 
@@ -23,6 +25,11 @@ function loadCached(): ExchangeRates | null {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const parsed: ExchangeRates = JSON.parse(raw);
+    // Descarta cachés viejas o guardadas mientras el backend no tenía todavía
+    // la API key real (esas solo traen PEN/USD/EUR de respaldo) — sin esto,
+    // un cliente que visitó la web antes de configurar la key se quedaría
+    // hasta 24h viendo solo 3 divisas aunque el backend ya esté arreglado.
+    if (!parsed.rates || Object.keys(parsed.rates).length < 10) return null;
     if (Date.now() - parsed.fetchedAt < TTL_MS) return parsed;
     return null;
   } catch {
@@ -43,6 +50,7 @@ export async function fetchRates(): Promise<ExchangeRates> {
     const rates: ExchangeRates = {
       USD:       data.USD,
       EUR:       data.EUR,
+      rates:     data.rates || { PEN: 1, USD: data.USD, EUR: data.EUR },
       fetchedAt: data.fetchedAt || Date.now(),
     };
     saveCache(rates);

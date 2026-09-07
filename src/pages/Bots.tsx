@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '../context/LangContext';
+import { getBotsStatus } from '../services/api';
+import type { BotsStatusResponse } from '../services/api';
 import { Copy, CheckCircle2, Clock, Bot, ShieldOff, ShieldCheck, AlertTriangle, Moon } from 'lucide-react';
 
 const STATIC_BOTS = Array.from({ length: 15 }, (_, i) => ({
@@ -12,26 +14,7 @@ const STATIC_BOTS = Array.from({ length: 15 }, (_, i) => ({
   ][i],
 }));
 
-interface BotAccount {
-  id: string;
-  display_name: string;
-  remaining_gifts: number;
-  is_active: boolean;
-}
-
-interface BotsStatusResponse {
-  success: boolean;
-  accounts: BotAccount[];
-  in_schedule: boolean;
-  reason: string;
-  schedule: {
-    enabled: boolean;
-    start_hour: number;
-    end_hour: number;
-    timezone: string;
-  };
-  current_time: string;
-}
+type BotAccount = BotsStatusResponse['accounts'][number];
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
@@ -45,11 +28,8 @@ export default function Bots() {
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL || ''}/store/bots-status`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('kc_token') || ''}` },
-    })
-      .then(r => r.json())
-      .then((d: BotsStatusResponse) => {
+    getBotsStatus()
+      .then(d => {
         if (d.success) {
           setLinkedBots(d.accounts || []);
           setInSchedule(d.in_schedule ?? true);

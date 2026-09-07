@@ -1,7 +1,7 @@
 {
   "name": "KidStorePeru",
   "short_name": "KidStore",
-  "description": "Tienda de items de Fortnite y Rocket League",
+  "description": "Tienda de items de Fortnite con KidCoins",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#6c5ce7",

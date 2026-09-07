@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { Lang } from '../services/i18n';
 import { t as translate, type TranslationKey } from '../services/i18n';
+import { detectGeo, isLatam } from '../services/geo';
 
 interface LangState {
   lang: Lang;
@@ -20,6 +21,21 @@ export function LangProvider({ children }: { children: ReactNode }) {
   });
   const [storeLang, setStoreLangState] = useState<Lang>(lang);
   const [storeOverridden, setStoreOverridden] = useState(false);
+
+  // Si el visitante nunca eligió idioma manualmente, lo detectamos por su
+  // país (geolocalización por IP): Latinoamérica → español, cualquier otro
+  // país → inglés. Nunca pisa una elección ya guardada.
+  useEffect(() => {
+    if (localStorage.getItem('kc_lang')) return;
+    detectGeo().then(geo => {
+      if (localStorage.getItem('kc_lang')) return; // pudo elegir mientras cargaba
+      const detected: Lang = isLatam(geo.countryCode) ? 'es' : 'en';
+      setLangState(detected);
+      setStoreLangState(detected);
+      localStorage.setItem('kc_lang', detected);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);

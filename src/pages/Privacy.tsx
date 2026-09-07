@@ -23,8 +23,8 @@ export default function Privacy() {
             <h2>Cómo usamos tu información</h2>
             <ul><li>Procesar y completar tus pedidos</li><li>Mantener un registro de transacciones</li><li>Enviar notificaciones por correo sobre aprobación de pagos y entregas</li><li>Mejorar nuestros productos y servicios</li></ul>
             <h2>Pasarelas de pago y datos financieros</h2>
-            <p>Cuando pagas mediante MercadoPago, PayPal o NOWPayments, tus datos financieros (números de tarjeta, datos bancarios, direcciones de billetera cripto) son procesados exclusivamente por la pasarela correspondiente. <strong>KidStorePeru nunca ve, almacena ni tiene acceso a tus números de tarjeta ni datos bancarios.</strong> Cada pasarela tiene su propia política de privacidad y seguridad.</p>
-            <p>Los pagos manuales (Yape, Plin, BCP, Interbank, BBVA, Bizum) son verificados por nuestro equipo. Solo registramos la referencia del pago, nunca datos sensibles de tu cuenta bancaria.</p>
+            <p>Cuando pagas mediante MercadoPago (Perú) o dLocal Go (resto del mundo), tus datos financieros (números de tarjeta, datos de Yape u otros métodos locales) son procesados exclusivamente por la pasarela correspondiente. <strong>KidStorePeru nunca ve, almacena ni tiene acceso a tus números de tarjeta ni datos bancarios.</strong> Cada pasarela tiene su propia política de privacidad y seguridad.</p>
+            <p>Los pagos manuales (Yape, Plin, BCP, Interbank y BBVA en Perú; Bizum en España) son verificados por nuestro equipo. Solo registramos la referencia del pago, nunca datos sensibles de tu cuenta bancaria.</p>
             <h2>Seguridad</h2>
             <p>KidStorePeru utiliza sistemas de seguridad actualizados. Tu contraseña se almacena de forma cifrada y nunca se comparte.</p>
             <h2>Cookies</h2>
@@ -39,8 +39,8 @@ export default function Privacy() {
             <h2>How we use your information</h2>
             <ul><li>Process and complete your orders</li><li>Maintain a transaction record</li><li>Send email notifications about payment approvals and deliveries</li><li>Improve our products and services</li></ul>
             <h2>Payment gateways and financial data</h2>
-            <p>When you pay via MercadoPago, PayPal, or NOWPayments, your financial data (card numbers, bank details, crypto wallet addresses) is processed exclusively by the corresponding gateway. <strong>KidStorePeru never sees, stores, or has access to your card numbers or bank details.</strong> Each gateway has its own privacy and security policy.</p>
-            <p>Manual payments (Yape, Plin, BCP, Interbank, BBVA, Bizum) are verified by our team. We only record the payment reference, never sensitive bank account data.</p>
+            <p>When you pay via MercadoPago (Peru) or dLocal Go (rest of the world), your financial data (card numbers, Yape details, or other local payment methods) is processed exclusively by the corresponding gateway. <strong>KidStorePeru never sees, stores, or has access to your card numbers or bank details.</strong> Each gateway has its own privacy and security policy.</p>
+            <p>Manual payments (Yape, Plin, BCP, Interbank and BBVA in Peru; Bizum in Spain) are verified by our team. We only record the payment reference, never sensitive bank account data.</p>
             <h2>Security</h2>
             <p>KidStorePeru uses up-to-date security systems. Your password is stored encrypted and never shared.</p>
             <h2>Cookies</h2>

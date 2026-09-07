@@ -353,25 +353,6 @@
 }
 .dash-order-info span { font-size:0.73rem; color:var(--text-muted); margin-top:2px; }
 
-/* Activation code in purchases */
-.dash-activation-code {
-  display: inline-flex; align-items: center; gap: 6px; margin-top: 3px;
-  padding: 3px 8px; border-radius: 6px;
-  background: var(--accent-soft);
-}
-.dash-code-label { font-size: .68rem; color: var(--text-muted); font-weight: 600; }
-.dash-code-value {
-  font-size: .75rem; font-weight: 800; color: var(--accent);
-  font-family: monospace; letter-spacing: 1.5px;
-  background: none; padding: 0;
-}
-.dash-code-copy {
-  background: none; border: none; color: var(--accent); cursor: pointer;
-  padding: 2px; display: flex; align-items: center; opacity: .6;
-  transition: opacity .2s;
-}
-.dash-code-copy:hover { opacity: 1; }
-
 /* Dashboard tabs */
 .dash-tabs {
   display: flex; gap: 6px; margin-bottom: 20px;

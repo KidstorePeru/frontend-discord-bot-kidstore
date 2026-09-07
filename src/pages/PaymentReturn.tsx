@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { useAuth } from '../context/AuthContext';
-import { getPaymentStatus, capturePayPalPayment } from '../services/api';
-import { CheckCircle, XCircle, Loader2, ArrowRight, Copy, CheckCircle as Check2, MessageCircle, ShieldCheck, Clock } from 'lucide-react';
+import { getPaymentStatus } from '../services/api';
+import { CheckCircle, XCircle, Loader2, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
+import { TrustpilotCTA } from '../components/UI';
 
 type PayState = 'loading' | 'pending' | 'processing' | 'success' | 'error';
 
@@ -15,32 +16,21 @@ export default function PaymentReturn() {
 
   const paymentId = params.get('id') || '';
   const status = params.get('status') || '';
-  const gateway = params.get('gateway') || '';
-  const paypalToken = params.get('token') || '';
 
   const [state, setState] = useState<PayState>('loading');
   const [productName, setProductName] = useState('');
   const [kcAmount, setKcAmount] = useState(0);
-  const [activationCode, setActivationCode] = useState('');
-  const [paymentType, setPaymentType] = useState('');
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!paymentId) { setState('error'); return; }
     async function process() {
       try {
-        if (gateway === 'paypal' && paypalToken) {
-          setState('processing');
-          await capturePayPalPayment(paymentId, paypalToken);
-        }
         setState('processing');
         const check = async (attempts: number): Promise<void> => {
           const res = await getPaymentStatus(paymentId);
           const tx = res.transaction as Record<string, unknown>;
           setProductName(tx.product_name as string || '');
           setKcAmount(tx.kc_amount as number || 0);
-          if (tx.activation_code) setActivationCode(tx.activation_code as string);
-          if (tx.payment_type) setPaymentType(tx.payment_type as string);
           const s = tx.status as string;
           if (s === 'approved' || s === 'fulfilled') { setState('success'); refresh(); return; }
           if (s === 'failed' || s === 'expired') { setState('error'); return; }
@@ -51,12 +41,7 @@ export default function PaymentReturn() {
       } catch { setState(status === 'failure' ? 'error' : 'pending'); }
     }
     process();
-  }, [paymentId, gateway, paypalToken, status, refresh]);
-
-  function copyCode() {
-    navigator.clipboard.writeText(activationCode);
-    setCopied(true); setTimeout(() => setCopied(false), 2000);
-  }
+  }, [paymentId, status, refresh]);
 
   const steps = [
     { label: es ? 'Pago enviado' : 'Payment sent' },
@@ -129,33 +114,9 @@ export default function PaymentReturn() {
                 <div className="pr-kc-badge">+{kcAmount.toLocaleString()} KC</div>
               )}
 
-              {paymentType === 'product_purchase' && activationCode && (
-                <div className="pr-activation-box">
-                  <span className="pr-activation-label">{es ? 'Tu codigo de activacion' : 'Your activation code'}</span>
-                  <div className="pr-activation-code-row">
-                    <span className="pr-activation-code">{activationCode}</span>
-                    <button onClick={copyCode} className="pr-copy-btn">
-                      {copied ? <><Check2 size={14}/> {es ? 'Copiado!' : 'Copied!'}</> : <><Copy size={14}/> {es ? 'Copiar' : 'Copy'}</>}
-                    </button>
-                  </div>
-
-                  <div className="pr-how-to">
-                    <strong>{es ? 'Como activar tu producto:' : 'How to activate:'}</strong>
-                    <div className="pr-steps-mini">
-                      <div><span className="pr-mini-num">1</span> {es ? 'Abre el chatbot' : 'Open the chatbot'} <span className="pr-mini-hint">({es ? 'esquina inferior derecha' : 'bottom right corner'})</span></div>
-                      <div><span className="pr-mini-num">2</span> {es ? 'Escribe' : 'Type'} <code>!activar {activationCode}</code></div>
-                      <div><span className="pr-mini-num">3</span> {es ? 'Vincula tu cuenta Epic y listo!' : 'Link your Epic account and done!'}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <TrustpilotCTA />
 
               <div className="pr-actions">
-                {paymentType === 'product_purchase' && activationCode && (
-                  <button onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot', { detail: { code: activationCode, product: productName } }))} className="btn btn-primary pr-btn">
-                    <MessageCircle size={15}/> {es ? 'Abrir chatbot y activar' : 'Open chatbot & activate'}
-                  </button>
-                )}
                 <Link to="/dashboard" className="btn btn-ghost pr-btn">
                   {es ? 'Ir al dashboard' : 'Dashboard'} <ArrowRight size={14}/>
                 </Link>

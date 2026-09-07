@@ -46,9 +46,6 @@
 .profile-username { font-size: clamp(1.5rem,3vw,2.2rem); font-weight: 900; color: #fff; letter-spacing: -0.025em; line-height: 1; }
 .profile-email    { font-size: 0.83rem; color: rgba(255,255,255,0.5); }
 .profile-member   { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: rgba(255,255,255,0.55); }
-.profile-discord  { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; }
-.profile-discord.linked   { color: #a5b4fc; }
-.profile-discord.unlinked { color: rgba(255,255,255,0.4); }
 /* Actions */
 .profile-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
 .profile-hero-actions a, .profile-hero-actions button {
@@ -95,15 +92,21 @@
 .btn-copy-sm { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; background: var(--bg-sunken); color: var(--text-muted); transition: all 0.2s; }
 .btn-copy-sm:hover { background: var(--accent-soft); color: var(--accent); }
 
-/* Profile tabs */
-.profile-tabs { display: flex; gap: 4px; background: var(--bg-sunken); padding: 5px; border-radius: 14px; width: fit-content; }
-.profile-tab {
-  display: flex; align-items: center; gap: 7px; padding: 8px 18px;
-  border-radius: calc(var(--radius-md) - 3px); font-size: 0.86rem; font-weight: 600;
-  color: var(--text-secondary); transition: all 0.2s;
+/* Profile sidebar tabs */
+.profile-body { display: flex; gap: 28px; align-items: flex-start; }
+.profile-sidebar-tabs {
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--bg-sunken); padding: 6px; border-radius: 14px;
+  width: 220px; flex-shrink: 0; position: sticky; top: 20px;
 }
-.profile-tab.active { background: var(--bg-surface); color: var(--accent); box-shadow: var(--shadow-sm); }
-.profile-tab:hover:not(.active) { color: var(--text-primary); }
+.profile-side-tab {
+  display: flex; align-items: center; gap: 9px; padding: 11px 16px; width: 100%;
+  border-radius: calc(var(--radius-md) - 3px); font-size: 0.86rem; font-weight: 600;
+  color: var(--text-secondary); transition: all 0.2s; text-align: left;
+}
+.profile-side-tab.active { background: var(--bg-surface); color: var(--accent); box-shadow: var(--shadow-sm); }
+.profile-side-tab:hover:not(.active) { color: var(--text-primary); }
+.profile-tab-content { flex: 1; min-width: 0; }
 
 .profile-section { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; animation: fadeUp 0.6s ease-out both; }
 
@@ -136,29 +139,17 @@
   border-top: 1px solid var(--border); margin-top: 4px;
 }
 .sec-note { font-size: 0.79rem; color: var(--text-muted); line-height: 1.5; }
-.sec-already-linked { padding: 0 22px 22px; font-size: 0.88rem; color: var(--text-secondary); }
-.discord-linked-badge {
-  margin-left: auto; padding: 3px 10px; border-radius: var(--radius-full);
-  background: color-mix(in srgb, #5865f2 12%, transparent); color: #5865f2;
-  font-size: 0.72rem; font-weight: 700;
-}
-.discord-server-link {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 0.82rem; color: #5865f2; font-weight: 600;
-}
-.discord-server-link:hover { text-decoration: underline; }
-
 
 /* ── Profile page content padding ── */
 .profile-progress-card,
 .profile-id-card,
-.profile-tabs,
+.profile-body,
 .profile-section { margin-left: 0; margin-right: 0; }
 
 .profile-page > .profile-stats { }
 .profile-page > .profile-progress-card,
 .profile-page > .profile-id-card,
-.profile-page > .profile-tabs,
+.profile-page > .profile-body,
 .profile-page > .profile-section {
   padding-left: 44px;
   padding-right: 44px;
@@ -166,10 +157,14 @@
 @media (max-width: 640px) {
   .profile-page > .profile-progress-card,
   .profile-page > .profile-id-card,
-  .profile-page > .profile-tabs,
+  .profile-page > .profile-body,
   .profile-page > .profile-section,
   .profile-stats { padding-left: 20px; padding-right: 20px; }
   .profile-hero { padding: 28px 20px 36px; }
+}
+@media (max-width: 780px) {
+  .profile-body { flex-direction: column; }
+  .profile-sidebar-tabs { flex-direction: row; width: 100%; overflow-x: auto; position: static; }
 }
 
 /* Profile section header with divider */
@@ -539,9 +534,6 @@
 }
 .profile-email    { font-size: 0.83rem !important; color: rgba(255,255,255,0.48) !important; }
 .profile-member   { display: flex !important; align-items: center !important; gap: 6px !important; font-size: 0.78rem !important; color: rgba(255,255,255,0.55) !important; font-weight: 500 !important; }
-.profile-discord  { display: flex !important; align-items: center !important; gap: 6px !important; font-size: 0.78rem !important; }
-.profile-discord.linked   { color: #a5b4fc !important; }
-.profile-discord.unlinked { color: rgba(255,255,255,0.38) !important; }
 
 /* Hero actions */
 .profile-hero-actions {
@@ -656,26 +648,36 @@
   white-space: nowrap !important;
 }
 
-/* ── Tabs ── */
-.profile-tabs {
-  display: flex !important; gap: 6px !important; background: var(--bg-sunken) !important;
-  padding: 5px !important; border-radius: 14px !important; width: fit-content !important;
+/* ── Sidebar tabs ── */
+.profile-body {
+  display: flex !important; gap: 28px !important; align-items: flex-start !important;
   margin: 0 44px 24px !important;
 }
-.profile-tab {
-  display: inline-flex !important; align-items: center !important; gap: 7px !important;
-  padding: 9px 20px !important; border-radius: 10px !important;
+.profile-sidebar-tabs {
+  display: flex !important; flex-direction: column !important; gap: 4px !important;
+  background: var(--bg-sunken) !important; padding: 6px !important;
+  border-radius: 14px !important; width: 220px !important; flex-shrink: 0 !important;
+  position: sticky !important; top: 20px !important;
+}
+.profile-tab-content { flex: 1 !important; min-width: 0 !important; }
+.profile-side-tab {
+  display: flex !important; align-items: center !important; gap: 9px !important;
+  padding: 11px 16px !important; width: 100% !important; border-radius: 10px !important;
   font-size: 0.82rem !important; font-weight: 700 !important;
   border: none !important; background: transparent !important;
   color: var(--text-secondary) !important; cursor: pointer !important;
-  transition: all 0.2s !important;
+  text-align: left !important; transition: all 0.2s !important;
 }
-.profile-tab.active {
+.profile-side-tab.active {
   background: var(--bg-surface) !important; color: var(--accent) !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
 }
-[data-theme="dark"] .profile-tab.active { box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important; }
-.profile-tab:hover:not(.active) { color: var(--text-primary) !important; }
+[data-theme="dark"] .profile-side-tab.active { box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important; }
+.profile-side-tab:hover:not(.active) { color: var(--text-primary) !important; }
+@media (max-width: 780px) {
+  .profile-body { flex-direction: column !important; }
+  .profile-sidebar-tabs { flex-direction: row !important; width: 100% !important; overflow-x: auto !important; position: static !important; }
+}
 
 /* ── Section (orders) ── */
 .profile-section {
@@ -708,13 +710,6 @@
   font-size: 0.95rem !important; font-weight: 800 !important; color: var(--text-primary) !important;
 }
 .security-card-header svg { color: var(--accent) !important; flex-shrink: 0 !important; }
-.discord-linked-badge {
-  margin-left: auto !important; display: inline-flex !important; align-items: center !important;
-  gap: 5px !important; padding: 4px 12px !important; border-radius: 100px !important;
-  background: rgba(88,101,242,0.1) !important; color: #5865f2 !important;
-  font-size: 0.72rem !important; font-weight: 700 !important;
-  border: 1px solid rgba(88,101,242,0.2) !important;
-}
 .security-form {
   display: flex !important; flex-direction: column !important; gap: 16px !important;
   padding: 24px !important;
@@ -755,16 +750,6 @@
   border-radius: 10px !important; border: 1px solid rgba(245,158,11,0.2) !important;
   line-height: 1.5 !important;
 }
-.sec-already-linked {
-  padding: 16px 24px 20px !important; font-size: 0.84rem !important;
-  color: var(--text-secondary) !important; line-height: 1.55 !important;
-}
-.discord-server-link {
-  display: inline-flex !important; align-items: center !important; gap: 6px !important;
-  color: #5865f2 !important; font-size: 0.82rem !important; font-weight: 700 !important;
-  text-decoration: none !important; transition: opacity 0.2s !important;
-}
-.discord-server-link:hover { opacity: 0.75 !important; }
 .pass-wrap {
   position: relative !important; display: flex !important; align-items: center !important;
 }
@@ -784,7 +769,7 @@
   .pstat { padding: 18px 16px !important; }
   .profile-progress-card { padding: 20px 20px !important; }
   .profile-id-card { padding: 12px 20px !important; }
-  .profile-tabs { margin: 0 20px 20px !important; }
+  .profile-body { margin: 0 20px 20px !important; }
   .profile-section { padding: 0 20px !important; }
   .security-section { padding: 0 20px !important; }
 }
@@ -793,105 +778,7 @@
    PROFILE AVATAR PICKER
    ══════════════════════════════════════════════ */
 
-/* Clickable avatar wrapper */
-.profile-avatar-btn {
-  position: relative !important;
-  background: none !important; border: none !important;
-  cursor: pointer !important; padding: 0 !important;
-  flex-shrink: 0 !important; z-index: 1 !important;
-}
-.profile-avatar-btn:hover .profile-avatar-edit { opacity: 1 !important; }
-.profile-avatar-btn:hover .profile-avatar { border-color: rgba(255,255,255,0.4) !important; }
-
-.profile-avatar-edit {
-  position: absolute !important;
-  inset: 0 !important; border-radius: 24px !important;
-  background: rgba(0,0,0,0.5) !important;
-  display: flex !important; align-items: center !important; justify-content: center !important;
-  color: #fff !important; opacity: 0 !important;
-  transition: opacity 0.2s !important;
-  font-size: 0.7rem !important; font-weight: 700 !important;
-  gap: 4px !important;
-}
-
-/* Modal overlay */
-.avatar-modal-overlay {
-  position: fixed !important; inset: 0 !important;
-  background: rgba(0,0,0,0.6) !important;
-  backdrop-filter: blur(6px) !important;
-  z-index: 1000 !important;
-  display: flex !important; align-items: center !important; justify-content: center !important;
-  padding: 20px !important; animation: fadeIn 0.18s ease-out !important;
-}
-@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-
-.avatar-modal {
-  background: var(--bg-surface) !important;
-  border: 1.5px solid var(--border) !important;
-  border-radius: 24px !important; overflow: hidden !important;
-  width: 100% !important; max-width: 460px !important;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.3) !important;
-  animation: fadeUp 0.22s ease-out both !important;
-}
-.avatar-modal-head {
-  display: flex !important; align-items: center !important;
-  justify-content: space-between !important;
-  padding: 18px 22px !important; background: var(--bg-surface-2) !important;
-  border-bottom: 1px solid var(--border) !important;
-}
-.avatar-modal-head h3 {
-  display: flex !important; align-items: center !important; gap: 9px !important;
-  font-size: 0.95rem !important; font-weight: 800 !important; color: var(--text-primary) !important;
-}
-.avatar-modal-head button {
-  background: none !important; border: none !important;
-  color: var(--text-muted) !important; cursor: pointer !important;
-  padding: 4px !important; border-radius: 8px !important;
-  display: flex !important; align-items: center !important;
-  transition: color 0.15s !important;
-}
-.avatar-modal-head button:hover { color: var(--text-primary) !important; }
-
-.avatar-modal-body { padding: 22px !important; }
-.avatar-modal-sub {
-  font-size: 0.82rem !important; color: var(--text-muted) !important;
-  margin-bottom: 18px !important;
-}
-
-/* Avatar grid */
-.avatar-grid {
-  display: grid !important; grid-template-columns: repeat(4, 1fr) !important;
-  gap: 12px !important; margin-bottom: 20px !important;
-}
-.avatar-option {
-  position: relative !important; background: var(--bg-surface-2) !important;
-  border: 2px solid var(--border) !important; border-radius: 16px !important;
-  padding: 8px !important; cursor: pointer !important;
-  transition: all 0.2s !important; aspect-ratio: 1 !important;
-  display: flex !important; align-items: center !important; justify-content: center !important;
-  overflow: hidden !important;
-}
-.avatar-option img {
-  width: 100% !important; height: 100% !important;
-  object-fit: cover !important; border-radius: 10px !important;
-}
-.avatar-option:hover {
-  border-color: var(--accent) !important;
-  transform: scale(1.05) !important;
-  box-shadow: 0 4px 14px rgba(108,92,231,0.2) !important;
-}
-.avatar-option.sel {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 2px var(--accent), 0 4px 14px rgba(108,92,231,0.25) !important;
-  transform: scale(1.05) !important;
-}
-.avatar-option-check {
-  position: absolute !important; bottom: 4px !important; right: 4px !important;
-  color: var(--accent) !important; background: var(--bg-surface) !important;
-  border-radius: 50% !important; padding: 1px !important;
-}
-
-/* Modal actions */
+/* Avatar preview + save actions (inline in the Perfil tab) */
 .avatar-modal-actions {
   display: flex !important; gap: 10px !important; align-items: center !important;
 }
@@ -957,4 +844,124 @@
 /* Add padding below the last order */
 .profile-section .orders-list:last-child {
   padding-bottom: 8px !important;
+}
+
+/* ══════════════════════════════════════════════
+   AVATAR — vista previa (reemplaza el selector de presets)
+   ══════════════════════════════════════════════ */
+.avatar-preview-wrap {
+  display: flex; justify-content: center; margin-bottom: 20px;
+}
+.avatar-preview-wrap img {
+  width: 140px; height: 140px; border-radius: 24px;
+  object-fit: cover; border: 2px solid var(--border);
+  background: var(--bg-surface-2);
+}
+
+/* ══════════════════════════════════════════════
+   PERFIL — informacion de cuenta (solo lectura)
+   ══════════════════════════════════════════════ */
+.account-info-grid {
+  display: flex; flex-direction: column;
+  gap: 16px; padding: 22px 24px;
+}
+.account-info-item {
+  display: flex; flex-direction: column; gap: 5px;
+  padding-bottom: 14px; border-bottom: 1px solid var(--border);
+}
+.account-info-item:last-child { padding-bottom: 0; border-bottom: none; }
+.account-info-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-muted);
+}
+.account-info-value {
+  font-size: 0.92rem; font-weight: 600; color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px;
+}
+.account-info-mono { font-family: var(--font-mono); font-size: 0.78rem; }
+
+/* Email lock note */
+.sec-note-lock {
+  display: flex; align-items: flex-start; gap: 8px;
+  color: var(--blue-500) !important;
+  background: rgba(59,130,246,0.08) !important;
+  border-color: rgba(59,130,246,0.2) !important;
+}
+
+/* Cuentas vinculadas (Google / Discord) */
+.linked-accounts { display: flex; flex-direction: column; padding: 8px 24px 4px; }
+.linked-account-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.linked-account-row:last-child { border-bottom: none; }
+.linked-account-info { display: flex; align-items: center; gap: 12px; }
+.linked-account-info strong { display: block; font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+.linked-account-info span { display: block; font-size: 0.78rem; color: var(--text-muted); }
+
+/* ══════════════════════════════════════════════
+   MIS ORDENES — filtros y detalle
+   ══════════════════════════════════════════════ */
+.order-filters {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.order-filter-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: var(--radius-full);
+  background: var(--bg-surface-2); border: 1.5px solid var(--border);
+  color: var(--text-secondary); font-size: 0.8rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+}
+.order-filter-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.order-filter-btn.active {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.order-filter-count {
+  font-size: 0.68rem; font-weight: 800; padding: 1px 7px; border-radius: 100px;
+  background: rgba(0,0,0,0.12); color: inherit;
+}
+.order-filter-btn.active .order-filter-count { background: rgba(255,255,255,0.25); }
+
+.order-detail-list { display: flex; flex-direction: column; gap: 12px; }
+.order-detail-card {
+  display: flex; gap: 14px; padding: 16px;
+  background: var(--bg-surface-2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.order-detail-img {
+  width: 64px; height: 64px; border-radius: 12px; flex-shrink: 0;
+  overflow: hidden; background: var(--bg-sunken);
+  display: flex; align-items: center; justify-content: center;
+}
+.order-detail-img img { width: 100%; height: 100%; object-fit: cover; }
+.order-detail-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.order-detail-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+}
+.order-detail-top strong { font-size: 0.94rem; color: var(--text-primary); }
+.order-detail-meta {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  font-size: 0.76rem; color: var(--text-muted);
+}
+.order-detail-id { display: flex; align-items: center; gap: 6px; }
+.order-detail-id code { font-family: var(--font-mono); font-size: 0.75rem; }
+.order-detail-date { display: flex; align-items: center; gap: 4px; }
+.order-detail-prices {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  font-size: 0.82rem; color: var(--text-secondary);
+}
+.order-detail-vbucks { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.order-detail-epic { font-size: 0.8rem; }
+.order-detail-error {
+  display: flex; align-items: flex-start; gap: 6px;
+  font-size: 0.78rem; color: var(--red-500);
+  background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+  padding: 8px 12px; border-radius: 10px;
+}
+
+@media (max-width: 640px) {
+  .account-info-grid { padding: 18px 16px; }
+  .order-detail-card { flex-direction: column; }
+  .order-detail-img { width: 100%; height: 140px; }
 }

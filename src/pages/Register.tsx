@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { register, resendVerification } from '../services/api';
 import { UserPlus, Loader2, Gamepad2, Mail, Lock, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import OAuthButtons from '../components/OAuthButtons';
 
 export default function Register() {
   const [epicUsername, setEpicUsername] = useState('');
@@ -144,6 +145,9 @@ export default function Register() {
           <p className="auth-sub">{t('auth.register.sub')}</p>
 
           {error && <div className="auth-error"><AlertCircle size={15} />{error}</div>}
+
+          <OAuthButtons />
+          <div className="oauth-divider"><span>{es ? 'o regístrate con tu correo' : 'or sign up with email'}</span></div>
 
           <label className="field">
             <span><Gamepad2 size={11} style={{ display: 'inline', marginRight: 4 }} />{t('auth.register.epic')}</span>

@@ -245,6 +245,51 @@
 }
 .auth-back:hover { color: var(--text-primary); }
 
+/* OAuth buttons (Google / Discord) */
+.oauth-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.oauth-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.oauth-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+.oauth-btn svg { flex-shrink: 0; }
+
+.oauth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 0 18px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.oauth-divider::before, .oauth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 /* Password input with toggle */
 .pass-wrap { position: relative; display: flex; }
 .pass-wrap input { flex: 1; padding-right: 40px; }

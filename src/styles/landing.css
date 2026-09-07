@@ -840,31 +840,7 @@
   gap: 16px;
 }
 
-/* Floating elements */
-.lv7-float { position: absolute; pointer-events: none; z-index: 3; }
-.lv7-f1 { top: 70px; right: -10px; animation: lvfloat 4s ease-in-out infinite; }
-.lv7-f1 img { width: 50px; height: 50px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(124,58,237,.35)); opacity: .8; }
-.lv7-f2 { bottom: 110px; right: 10px; animation: lvfloat 3.8s ease-in-out infinite 1.5s; }
-.lv7-f3 { top: 50%; right: -5px; transform: translateY(-50%); animation: lvfloat2 3.5s ease-in-out infinite 2.5s; }
 @keyframes lvfloat  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-@keyframes lvfloat2 { 0%,100%{transform:translateY(-50%)} 50%{transform:translateY(calc(-50% - 9px))} }
-
-.lv7-float-card {
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.22);
-  backdrop-filter: blur(12px);
-  border-radius: 11px; padding: 9px 15px;
-  display: flex; flex-direction: column; gap: 1px;
-}
-.lv7-fc-kc  { font-size: .85rem; font-weight: 900; color: var(--gold); }
-.lv7-fc-lbl { font-size: .65rem; color: rgba(255,255,255,.55); font-weight: 600; }
-.lv7-float-badge {
-  display: flex; align-items: center; gap: 5px;
-  background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.28);
-  border-radius: 100px; padding: 5px 11px;
-  font-size: .7rem; font-weight: 700; color: #22c55e;
-  white-space: nowrap; backdrop-filter: blur(8px);
-}
 
 /* Season */
 .lv7-season {
@@ -1016,7 +992,6 @@
   .lv7-hero { grid-template-columns:1fr; padding:0 24px; min-height:auto; }
   .lv7-hero-right { display:none; }
   .lv7-hero-left { padding:56px 0 40px; }
-  .lv7-float { display:none; }
 }
 
 /* ════════════════════════════
@@ -1179,6 +1154,45 @@
 [data-theme="dark"] .lv7-trust-card strong { color:#fff; }
 .lv7-trust-card p { font-size:.76rem; color:var(--text-muted,#64748b); line-height:1.5; margin:0; }
 [data-theme="dark"] .lv7-trust-card p { color:rgba(255,255,255,.38); }
+
+/* ── TESTIMONIOS ── */
+.lv7-sec-reviews { background:var(--bg-surface,#fff); border-top:1px solid var(--border,#e2e8f0); }
+[data-theme="dark"] .lv7-sec-reviews { background:#0d0f18; border-top-color:rgba(255,255,255,.06); }
+.lv7-reviews-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+@media (max-width:900px) { .lv7-reviews-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:600px) { .lv7-reviews-grid { grid-template-columns:1fr; } }
+
+/* Widget oficial de Facebook (iframe de Meta) — fila horizontal con
+   auto-scroll hacia la izquierda (ver useEffect en Landing.tsx). El ancho
+   de cada tarjeta es fijo (500px, ver FacebookReviewEmbed) para que la
+   altura pre-calculada por Facebook siempre coincida con el contenido real. */
+.lv7-fb-ticker {
+  position:relative; overflow:hidden;
+  mask-image:linear-gradient(to right,transparent 0%,black 3%,black 97%,transparent 100%);
+  -webkit-mask-image:linear-gradient(to right,transparent 0%,black 3%,black 97%,transparent 100%);
+}
+.lv7-fb-ticker-track {
+  display:flex; gap:18px; overflow-x:auto; scroll-behavior:smooth;
+  padding:4px 4px 14px; scrollbar-width:none;
+}
+.lv7-fb-ticker-track::-webkit-scrollbar { display:none; }
+.fb-review-embed { flex-shrink:0; width:500px; border-radius:12px; overflow:hidden; background:var(--bg-surface-2,#f8f8fc); border:1px solid var(--border,#e2e8f0); }
+[data-theme="dark"] .fb-review-embed { background:rgba(255,255,255,.03); border-color:rgba(255,255,255,.07); }
+.lv7-review-card {
+  background:var(--bg-surface-2,#f8f8fc); border:1px solid var(--border,#e2e8f0);
+  border-radius:16px; padding:22px 20px; display:flex; flex-direction:column; gap:12px;
+  transition:transform .2s, box-shadow .2s;
+}
+[data-theme="dark"] .lv7-review-card { background:rgba(255,255,255,.03); border-color:rgba(255,255,255,.07); }
+.lv7-review-card:hover { transform:translateY(-3px); box-shadow:0 10px 26px rgba(0,0,0,.06); }
+[data-theme="dark"] .lv7-review-card:hover { box-shadow:0 10px 26px rgba(0,0,0,.25); }
+.lv7-review-stars { display:flex; gap:2px; color:#f59e0b; }
+.lv7-review-text { font-size:.87rem; color:var(--text-secondary,#475569); line-height:1.6; margin:0; flex:1; }
+[data-theme="dark"] .lv7-review-text { color:rgba(255,255,255,.65); }
+.lv7-review-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.lv7-review-name { font-size:.82rem; font-weight:800; color:var(--text-primary,#0f172a); }
+[data-theme="dark"] .lv7-review-name { color:#fff; }
+.lv7-review-source { font-size:.65rem; font-weight:800; padding:3px 10px; border-radius:100px; letter-spacing:.03em; }
 
 /* ════════════════════════════
    FOOTER — theme-aware

@@ -34,3 +34,18 @@
 .toast-info    { background: color-mix(in srgb, var(--blue-500) 10%, var(--bg-surface)); color: var(--blue-500); border-color: color-mix(in srgb, var(--blue-500) 25%, transparent); }
 .page-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: calc(100vh - var(--nav-height)); color: var(--text-muted); }
 
+/* ═══════════════════════════════════════════════════
+   TRUSTPILOT CTA — invitación a reseñar tras compra/recarga exitosa
+   ═══════════════════════════════════════════════════ */
+.trustpilot-cta {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 13px 16px; margin-top: 14px; border-radius: var(--radius-md);
+  background: color-mix(in srgb, #00b67a 8%, var(--bg-surface));
+  border: 1.5px solid color-mix(in srgb, #00b67a 25%, transparent);
+  text-decoration: none; transition: all 0.2s; text-align: left;
+}
+.trustpilot-cta:hover { border-color: #00b67a; transform: translateY(-1px); box-shadow: 0 4px 14px color-mix(in srgb, #00b67a 20%, transparent); }
+.trustpilot-cta-stars { display: flex; gap: 1px; color: #00b67a; flex-shrink: 0; }
+.trustpilot-cta-text { display: flex; flex-direction: column; gap: 1px; font-size: 0.8rem; color: var(--text-secondary); }
+.trustpilot-cta-text strong { font-size: 0.86rem; color: var(--text-primary); }
+

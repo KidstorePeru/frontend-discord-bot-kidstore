@@ -5,22 +5,28 @@ export interface Customer {
   epic_username: string;
   email: string;
   kc_balance: number;
-  discord_id?: string;
+  avatar_url?: string;
+  phone?: string;
+  has_password: boolean;
+  google_linked: boolean;
+  discord_linked: boolean;
   discord_username?: string;
+  next_email_change_at?: string;
   is_admin?: boolean;
   created_at: string;
 }
 
 export interface Order {
-  id: number;
-  customer_id: number;
+  id: string;
+  customer_id: string;
   epic_username: string;
   item_offer_id: string;
   item_name: string;
   item_image: string;
   price_kc: number;
-  price_vbucks?: number;
+  price_vbucks: number;
   status: 'pending' | 'processing' | 'sent' | 'failed' | 'refunded';
+  error_msg?: string;
   created_at: string;
 }
 

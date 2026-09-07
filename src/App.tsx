@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LangProvider } from './context/LangContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider, useCart } from './context/CartContext';
 import { useAuth } from './context/AuthContext';
@@ -9,11 +10,14 @@ import { useLang } from './context/LangContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import GuestRoute from './components/GuestRoute';
 import Landing from './pages/Landing';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
+import AuthCallback from './pages/AuthCallback';
+import CompleteOAuthRegistration from './pages/CompleteOAuthRegistration';
 import StorePage from './pages/Store';
 import Dashboard from './pages/Dashboard';
 import Recharge from './pages/Recharge';
@@ -26,10 +30,10 @@ import Refunds from './pages/Refunds';
 import FAQPage from './pages/FAQ';
 import Contact from './pages/Contact';
 import PaymentReturn from './pages/PaymentReturn';
-import ChatBot from './components/ChatBot';
+import NotFound from './pages/NotFound';
 import { useState } from 'react';
 import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { Toast } from './components/UI';
+import { Toast, TrustpilotCTA } from './components/UI';
 
 function KCIcon({ s = 16 }: { s?: number }) {
   return <img src="/kidcoin.png" alt="KC" width={s} height={s} style={{ objectFit: 'contain', flexShrink: 0 }} />;
@@ -46,6 +50,7 @@ function GlobalCart() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [purchaseSuccess, setPurchaseSuccess] = useState<number | null>(null);
 
   const es = lang === 'es';
   const hasBalance = customer ? customer.kc_balance >= cartTotal : false;
@@ -80,12 +85,14 @@ function GlobalCart() {
       setShowConfirm(false);
       setCartOpen(false);
       clearCart();
-      setToast({
-        msg: errors.length === 0
-          ? (es ? `¡Compra completada! ${cartCount} item${cartCount > 1 ? 's' : ''} pedido${cartCount > 1 ? 's' : ''}` : `Purchase complete! ${cartCount} item${cartCount > 1 ? 's' : ''} ordered`)
-          : (es ? `Algunos items fallaron: ${errors.join(', ')}` : `Some items failed: ${errors.join(', ')}`),
-        type: errors.length === 0 ? 'success' : 'error',
-      });
+      if (errors.length === 0) {
+        setPurchaseSuccess(cartCount);
+      } else {
+        setToast({
+          msg: es ? `Algunos items fallaron: ${errors.join(', ')}` : `Some items failed: ${errors.join(', ')}`,
+          type: 'error',
+        });
+      }
     } catch (err: unknown) {
       setConfirming(false);
       const msg = err instanceof Error ? err.message : (es ? 'Error al procesar la compra' : 'Purchase error');
@@ -99,11 +106,32 @@ function GlobalCart() {
     }
   }
 
-  if (!cartOpen) return <>{toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}</>;
+  const successModal = purchaseSuccess !== null && (
+    <div className="pc-modal-ov">
+      <div className="pc-modal" style={{ maxWidth: 420, textAlign: 'center', padding: '40px 32px' }}>
+        <CheckCircle size={48} style={{ color: '#22c55e', marginBottom: 16 }} />
+        <h3 style={{ margin: '0 0 8px', fontWeight: 800, fontSize: '1.1rem' }}>
+          {es ? '¡Compra completada!' : 'Purchase complete!'}
+        </h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: '0 0 4px' }}>
+          {es
+            ? `${purchaseSuccess} item${purchaseSuccess > 1 ? 's' : ''} pedido${purchaseSuccess > 1 ? 's' : ''}. Te avisaremos por correo cuando se entregue.`
+            : `${purchaseSuccess} item${purchaseSuccess > 1 ? 's' : ''} ordered. We'll email you once it's delivered.`}
+        </p>
+        <TrustpilotCTA />
+        <button onClick={() => setPurchaseSuccess(null)} className="btn btn-ghost" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }}>
+          {es ? 'Cerrar' : 'Close'}
+        </button>
+      </div>
+    </div>
+  );
+
+  if (!cartOpen) return <>{toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}{successModal}</>;
 
   return (
     <>
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      {successModal}
 
       <div className="cart-overlay" onClick={() => setCartOpen(false)} />
       <div className="cart-panel">
@@ -244,23 +272,28 @@ export default function App() {
     <BrowserRouter>
       <ThemeProvider>
         <LangProvider>
+          <CurrencyProvider>
           <AuthProvider>
             <CartProvider>
               <Navbar />
               <GlobalCart />
-              <ChatBot />
               <main className="main-content">
                 <Routes>
                   <Route path="/"               element={<Landing />} />
-                  <Route path="/register"       element={<Register />} />
-                  <Route path="/login"          element={<Login />} />
+                  <Route path="/register"       element={<GuestRoute><Register /></GuestRoute>} />
+                  <Route path="/login"          element={<GuestRoute><Login /></GuestRoute>} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/verify-email"   element={<VerifyEmail />} />
+                  <Route path="/auth/callback"  element={<AuthCallback />} />
+                  <Route path="/auth/complete"  element={<CompleteOAuthRegistration />} />
                   <Route path="/store"          element={<StorePage />} />
-                  <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                  <Route path="/admin"          element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                  <Route path="/admin/:tab"     element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
                   <Route path="/dashboard"      element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/dashboard/:tab" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/recharge"       element={<ProtectedRoute><Recharge /></ProtectedRoute>} />
-                  <Route path="/profile"        element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/account"        element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/account/:tab"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                   <Route path="/bots"           element={<ProtectedRoute><Bots /></ProtectedRoute>} />
                   <Route path="/terms"          element={<Terms />} />
                   <Route path="/privacy"        element={<Privacy />} />
@@ -268,11 +301,13 @@ export default function App() {
                   <Route path="/faq"            element={<FAQPage />} />
                   <Route path="/contact"        element={<Contact />} />
                   <Route path="/payment/return" element={<PaymentReturn />} />
+                  <Route path="*"               element={<NotFound />} />
                 </Routes>
               </main>
               <GlobalFooter />
             </CartProvider>
           </AuthProvider>
+          </CurrencyProvider>
         </LangProvider>
       </ThemeProvider>
     </BrowserRouter>

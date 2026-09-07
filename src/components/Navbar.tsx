@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCart } from '../context/CartContext';
+import CurrencySelector from './CurrencySelector';
 import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart, Shield } from 'lucide-react';
 import { useState } from 'react';
 
@@ -20,7 +21,7 @@ export default function Navbar() {
         { to: '/dashboard', label: t('nav.orders'),   icon: <LayoutDashboard size={17} /> },
         { to: '/recharge',  label: t('nav.recharge'), icon: <Zap size={17} /> },
         { to: '/bots',      label: t('nav.bots'),     icon: <Bot size={17} /> },
-        { to: '/profile',   label: t('nav.profile'),  icon: <User size={17} /> },
+        { to: '/account',   label: t('nav.profile'),  icon: <User size={17} /> },
         ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: <Shield size={17} /> }] : []),
       ]
     : [
@@ -53,6 +54,9 @@ export default function Navbar() {
             <button className={`lang-sw ${lang === 'es' ? 'active' : ''}`} onClick={() => setLang('es')}>ES</button>
             <button className={`lang-sw ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>EN</button>
           </div>
+
+          {/* Divisa */}
+          <CurrencySelector />
 
           {/* Tema */}
           <button className="theme-toggle" onClick={toggleTheme} aria-label="Cambiar tema">

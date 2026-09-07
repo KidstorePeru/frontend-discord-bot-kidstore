@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getMyOrders, getMyRecharges } from '../services/api';
 import { KCBadge, StatusBadge, PageLoader } from '../components/UI';
 import type { Order } from '../types';
-import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coins, CreditCard, ChevronLeft, ChevronRight, Wallet, DollarSign, Copy } from 'lucide-react';
+import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coins, CreditCard, ChevronLeft, ChevronRight, Wallet, DollarSign } from 'lucide-react';
 
-type DashTab = 'orders' | 'recharges' | 'purchases';
+type DashTab = 'orders' | 'recharges';
+const DASH_TABS: DashTab[] = ['orders', 'recharges'];
 const PER_PAGE = 10;
 
 export default function Dashboard() {
   const { customer, refresh } = useAuth();
   const { t, lang } = useLang();
+  const { tab: tabParam } = useParams<{ tab: string }>();
   const es = lang === 'es';
-  const [tab, setTab] = useState<DashTab>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [recharges, setRecharges] = useState<{ id: string; amount_kc: number; amount_soles: number | null; method: string; created_at: string }[]>([]);
   const [payments, setPayments] = useState<{ id: string; gateway: string; payment_type: string; product_name: string; amount_pen: number; kc_amount: number; status: string; created_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [orderPage, setOrderPage] = useState(1);
   const [rechargePage, setRechargePage] = useState(1);
-  const [purchasePage, setPurchasePage] = useState(1);
 
   useEffect(() => {
     Promise.all([
@@ -33,8 +33,12 @@ export default function Dashboard() {
 
   if (loading || !customer) return <PageLoader />;
 
-  // ── Separate payments by type ──
-  const productPurchases = payments.filter(p => p.payment_type === 'product_purchase');
+  if (!tabParam || !DASH_TABS.includes(tabParam as DashTab)) {
+    return <Navigate to="/dashboard/orders" replace />;
+  }
+  const tab = tabParam as DashTab;
+
+  // ── KC recharge payments only (product_purchase payments no longer exist) ──
   const kcPayments = payments.filter(p => p.payment_type === 'kc_recharge');
 
   // ── Order stats ──
@@ -46,11 +50,6 @@ export default function Dashboard() {
   const totalKCRecharged = recharges.reduce((a, r) => a + r.amount_kc, 0);
   const totalPENRechargedGateway = kcPayments.reduce((a, p) => a + p.amount_pen, 0);
   const pendingRecharges = kcPayments.filter(p => p.status === 'pending').length;
-
-  // ── Purchase stats ──
-  const totalPENProducts = productPurchases.reduce((a, p) => a + p.amount_pen, 0);
-  const approvedPurchases = productPurchases.filter(p => p.status === 'approved').length;
-  const pendingPurchases = productPurchases.filter(p => p.status === 'pending').length;
 
   // ── Recharge items: manual KC + gateway KC ──
   const allRechargeItemsFiltered = [
@@ -64,8 +63,6 @@ export default function Dashboard() {
   const pagedOrders = orders.slice((orderPage - 1) * PER_PAGE, orderPage * PER_PAGE);
   const rechargePages = Math.ceil(allRechargeItemsFiltered.length / PER_PAGE) || 1;
   const pagedRecharges = allRechargeItemsFiltered.slice((rechargePage - 1) * PER_PAGE, rechargePage * PER_PAGE);
-  const purchasePages = Math.ceil(productPurchases.length / PER_PAGE) || 1;
-  const pagedPurchases = productPurchases.slice((purchasePage - 1) * PER_PAGE, purchasePage * PER_PAGE);
 
   function Pagination({ page, total, setPage }: { page: number; total: number; setPage: (p: number) => void }) {
     if (total <= 1) return null;
@@ -112,15 +109,12 @@ export default function Dashboard() {
 
       {/* ── Tabs ── */}
       <div className="dash-tabs">
-        <button className={`dash-tab ${tab === 'orders' ? 'active' : ''}`} onClick={() => setTab('orders')}>
+        <Link to="/dashboard/orders" className={`dash-tab ${tab === 'orders' ? 'active' : ''}`}>
           <Package size={16}/> {es ? 'Mis Pedidos' : 'My Orders'}
-        </button>
-        <button className={`dash-tab ${tab === 'recharges' ? 'active' : ''}`} onClick={() => setTab('recharges')}>
+        </Link>
+        <Link to="/dashboard/recharges" className={`dash-tab ${tab === 'recharges' ? 'active' : ''}`}>
           <Coins size={16}/> {es ? 'Historial de Recargas' : 'Recharge History'}
-        </button>
-        <button className={`dash-tab ${tab === 'purchases' ? 'active' : ''}`} onClick={() => setTab('purchases')}>
-          <CreditCard size={16}/> {es ? 'Mis Compras' : 'My Purchases'}
-        </button>
+        </Link>
       </div>
 
       {/* ══════════ TAB: MIS PEDIDOS ══════════ */}
@@ -266,83 +260,6 @@ export default function Dashboard() {
                 })}
               </div>
               <Pagination page={rechargePage} total={rechargePages} setPage={setRechargePage} />
-            </>
-          )}
-        </div>
-      </>}
-
-      {/* ══════════ TAB: MIS COMPRAS ══════════ */}
-      {tab === 'purchases' && <>
-        <div className="dash-stats">
-          <div className="dash-stat" style={{'--sc':'#7c3aed','--sg':'rgba(124,58,237,0.12)'} as React.CSSProperties}>
-            <div className="dash-stat-icon"><CreditCard size={20} /></div>
-            <div className="dash-stat-val">{productPurchases.length}</div>
-            <div className="dash-stat-lbl">{es ? 'Compras totales' : 'Total purchases'}</div>
-          </div>
-          <div className="dash-stat" style={{'--sc':'#22c55e','--sg':'rgba(34,197,94,0.12)'} as React.CSSProperties}>
-            <div className="dash-stat-icon"><Package size={20} /></div>
-            <div className="dash-stat-val">{approvedPurchases}</div>
-            <div className="dash-stat-lbl">{es ? 'Aprobadas' : 'Approved'}</div>
-          </div>
-          <div className="dash-stat" style={{'--sc':'#f59e0b','--sg':'rgba(245,158,11,0.12)'} as React.CSSProperties}>
-            <div className="dash-stat-icon"><DollarSign size={20} /></div>
-            <div className="dash-stat-val">S/ {totalPENProducts.toFixed(0)}</div>
-            <div className="dash-stat-lbl">{es ? 'Total gastado' : 'Total spent'}</div>
-          </div>
-          <div className="dash-stat" style={{'--sc':'#06b6d4','--sg':'rgba(6,182,212,0.12)'} as React.CSSProperties}>
-            <div className="dash-stat-icon"><Clock size={20} /></div>
-            <div className="dash-stat-val">{pendingPurchases}</div>
-            <div className="dash-stat-lbl">{es ? 'Pendientes' : 'Pending'}</div>
-          </div>
-        </div>
-
-        <div className="dash-section">
-          <div className="dash-section-head">
-            <h2><CreditCard size={18} /> {es ? 'Compras de productos' : 'Product purchases'}</h2>
-            <Link to="/store" className="btn btn-ghost btn-sm">{es ? 'Ir a la tienda' : 'Go to store'} <ArrowRight size={14} /></Link>
-          </div>
-
-          {productPurchases.length === 0 ? (
-            <div className="dash-empty">
-              <CreditCard size={48} strokeWidth={1} />
-              <p>{es ? 'Aun no tienes compras de productos' : 'No product purchases yet'}</p>
-              <Link to="/store" className="btn btn-primary btn-sm">{es ? 'Ver productos' : 'Browse products'}</Link>
-            </div>
-          ) : (
-            <>
-              <div className="dash-orders">
-                {pagedPurchases.map(p => (
-                  <div className="dash-order-row" key={p.id}>
-                    <div className="dash-order-img">
-                      <div className="dash-order-placeholder" style={{
-                        background: p.status === 'approved' ? 'rgba(34,197,94,0.1)' : p.status === 'pending' ? 'rgba(245,158,11,0.1)' : 'rgba(220,38,38,0.1)',
-                        color: p.status === 'approved' ? '#22c55e' : p.status === 'pending' ? '#f59e0b' : '#dc2626',
-                      }}>
-                        <CreditCard size={18} />
-                      </div>
-                    </div>
-                    <div className="dash-order-info">
-                      <strong>{p.product_name}</strong>
-                      <span>{p.gateway} — {new Date(p.created_at).toLocaleDateString(es ? 'es-PE' : 'en-US', { day:'numeric', month:'short', year:'numeric' })}</span>
-                      {/* eslint-disable @typescript-eslint/no-explicit-any */}
-                      {(p as any).activation_code && (
-                        <div className="dash-activation-code">
-                          <span className="dash-code-label">{es ? 'Codigo:' : 'Code:'}</span>
-                          <code className="dash-code-value">{(p as any).activation_code}</code>
-                          <button className="dash-code-copy" onClick={() => { navigator.clipboard.writeText((p as any).activation_code); }} title={es ? 'Copiar' : 'Copy'}>
-                            <Copy size={11}/>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--accent)' }}>S/ {p.amount_pen.toFixed(2)}</span>
-                    <span className="status-badge" style={{ '--badge-color': p.status === 'approved' ? '#22c55e' : p.status === 'pending' ? '#f59e0b' : '#dc2626' } as React.CSSProperties}>
-                      {p.status === 'approved' ? (es ? 'Aprobado' : 'Approved') : p.status === 'pending' ? (es ? 'Pendiente' : 'Pending') : (es ? 'Fallido' : 'Failed')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <Pagination page={purchasePage} total={purchasePages} setPage={setPurchasePage} />
             </>
           )}
         </div>

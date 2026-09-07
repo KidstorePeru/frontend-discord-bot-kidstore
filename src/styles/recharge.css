@@ -1283,4 +1283,7 @@
 .rc-gateway-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .rc-gateway-btn img { width: 28px; height: 28px; object-fit: contain; }
 .rc-gateway-btn .spin { animation: spin 1s linear infinite; }
+.rc-gateway-btn-main { min-width: 320px; max-width: 460px; width: 100%; padding: 18px 26px; gap: 14px; }
+.rc-gateway-btn-main img { width: 34px; height: 34px; }
+.rc-gateway-btn-main span:first-of-type { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; }
 .rc-gateway-note { text-align: center; font-size: .82rem; color: var(--text-muted); margin-top: 8px; }

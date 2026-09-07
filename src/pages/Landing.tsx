@@ -2,30 +2,127 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrency } from '../context/CurrencyContext';
+import { formatReferencePrice } from '../services/constants';
 import { ArrowRight, ChevronRight, ShieldCheck, Zap, Clock, Package, Headphones, Star } from 'lucide-react';
 
 function IconStar()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>; }
 function IconFire()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-4.4 0-8-3.6-8-8 0-3.5 2.3-6.5 5.5-7.6-.3 1-.2 2.1.4 3 .3.5.8.9 1.3 1.1C10.1 9.4 10 7 10.8 5c.8-2 2.4-3.5 4.2-4.5-.3 1.6.1 3.3 1.2 4.5.7.8 1.5 1.3 2.5 1.6-1 1.2-1.7 2.7-1.7 4.4 0 3.3 2 4.5 2 7C19 19.4 15.4 23 12 23z"/></svg>; }
 function IconCrown() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 19h18v2H3v-2zM2 7l4 8h12l4-8-5 3-5-8-5 8-5-3z"/></svg>; }
 
+// Refleja los métodos reales de /recharge: pasarelas automáticas primero,
+// luego los manuales. Binance ya no es un método manual (ver Recharge.tsx) —
+// la cripto ahora es parte del pago automático internacional.
 const PAYMENT_METHODS = [
-  { name: 'Yape',      logo: '/yape-imagotipo.png' },
-  { name: 'Plin',      logo: '/plin-imagotipo.png' },
-  { name: 'BCP',       logo: '/bcp-imagotipo.png' },
-  { name: 'Interbank', logo: '/interbank-imagotipo.png' },
-  { name: 'BBVA',      logo: '/bbva-imagotipo.png' },
-  { name: 'PayPal',    logo: '/paypal-imagotipo.png' },
-  { name: 'Binance',   logo: '/binance-imagotipo.png' },
+  { name: 'MercadoPago', logo: '/mercadopago.png' },
+  { name: 'PayPal',      logo: '/paypal-imagotipo.png' },
+  { name: 'Yape',        logo: '/yape-imagotipo.png' },
+  { name: 'Plin',        logo: '/plin-imagotipo.png' },
+  { name: 'BCP',         logo: '/bcp-imagotipo.png' },
+  { name: 'Interbank',   logo: '/interbank-imagotipo.png' },
+  { name: 'BBVA',        logo: '/bbva-imagotipo.png' },
+  { name: 'Bizum',       logo: '/bizum.png' },
 ];
+
+// ─────────────────────────────────────────────────────────────
+// TESTIMONIOS — reseñas reales de clientes, curadas a mano.
+// Agrega aquí cada reseña conforme la vayas recibiendo (Google, Facebook,
+// Trustpilot, Discord, WhatsApp, etc.) — nunca inventar contenido: la
+// sección completa se oculta sola mientras este arreglo esté vacío.
+// Ejemplo:
+// { name: 'Juan P.', text_es: 'Todo llegó rápido y sin problemas.', text_en: 'Everything arrived fast, no issues.', rating: 5, source: 'Google' },
+// ─────────────────────────────────────────────────────────────
+interface Testimonial {
+  name: string;
+  text_es: string;
+  text_en: string;
+  rating: number;
+  source: 'Google' | 'Facebook' | 'Trustpilot' | 'Discord' | 'WhatsApp';
+}
+const TESTIMONIALS: Testimonial[] = [];
+const SOURCE_COLOR: Record<Testimonial['source'], string> = {
+  Google: '#4285F4', Facebook: '#1877F2', Trustpilot: '#00b67a', Discord: '#5865F2', WhatsApp: '#25D366',
+};
+
+// ─────────────────────────────────────────────────────────────
+// RESEÑAS DE FACEBOOK — widget oficial (iframe de Meta), no texto copiado.
+// Cómo conseguir cada link: ve a tu Página de Facebook → pestaña "Reseñas"
+// → los tres puntos (•••) de la reseña que quieras mostrar → "Insertar"
+// → copia el link (el permalink de esa reseña/publicación). El `height`
+// es el que Facebook calculó para esa reseña específica (viene en su mismo
+// código de inserción) — así cada tarjeta se ve del tamaño justo, sin
+// scroll interno ni espacio vacío.
+// ─────────────────────────────────────────────────────────────
+interface FacebookReview { url: string; height: number; }
+const FACEBOOK_REVIEWS: FacebookReview[] = [
+  { url: 'https://www.facebook.com/kimbun.kimbun.3386/posts/pfbid023qKRjk2fEVEtF2u6VKhqbjdKsDDDza52rJGpftoaMGU29M1JNyRGgLGtNxVbU4cpl', height: 166 },
+  { url: 'https://www.facebook.com/luis.eo.4682/posts/pfbid0kG4Sb1SxvQeRrSxzZf1ssyHbJ7BJBz8CR9VD7c3mXbXC7hDm272g5kffTn9DxyUfl', height: 170 },
+  { url: 'https://www.facebook.com/fabianeTsukishiro/posts/pfbid0cahdWXe32fTy9iu7U9md9CfGbRKTWQaXLvRbXyHRFuMrZqQdsFdQ4nA8A3cdLNPVl', height: 272 },
+  { url: 'https://www.facebook.com/kevin.ccaso.79/posts/pfbid02iUkGRJD76LGrKQEZHvzZC5HnPtCKMEbythyHNxpECHcwc27FmU5M5eqWrCc8bzRMl', height: 250 },
+  { url: 'https://www.facebook.com/SephithSTF/posts/pfbid021Ptf1HeWzfNA9qomtPVFzhiGXUf8cnFhEnZT9z9L6yefiieS2yAunHcx9vVqtCCtl', height: 250 },
+  { url: 'https://www.facebook.com/AntonyYoshi/posts/pfbid02YVAjsjqAEZofpWYkMvRa9XMVh68FF5ZVdZv4U1t6Ahba6eohFVDuZbVXMUpuhg83l', height: 189 },
+  { url: 'https://www.facebook.com/andrea.lucas.699467/posts/pfbid02u3R3xGGmFBREqDm9yo5RBWfbKwg1wrSidsyueVn4r7Qjizw6Q8nFEqfTAPwYdBd1l', height: 194 },
+  { url: 'https://www.facebook.com/richardanderson.encinascondor/posts/pfbid0VL2LwrQAx6N5NRS3FkNxr9189Qvj7CYEhwPJgbezEyGbxarS8TptKFGutbXuWjVNl', height: 189 },
+  { url: 'https://www.facebook.com/Xrusses/posts/pfbid0yFB1qqjtoJCTFcE1ccLYJVjsVdxKdVJNs91NSeJKPsAgotw8Di3G5b7UiooMWSSJl', height: 166 },
+  { url: 'https://www.facebook.com/wilmercarranza.carranza.3/posts/pfbid037HibiR4wModQ57eJ5NAayhYdgXXYQ87UohGoh3icsdaPD1QcdQ5YFvYFL5H4Fb3pl', height: 166 },
+  { url: 'https://www.facebook.com/brian.marquez.763203/posts/pfbid02w95JxoQbcKRVj71AeDGo7Qm4DpBPYzPWPHkJAUxgQS7c3sx1B4jqxhTsSX2VcqtQl', height: 194 },
+  { url: 'https://www.facebook.com/permalink.php?story_fbid=pfbid0x2QTnWfwDLMdak8qbSg2BB3zwMTUsfYrPF1ioZ5tGqXtfD2b8Z9Ux2FeqaXjfKdNl&id=100095321777575', height: 166 },
+  { url: 'https://www.facebook.com/je.veux.vingt.neuf/posts/pfbid0346iVF6YihdWrYbSphPcEVxf6RLnawP2TMLKE6wb72kkNLxaAf4Xk5piQ3eyKC3Jul', height: 170 },
+  { url: 'https://www.facebook.com/fernandoaaron.grillo/posts/pfbid02LRZvCDMoFuTbLQHzKg7jvPqqcpuRSaDnDJag2J3NDivaJxNfe9J8MJUjAEEJJyz7l', height: 194 },
+  { url: 'https://www.facebook.com/permalink.php?story_fbid=pfbid0MsYzUXHkSwTG12CRT56vz6SZAmXchNy4oeAFuYgTmWG9ydNSyZiGruTt5oQ41vE9l&id=61571042311900', height: 250 },
+  { url: 'https://www.facebook.com/kevin.eduardo.596457/posts/pfbid09jFpmX1BPgZhXjYdhGURTmrdzXtzwZPCEYqpMg1bdtZWSjGsoeQ28EHBq8Y7wXPtl', height: 166 },
+  { url: 'https://www.facebook.com/lyy.ramirez.3/posts/pfbid02FnFpCSBZu9Mm25PkFzHsvwGPP5az23zUrVTBsNxftTrfnes4PVQykxxtCJfj5RxUl', height: 166 },
+  { url: 'https://www.facebook.com/diego.horna.429756/posts/pfbid02douV4gU2jVssnSH2YDv42WtgofWWzMcSzzzq9DFw8YnywwDbYgYPNpJNcwvFKBAKl', height: 166 },
+  { url: 'https://www.facebook.com/marko.vallesMendoza/posts/pfbid0FDiK2VozX1YSzybRvuxtxLRsr4TungaPZSPeQJNbX5ko4wFW79NYsE4c6Ge4LoEMl', height: 194 },
+  { url: 'https://www.facebook.com/whatareyoudoing15/posts/pfbid0zdzK7pF7nvghww8tPiAvbcR8eFdEy5y7dTtARSA2VbgFYtPHLZHe53NQ65mWEDNYl', height: 166 },
+  { url: 'https://www.facebook.com/permalink.php?story_fbid=pfbid029NcbwzTcVu8jfWsYB4CGWr62XDDm4fPj9eJgdS1zmP35AXkCNjtmkgS3bPxzzbpRl&id=100092716593312', height: 194 },
+  { url: 'https://www.facebook.com/luis.quinto.5201254/posts/pfbid02SbEQKBkoWPJRsh94e1226vzTzk8DdgNc4d3z2bMaGtFNYHLPe1boUZ3D2qSXZcxzl', height: 166 },
+  { url: 'https://www.facebook.com/joseluis.mox/posts/pfbid0KxV8AQixJ8cgxzppbYHKWgX6ZPCdz77Cqp7RG8Wqi2bkZJoUVavCTjigiUSgPTLLl', height: 166 },
+  { url: 'https://www.facebook.com/sherlock.gillen/posts/pfbid02PLBuF8fpfGZ9resQpR7CE9xkdDCrafakftzxY1T8L2Yn1SUWrr97igXgKU3gmX1Jl', height: 194 },
+  { url: 'https://www.facebook.com/joselito.deuniversitario/posts/pfbid0kBUQWVkRvvFZktDLXKpoWEyFzKgiSSb1SZsrj9z8vaw9TgbxWjMiaDqyLN8YKjthl', height: 194 },
+  { url: 'https://www.facebook.com/SainZ.trx/posts/pfbid0n1qvo8W1zxSBSakLEMZqKff3TUqkDUDAtBJXiDPGq3QWvQkB41d83GFP6H6LrvKBl', height: 194 },
+  { url: 'https://www.facebook.com/maicol.jhoal.perez/posts/pfbid0KbJGTrfaMSyee3kcqnPJwnfNshmbh2izMHiSMP831ufBv4nB1Jp2sET99Pvo7nQ7l', height: 194 },
+  { url: 'https://www.facebook.com/laldair/posts/pfbid02WY2XHmveSZHL76dB3HPQkZJYi7AiWV2tF7vLEKZuwEVm5J2eSaYKV1oLi44JnQ7rl', height: 170 },
+  { url: 'https://www.facebook.com/joseph.daniel.907667/posts/pfbid02ztBhQwTf3kBmGW3qAvqw1jRcLbGVqTjb9QUXLFMftQgYePNPkK1NLqPVhQv9Hi4Rl', height: 194 },
+  { url: 'https://www.facebook.com/jefferson.copavilla/posts/pfbid02REP6VdCRPNTZsgk1sessyFXHkJ4DETQ6to1Q4hVxvSaSuQVZmHQU5ta5d8HWEMXSl', height: 170 },
+  { url: 'https://www.facebook.com/katty.fernandez.3572/posts/pfbid0RNgaVV6ZDJF1duKJGjVMRZidgAGyjWsAzseNAL1yjBQ4oCsw8g2VPx8vb1eyaCTCl', height: 166 },
+  { url: 'https://www.facebook.com/RenzoZaHdiel/posts/pfbid02ft34iP326yHMHAQ3s9Av4aCv8eij6cJbKsBhNKwgSbPQfHhQJJ8FiUFi4PSBWZ6Dl', height: 166 },
+  { url: 'https://www.facebook.com/sunkzzz/posts/pfbid05gfy4xCBQwkeYXwbDffb9ZwJXuqPcj7pRkMxsLDh4RCZkNEEabpMfjxGCqqS1nmSl', height: 194 },
+  { url: 'https://www.facebook.com/samuel.aquino.188/posts/pfbid0We2xp9LQwE1SXSwpsu7iT25ybYThGRKmMQM5yg39Koup9NbMChxRTJUo3c3HRZQDl', height: 250 },
+  { url: 'https://www.facebook.com/45pez/posts/pfbid02VjioYcH6yTTdAkceFyKo6o3jT7oNicnHdtptpqsaCr9eZ6uZsj1rSZk2XUGfpRc6l', height: 170 },
+  { url: 'https://www.facebook.com/nadia.mamani.940/posts/pfbid02hFygvjW3fjMSd9J8aqQ4W1Jvm8ozxRZqgbq9UcyK69oJr5zT6FiYNsbWsFE6d4Vvl', height: 189 },
+  { url: 'https://www.facebook.com/itsharlow24/posts/pfbid02RFh764FiXZ4Ceu3eMtcdji8gaohiAWgU786uKicQQXDTfwcC7PZ8mPi73WhsGckYl', height: 170 },
+  { url: 'https://www.facebook.com/isac.isac.12327608/posts/pfbid0XY7GhNuQyZNLhXkPayk9MANxikGwEkwaquzSB2ZkTuJz5sBzpT7q3CnxB1YsGYZl', height: 166 },
+  { url: 'https://www.facebook.com/edgardavid.abantocondori/posts/pfbid0AuJ2FnCmmHmGM4dw73KH5jesAGZHDVquvsy3WaGEPnwaSx3mufX7pvSSrscsNfH6l', height: 222 },
+  { url: 'https://www.facebook.com/renzoparraga666/posts/pfbid0psJDkAvaUxrpmWN2Le2HJu76qpRDtNrF3QpTNKiLSeMV9ak7ca4jThnLUtMecoPLl', height: 194 },
+];
+function FacebookReviewEmbed({ url, height }: { url: string; height: number }) {
+  const src = `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(url)}&show_text=true&width=500`;
+  return (
+    // Ancho fijo de 500px (igual al que Facebook usó para calcular `height`)
+    // — si el iframe se estira a un ancho distinto, el texto se reacomoda y
+    // la altura fija queda corta, cortando contenido. Por eso NO usar 100%.
+    <div className="fb-review-embed" style={{ height }}>
+      <iframe
+        src={src}
+        title={`Facebook review ${url}`}
+        width="500"
+        height={height}
+        style={{ border: 'none', width: 500, height }}
+        scrolling="no"
+        loading="lazy"
+        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+      />
+    </div>
+  );
+}
 
 const KC_PACKAGES_BASE = [
-  { id: 'starter', name: 'Starter', kc: 800,   price_soles: 12.8,  image: '/800-kc.png',   color: '#3b82f6', glow: '#3b82f625', tag: null,   tagIcon: null },
-  { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_soles: 38.4,  image: '/2400-kc.png',  color: '#8b5cf6', glow: '#8b5cf625', tag: 'pop',  tagIcon: 'star' },
-  { id: 'pro',     name: 'Pro',     kc: 4500,  price_soles: 72.0,  image: '/4500-kc.png',  color: '#f59e0b', glow: '#f59e0b25', tag: 'sell', tagIcon: 'fire' },
-  { id: 'legend',  name: 'Legend',  kc: 12500, price_soles: 200.0, image: '/12500-kc.png', color: '#ec4899', glow: '#ec489925', tag: 'prem', tagIcon: 'crown' },
+  { id: 'starter', name: 'Starter', kc: 800,   price_soles: 10.40,  image: '/800-kc.png',   color: '#3b82f6', glow: '#3b82f625', tag: null,   tagIcon: null },
+  { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_soles: 31.20,  image: '/2400-kc.png',  color: '#8b5cf6', glow: '#8b5cf625', tag: 'pop',  tagIcon: 'star' },
+  { id: 'pro',     name: 'Pro',     kc: 4500,  price_soles: 58.50,  image: '/4500-kc.png',  color: '#f59e0b', glow: '#f59e0b25', tag: 'sell', tagIcon: 'fire' },
+  { id: 'legend',  name: 'Legend',  kc: 12500, price_soles: 162.50, image: '/12500-kc.png', color: '#ec4899', glow: '#ec489925', tag: 'prem', tagIcon: 'crown' },
 ];
-
-import { getExchangeRates } from '../services/api';
 
 function useRotatingWord(words: string[]) {
   const [index, setIndex] = useState(0);
@@ -49,29 +146,31 @@ function useRotatingWord(words: string[]) {
 export default function Landing() {
   const { t, lang } = useLang();
   const { customer } = useAuth();
+  const { currency: refCurrency, rates: refRates } = useCurrency();
   const isLogged = !!customer;
   const words = t('land.words').split(',');
   const { word, phase, ref } = useRotatingWord(words);
+  const fbTickerRef = useRef<HTMLDivElement>(null);
+  const [fbTickerPaused, setFbTickerPaused] = useState(false);
 
-  // Tasas de cambio dinámicas
-  const [usdRate, setUsdRate] = useState<number>(0.27);
-  const [eurRate, setEurRate] = useState<number>(0.25);
-
+  // Fila horizontal de reseñas de Facebook — avanza sola hacia la izquierda
+  // cada pocos segundos y da la vuelta al llegar al final, mostrando las 40
+  // sin cargarlas todas visibles a la vez (loading="lazy" + fuera de vista).
   useEffect(() => {
-    getExchangeRates()
-      .then(data => {
-        if (data.USD) setUsdRate(data.USD);
-        if (data.EUR) setEurRate(data.EUR);
-      })
-      .catch(() => {}); // Usar valores por defecto si falla
-  }, []);
-
-  // Calcular precios con tasas actuales
-  const KC_PACKAGES = KC_PACKAGES_BASE.map(pkg => ({
-    ...pkg,
-    price_usd: Math.round(pkg.price_soles * usdRate * 100) / 100,
-    price_eur: Math.round(pkg.price_soles * eurRate * 100) / 100,
-  }));
+    if (FACEBOOK_REVIEWS.length === 0) return;
+    const id = setInterval(() => {
+      const el = fbTickerRef.current;
+      if (!el || fbTickerPaused) return;
+      const cardStep = 518; // 500px de tarjeta + 18px de gap
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (el.scrollLeft >= maxScroll - 5) {
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        el.scrollBy({ left: cardStep, behavior: 'smooth' });
+      }
+    }, 3500);
+    return () => clearInterval(id);
+  }, [fbTickerPaused]);
 
   const tagLabels: Record<string, string> = {
     pop:  lang === 'es' ? 'Más Popular' : 'Most Popular',
@@ -93,17 +192,6 @@ export default function Landing() {
     <div className="lv7">
       <section className="lv7-hero">
         <div className="lv7-hero-left">
-          <div className="lv7-float lv7-f1"><img src="/kidcoin.png" alt="" /></div>
-          <div className="lv7-float lv7-f2">
-            <div className="lv7-float-card">
-              <span className="lv7-fc-kc">+800 KC</span>
-              <span className="lv7-fc-lbl">Starter</span>
-            </div>
-          </div>
-          <div className="lv7-float lv7-f3">
-            <div className="lv7-float-badge"><ShieldCheck size={13} />{t('land.check.pay')}</div>
-          </div>
-
           <div className="lv7-season">
             <span className="lv7-dot" />
             {t('land.season')}
@@ -178,7 +266,7 @@ export default function Landing() {
             <p>{t('land.pkg.sub')}</p>
           </div>
           <div className="lv7-packages">
-            {KC_PACKAGES.map(pkg => (
+            {KC_PACKAGES_BASE.map(pkg => (
               <div key={pkg.id} className={`lv7-pkg ${pkg.tag ? 'featured' : ''}`}
                 style={{ '--pc': pkg.color, '--pg': pkg.glow } as React.CSSProperties}>
                 {pkg.tag && (
@@ -197,8 +285,7 @@ export default function Landing() {
                   <div className="lv7-pkg-name">{pkg.name}</div>
                   <div className="lv7-pkg-kc">{pkg.kc.toLocaleString()} <span>KC</span></div>
                   <div className="lv7-pkg-prices">
-                    <strong>S/ {pkg.price_soles.toLocaleString()}</strong>
-                    <span>${pkg.price_usd.toFixed(2)} · €{pkg.price_eur.toFixed(2)}</span>
+                    <strong>{formatReferencePrice(pkg.price_soles, refCurrency, refRates)}</strong>
                   </div>
                   <Link to="/recharge" className="lv7-pkg-btn">
                     {t('land.pkg.btn')} <ChevronRight size={14} />
@@ -213,7 +300,8 @@ export default function Landing() {
               <div className="lv7-pay-track">
                 {[...PAYMENT_METHODS, ...PAYMENT_METHODS, ...PAYMENT_METHODS].map((pm, i) => (
                   <div className="lv7-pay-item" key={i}>
-                    <img src={pm.logo} alt={pm.name} />
+                    <img src={pm.logo} alt={pm.name}
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <span>{pm.name}</span>
                   </div>
                 ))}
@@ -241,6 +329,53 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {(FACEBOOK_REVIEWS.length > 0 || TESTIMONIALS.length > 0) && (
+        <section className="lv7-sec lv7-sec-reviews">
+          <div className="lv7-inner">
+            <div className="lv7-head">
+              <span className="lv7-tag">{t('land.reviews.tag')}</span>
+              <h2>{t('land.reviews.title')}</h2>
+              <p>{t('land.reviews.sub')}</p>
+            </div>
+
+            {/* Reseñas de Facebook — widget oficial, fila horizontal con auto-scroll */}
+            {FACEBOOK_REVIEWS.length > 0 && (
+              <div
+                className="lv7-fb-ticker"
+                onMouseEnter={() => setFbTickerPaused(true)}
+                onMouseLeave={() => setFbTickerPaused(false)}
+              >
+                <div className="lv7-fb-ticker-track" ref={fbTickerRef}>
+                  {FACEBOOK_REVIEWS.map(rv => (
+                    <FacebookReviewEmbed key={rv.url} url={rv.url} height={rv.height} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Testimonios de texto curados a mano (otras fuentes) */}
+            {TESTIMONIALS.length > 0 && (
+              <div className="lv7-reviews-grid" style={{ marginTop: FACEBOOK_REVIEWS.length > 0 ? 24 : 0 }}>
+                {TESTIMONIALS.map((rv, i) => (
+                  <div className="lv7-review-card" key={i}>
+                    <div className="lv7-review-stars">
+                      {Array.from({ length: 5 }).map((_, s) => (
+                        <span key={s} style={{ opacity: s < rv.rating ? 1 : 0.25 }}><IconStar /></span>
+                      ))}
+                    </div>
+                    <p className="lv7-review-text">"{lang === 'es' ? rv.text_es : rv.text_en}"</p>
+                    <div className="lv7-review-foot">
+                      <span className="lv7-review-name">{rv.name}</span>
+                      <span className="lv7-review-source" style={{ color: SOURCE_COLOR[rv.source], background: SOURCE_COLOR[rv.source] + '18' }}>{rv.source}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <footer className="lv7-footer">
         <div className="lv7-footer-inner">
