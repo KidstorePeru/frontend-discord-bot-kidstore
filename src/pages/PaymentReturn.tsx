@@ -34,6 +34,12 @@ export default function PaymentReturn() {
           const s = tx.status as string;
           if (s === 'approved' || s === 'fulfilled') { setState('success'); refresh(); return; }
           if (s === 'failed' || s === 'expired') { setState('error'); return; }
+          // La pasarela ya nos redirigió acá diciendo que el pago se canceló o
+          // falló (status=failure en la URL) — el backend puede tardar hasta 30
+          // min en marcar la transacción como expirada por su cuenta, así que no
+          // tiene sentido reintentar 8 veces (~20s) y terminar mostrando "pago
+          // pendiente" para siempre en cada recarga de la página.
+          if (status === 'failure') { setState('error'); return; }
           if (attempts > 0) { await new Promise(r => setTimeout(r, 2500)); return check(attempts - 1); }
           setState('pending');
         };

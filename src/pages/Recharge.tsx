@@ -148,6 +148,21 @@ export default function Recharge() {
       let settled = false;
       for (let i = 0; i < 120; i++) {
         await new Promise(r => setTimeout(r, 3000));
+
+        // Si el popup ya volvió a nuestro propio dominio en /payment/return con
+        // status=failure, la pasarela nos está diciendo directamente que el
+        // pago se canceló o falló — no tiene sentido seguir esperando hasta 6
+        // minutos a que el backend lo detecte solo. Mientras el popup sigue en
+        // el dominio de la pasarela (checkout de MercadoPago/PayPal/etc.) leer
+        // su URL falla por cross-origin, lo cual es normal y se ignora.
+        let returnedAsFailure = false;
+        try {
+          const href = payWindow.location.href;
+          if (href.includes('/payment/return') && href.includes('status=failure')) {
+            returnedAsFailure = true;
+          }
+        } catch { /* todavía en el dominio de la pasarela — normal */ }
+
         try {
           const statusRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
@@ -162,7 +177,12 @@ export default function Recharge() {
             settled = true;
             break;
           }
-          if (st === 'failed' || st === 'expired') { setPayResult('error'); settled = true; break; }
+          if (st === 'failed' || st === 'expired' || returnedAsFailure) {
+            setPayResult('error');
+            try { payWindow.close(); } catch {}
+            settled = true;
+            break;
+          }
           // User closed the payment window — do one final status check
           if (payWindow.closed) {
             await new Promise(r => setTimeout(r, 5000));
