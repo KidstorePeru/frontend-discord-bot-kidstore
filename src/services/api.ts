@@ -115,6 +115,19 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return { token: res.token, customer: res.customer };
 }
 
+// Revoca el refresh token del dispositivo actual del lado del servidor —
+// antes "cerrar sesión" solo borraba el token del navegador y el servidor
+// seguía aceptándolo hasta sus 7 días completos. Se llama antes de limpiar
+// el localStorage.
+export async function logoutRequest(refreshToken: string | null): Promise<void> {
+  if (!refreshToken) return;
+  try {
+    await request('/store/logout', { method: 'POST', body: JSON.stringify({ refresh_token: refreshToken }) });
+  } catch {
+    // best-effort — si falla (red caída, etc.) igual se limpia la sesión local
+  }
+}
+
 export async function forgotPassword(email: string, lang?: string): Promise<void> {
   await request('/store/forgot-password', {
     method: 'POST',

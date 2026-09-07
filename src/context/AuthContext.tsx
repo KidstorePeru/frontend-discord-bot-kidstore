@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Customer } from '../types';
-import { getMe } from '../services/api';
+import { getMe, logoutRequest } from '../services/api';
 
 interface AuthState {
   customer: Customer | null;
@@ -20,10 +20,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(!!localStorage.getItem('kc_token'));
 
   const logout = useCallback(() => {
+    const refreshToken = localStorage.getItem('kc_refresh_token');
     localStorage.removeItem('kc_token');
     localStorage.removeItem('kc_refresh_token');
     setToken(null);
     setCustomer(null);
+    // Revocar la sesión del lado del servidor también — sin esto, el
+    // refresh token seguía siendo válido hasta 7 días después de "cerrar
+    // sesión". No hace falta esperar la respuesta, la sesión local ya se
+    // limpió igual.
+    void logoutRequest(refreshToken);
   }, []);
 
   const setAuth = useCallback((t: string, c: Customer) => {
