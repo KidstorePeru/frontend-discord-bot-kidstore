@@ -169,6 +169,11 @@ export default function Dashboard() {
                     </div>
                     <KCBadge amount={o.price_kc} size="sm" />
                     <StatusBadge status={o.status} />
+                    {o.status === 'sent' && (
+                      <Link to={`/dashboard/comprobantes/pedido/${o.id}`} className="dash-voucher-link">
+                        {es ? 'Comprobante' : 'Receipt'}
+                      </Link>
+                    )}
                   </div>
                 ))}
               </div>
@@ -232,6 +237,7 @@ export default function Dashboard() {
                         </div>
                         <KCBadge amount={r.amount_kc} size="sm" />
                         <span className="status-badge" style={{ '--badge-color': '#22c55e' } as React.CSSProperties}>{es ? 'Acreditado' : 'Credited'}</span>
+                        <Link to={`/dashboard/comprobantes/recarga/${r.id}`} className="dash-voucher-link">{es ? 'Comprobante' : 'Receipt'}</Link>
                       </div>
                     );
                   } else {
@@ -254,6 +260,9 @@ export default function Dashboard() {
                         <span className="status-badge" style={{ '--badge-color': p.status === 'approved' ? '#22c55e' : p.status === 'pending' ? '#f59e0b' : '#dc2626' } as React.CSSProperties}>
                           {p.status === 'approved' ? (es ? 'Aprobado' : 'Approved') : p.status === 'pending' ? (es ? 'Pendiente' : 'Pending') : (es ? 'Fallido' : 'Failed')}
                         </span>
+                        {(p.status === 'approved' || p.status === 'fulfilled') && (
+                          <Link to={`/dashboard/comprobantes/pago/${p.id}`} className="dash-voucher-link">{es ? 'Comprobante' : 'Receipt'}</Link>
+                        )}
                       </div>
                     );
                   }

@@ -282,6 +282,34 @@ export async function cancelPayment(paymentId: string): Promise<{ success: boole
   return request<{ success: boolean; cancelled: boolean }>(`/store/payment/${paymentId}/cancel`, { method: 'POST' });
 }
 
+export interface Voucher {
+  type: 'payment' | 'order' | 'recharge';
+  reference: string;
+  customer_name: string;
+  status: string;
+  created_at: string;
+  // pago / recarga
+  product_name?: string;
+  amount_pen?: number;
+  kc_amount?: number;
+  gateway?: string;
+  external_id?: string;
+  // pedido
+  item_name?: string;
+  item_image?: string;
+  epic_username?: string;
+  price_kc?: number;
+  price_vbucks?: number;
+}
+
+// voucherKind: "pago" | "pedido" | "recarga" — coincide con la ruta del sitio;
+// se traduce a la ruta real del backend (payment/order/recharge).
+export async function getVoucher(voucherKind: 'pago' | 'pedido' | 'recarga', id: string): Promise<Voucher> {
+  const backendKind = { pago: 'payment', pedido: 'order', recarga: 'recharge' }[voucherKind];
+  const res = await request<{ success: boolean; voucher: Voucher }>(`/store/voucher/${backendKind}/${id}`);
+  return res.voucher;
+}
+
 /* ── Product Availability ── */
 
 export async function checkProductAvailable(productId: string): Promise<boolean> {

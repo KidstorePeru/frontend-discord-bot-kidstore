@@ -30,6 +30,7 @@ import Refunds from './pages/Refunds';
 import FAQPage from './pages/FAQ';
 import Contact from './pages/Contact';
 import PaymentReturn from './pages/PaymentReturn';
+import Voucher from './pages/Voucher';
 import NotFound from './pages/NotFound';
 import { useState } from 'react';
 import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -301,6 +302,7 @@ export default function App() {
                   <Route path="/faq"            element={<FAQPage />} />
                   <Route path="/contact"        element={<Contact />} />
                   <Route path="/payment/return" element={<PaymentReturn />} />
+                  <Route path="/dashboard/comprobantes/:kind/:id" element={<ProtectedRoute><Voucher /></ProtectedRoute>} />
                   <Route path="*"               element={<NotFound />} />
                 </Routes>
               </main>

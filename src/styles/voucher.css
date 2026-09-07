@@ -1,0 +1,85 @@
+/* ═══════════════════════════════════════════════════
+   COMPROBANTE — mismo lenguaje visual que los correos
+   ═══════════════════════════════════════════════════ */
+
+.vc-page {
+  min-height: calc(100vh - 64px);
+  background: var(--bg-secondary, #f7f6f3);
+  padding: 32px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vc-toolbar { width: 100%; max-width: 480px; margin-bottom: 16px; }
+.vc-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; color: var(--text-muted, #6d716f); text-decoration: none;
+}
+.vc-back:hover { color: var(--text-primary, #14161a); }
+
+.vc-card {
+  width: 100%; max-width: 480px; background: #ffffff; border: 1px solid #e4e3dd;
+  border-radius: 16px; padding: 36px 32px 30px; color: #14161a; font-family: 'Manrope', sans-serif;
+}
+
+.vc-top { display: flex; justify-content: space-between; align-items: center; padding-bottom: 22px; border-bottom: 1px solid #e4e3dd; margin-bottom: 24px; }
+.vc-logo { height: 28px; width: auto; }
+.vc-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 11.5px; color: #6d716f; }
+
+.vc-status {
+  display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: #2e7d5b; background: rgba(46,125,91,.1); padding: 4px 10px; border-radius: 100px; margin-bottom: 22px;
+}
+
+.vc-item { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+.vc-thumb { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; background: #f2f1ec; flex-shrink: 0; }
+
+.vc-h { font-size: 12px; color: #6d716f; margin: 0 0 4px; }
+.vc-amount {
+  font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 32px; margin: 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.vc-kc-icon { width: 24px; height: 24px; }
+
+.vc-table { width: 100%; border-collapse: collapse; margin: 22px 0; }
+.vc-table td { padding: 10px 0; border-bottom: 1px solid #e4e3dd; font-size: 13px; }
+.vc-table td:first-child { color: #6d716f; width: 42%; }
+.vc-table td:last-child { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.vc-actions { display: flex; gap: 10px; margin-bottom: 22px; }
+.vc-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+}
+.vc-btn.primary { background: #14161a; color: #fff; }
+.vc-btn.primary:hover { opacity: .88; }
+.vc-btn.ghost { background: #fff; border: 1px solid #e4e3dd; color: #14161a; }
+.vc-btn.ghost:hover { background: #f7f6f3; }
+
+.vc-disclaimer { background: #f7f6f3; border: 1px solid #e4e3dd; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+.vc-disclaimer .tag { display: block; font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #6d716f; margin-bottom: 6px; }
+.vc-disclaimer p { font-size: 11.5px; color: #6d716f; line-height: 1.6; margin: 0; }
+
+.vc-support { text-align: center; font-size: 11.5px; color: #6d716f; margin: 0; }
+.vc-support a { color: #33396b; font-weight: 600; text-decoration: none; }
+
+.vc-error {
+  max-width: 420px; margin: 60px auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  color: var(--text-primary, #14161a);
+}
+.vc-error svg { color: #a15c1f; }
+.vc-error h1 { font-size: 20px; margin: 0; }
+.vc-error p { color: var(--text-muted, #6d716f); font-size: 14px; margin: 0 0 8px; }
+
+@media (prefers-color-scheme: dark) {
+  .vc-page { background: #0f0f10; }
+}
+
+/* ── Impresión: solo la tarjeta, sin navbar/footer/botones ── */
+@media print {
+  body * { visibility: hidden; }
+  .vc-card, .vc-card * { visibility: visible; }
+  .vc-card { position: absolute; top: 0; left: 0; width: 100%; max-width: 100%; border: none; padding: 24px; }
+  .no-print { display: none !important; }
+}

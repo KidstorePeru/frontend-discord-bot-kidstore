@@ -12,6 +12,7 @@ import './styles/recharge.css';
 import './styles/admin.css';
 import './styles/cart.css';
 import './styles/payment-return.css';
+import './styles/voucher.css';
 import './styles/utilities.css';
 
 createRoot(document.getElementById('root')!).render(

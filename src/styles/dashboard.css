@@ -337,6 +337,12 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.07);
 }
 [data-theme="dark"] .dash-order-row:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+.dash-voucher-link {
+  font-size: .76rem; font-weight: 700; color: var(--accent); text-decoration: none;
+  white-space: nowrap; flex-shrink: 0; padding: 6px 10px; border-radius: 8px;
+  border: 1.5px solid var(--border);
+}
+.dash-voucher-link:hover { border-color: var(--accent); background: rgba(124,58,237,0.06); }
 .dash-order-img {
   width: 52px; height: 52px; border-radius: 12px; overflow: hidden;
   background: var(--bg-sunken); flex-shrink: 0; border: 1px solid var(--border);
