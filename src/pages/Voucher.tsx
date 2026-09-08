@@ -95,6 +95,15 @@ export default function Voucher() {
             {isOrder && <tr><td>{es ? 'Cuenta Epic' : 'Epic account'}</td><td>{voucher.epic_username}</td></tr>}
             {!isOrder && <tr><td>{es ? 'Método de pago' : 'Payment method'}</td><td>{voucher.gateway}</td></tr>}
             {voucher.external_id && <tr><td>{es ? 'ID de operación' : 'Operation ID'}</td><td>{voucher.external_id}</td></tr>}
+            {isOrder && voucher.delivery_confirmed && (
+              <tr>
+                <td>{es ? 'Entrega' : 'Delivery'}</td>
+                <td>
+                  {es ? 'Confirmada por Epic Games' : 'Confirmed by Epic Games'}
+                  {voucher.delivered_at ? ` · ${fmtDate(voucher.delivered_at, es)}` : ''}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
 

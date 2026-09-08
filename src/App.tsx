@@ -31,6 +31,7 @@ import FAQPage from './pages/FAQ';
 import Contact from './pages/Contact';
 import PaymentReturn from './pages/PaymentReturn';
 import Voucher from './pages/Voucher';
+import ComplaintBook from './pages/ComplaintBook';
 import NotFound from './pages/NotFound';
 import { useState } from 'react';
 import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -299,6 +300,7 @@ export default function App() {
                   <Route path="/terms"          element={<Terms />} />
                   <Route path="/privacy"        element={<Privacy />} />
                   <Route path="/refunds"        element={<Refunds />} />
+                  <Route path="/libro-de-reclamaciones" element={<ComplaintBook />} />
                   <Route path="/faq"            element={<FAQPage />} />
                   <Route path="/contact"        element={<Contact />} />
                   <Route path="/payment/return" element={<PaymentReturn />} />

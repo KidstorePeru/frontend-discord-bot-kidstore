@@ -313,6 +313,10 @@ export interface Voucher {
   epic_username?: string;
   price_kc?: number;
   price_vbucks?: number;
+  // Evidencia de entrega (solo pedidos "sent"): confirmación de que Epic
+  // Games recibió y procesó el envío del regalo.
+  delivery_confirmed?: boolean;
+  delivered_at?: string;
 }
 
 // voucherKind: "pago" | "pedido" | "recarga" — coincide con la ruta del sitio;
@@ -321,6 +325,47 @@ export async function getVoucher(voucherKind: 'pago' | 'pedido' | 'recarga', id:
   const backendKind = { pago: 'payment', pedido: 'order', recarga: 'recharge' }[voucherKind];
   const res = await request<{ success: boolean; voucher: Voucher }>(`/store/voucher/${backendKind}/${id}`);
   return res.voucher;
+}
+
+/* ── Libro de Reclamaciones Virtual ── */
+
+export interface ComplaintRequest {
+  kind: 'reclamo' | 'queja';
+  full_name: string;
+  document_type: 'DNI' | 'CE' | 'Pasaporte';
+  document_number: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  is_minor: boolean;
+  guardian_name?: string;
+  order_id?: string;
+  amount_involved?: number;
+  product_description: string;
+  detail: string;
+  consumer_request: string;
+}
+
+export async function submitComplaint(data: ComplaintRequest): Promise<{ reference: string; status: string; created_at: string }> {
+  const res = await request<{ success: boolean; complaint: { reference: string; status: string; created_at: string } }>('/store/complaints', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return res.complaint;
+}
+
+export interface ComplaintStatus {
+  reference: string;
+  kind: string;
+  status: string;
+  admin_response: string | null;
+  responded_at: string | null;
+  created_at: string;
+}
+
+export async function getComplaintStatus(reference: string): Promise<ComplaintStatus> {
+  const res = await request<{ success: boolean; complaint: ComplaintStatus }>(`/store/complaints/${encodeURIComponent(reference)}`);
+  return res.complaint;
 }
 
 /* ── Product Availability ── */
@@ -369,6 +414,50 @@ export async function adminRechargeKC(adminKey: string, data: {
     method: 'POST',
     headers: { 'X-Admin-Key': adminKey, 'X-Approved-By': 'admin-panel' },
     body: JSON.stringify(data),
+  });
+}
+
+export interface AdminComplaint {
+  id: string;
+  reference: string;
+  kind: 'reclamo' | 'queja';
+  full_name: string;
+  document_type: string;
+  document_number: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  is_minor: boolean;
+  guardian_name?: string;
+  order_id?: string;
+  amount_involved?: number;
+  product_description: string;
+  detail: string;
+  consumer_request: string;
+  status: 'pendiente' | 'respondido' | 'cerrado';
+  admin_response?: string;
+  responded_at?: string;
+  created_at: string;
+}
+
+export async function adminGetComplaints(adminKey: string) {
+  return request<{ success: boolean; complaints: AdminComplaint[]; total: number }>('/admin/complaints', {
+    headers: { 'X-Admin-Key': adminKey },
+  });
+}
+
+export async function adminRespondComplaint(adminKey: string, id: string, response: string) {
+  return request<{ success: boolean; message: string }>(`/admin/complaints/${id}/respond`, {
+    method: 'PUT',
+    headers: { 'X-Admin-Key': adminKey },
+    body: JSON.stringify({ response }),
+  });
+}
+
+export async function adminCloseComplaint(adminKey: string, id: string) {
+  return request<{ success: boolean }>(`/admin/complaints/${id}/close`, {
+    method: 'PUT',
+    headers: { 'X-Admin-Key': adminKey },
   });
 }
 

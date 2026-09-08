@@ -1,0 +1,135 @@
+/* ── Libro de Reclamaciones Virtual ── */
+
+.cb-section-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 28px 0 14px;
+}
+.cb-form > .cb-section-title:first-of-type { margin-top: 6px; }
+
+.cb-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 560px) {
+  .cb-row-2 { grid-template-columns: 1fr; }
+}
+
+.cb-kind-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+@media (max-width: 560px) {
+  .cb-kind-grid { grid-template-columns: 1fr; }
+}
+.cb-kind-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-surface-2);
+  cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.cb-kind-card input { position: absolute; opacity: 0; pointer-events: none; }
+.cb-kind-card strong { font-size: .9rem; color: var(--text-primary); }
+.cb-kind-card span { font-size: .78rem; color: var(--text-muted); line-height: 1.5; }
+.cb-kind-card.active {
+  border-color: var(--accent);
+  background: rgba(124,58,237,0.06);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+}
+
+.cb-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 4px 0 16px;
+  cursor: pointer;
+}
+.cb-checkbox input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.cb-checkbox span { font-size: .85rem; color: var(--text-secondary); }
+
+.cb-lookup {
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 22px;
+  background: var(--bg-surface-2);
+}
+.cb-lookup summary {
+  cursor: pointer;
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  list-style: none;
+}
+.cb-lookup summary::-webkit-details-marker { display: none; }
+.cb-lookup-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.cb-lookup-form input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: .85rem;
+}
+.cb-lookup-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  color: #ef4444;
+  margin: 10px 0 0;
+}
+.cb-lookup-result {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: .85rem;
+  color: var(--text-secondary);
+}
+.cb-lookup-response { margin-top: 8px; }
+.cb-lookup-response p { margin: 4px 0 0; color: var(--text-primary); line-height: 1.55; }
+
+.cb-form { margin-top: 4px; }
+
+.cb-success {
+  text-align: center;
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.cb-success h1 { font-size: 1.3rem; margin: 8px 0 0; }
+.cb-success-ref {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 4px 0 10px;
+  letter-spacing: .02em;
+}
+.cb-success p { font-size: .88rem; color: var(--text-muted); max-width: 440px; line-height: 1.6; margin: 0 0 4px; }
+.cb-success-plazo { color: var(--text-secondary) !important; }
+.cb-success-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}

@@ -44,6 +44,7 @@
 .admin-tab { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: 12px; font-size: 0.82rem; font-weight: 700; border: 1.5px solid var(--border); color: var(--text-secondary); background: var(--bg-surface); cursor: pointer; transition: all 0.2s; }
 .admin-tab:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
 .admin-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 4px 14px rgba(108,92,231,0.35); transform: translateY(-1px); }
+.adm-tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 0.68rem; font-weight: 800; margin-left: 2px; }
 .admin-loading { display: flex; justify-content: center; align-items: center; padding: 64px; color: var(--text-muted); }
 .admin-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; padding: 0 24px; animation: fadeUp 0.4s ease-out both; }
 .admin-stat-card { background: var(--bg-surface); border: 1.5px solid var(--border); border-radius: 18px; padding: 22px 20px; display: flex; align-items: center; gap: 14px; transition: all 0.2s; }

@@ -225,6 +225,7 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2;
 .legal-highlight strong { color: var(--accent); }
 .legal-highlight-warning { background: rgba(245,158,11,.07); border-color: rgba(245,158,11,.2); }
 .legal-highlight-warning strong { color: #f59e0b; }
+.legal-note { font-size: .78rem; color: var(--text-muted); font-style: italic; margin: 0 0 14px; }
 
 /* ── FAQ ── */
 .faq-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 36px; }

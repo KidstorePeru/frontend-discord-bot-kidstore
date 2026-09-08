@@ -8,11 +8,11 @@ import {
   CheckCircle2, RefreshCw, ShieldCheck, Bot,
   Plus, Trash2, ExternalLink, Copy, Zap, X, Edit2,
   AlertTriangle, Gamepad2, Mail, Clock, Moon, Sun, ToggleLeft, ToggleRight,
-  CreditCard
+  CreditCard, ClipboardList, Send
 } from 'lucide-react';
 
-type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments';
-const ADMIN_TABS: AdminTab[] = ['stats', 'customers', 'orders', 'recharge', 'bots', 'schedule', 'payments'];
+type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments' | 'complaints';
+const ADMIN_TABS: AdminTab[] = ['stats', 'customers', 'orders', 'recharge', 'bots', 'schedule', 'payments', 'complaints'];
 const ADMIN_PER_PAGE = 10;
 
 function AdminPagination({ page, total, setPage }: { page: number; total: number; setPage: (p: number) => void }) {
@@ -97,6 +97,14 @@ export default function AdminPanel() {
   const [orderFilter, setOrderFilter] = useState('all');
   const [bots,      setBots]      = useState<BotAccount[]>([]);
 
+  // Libro de Reclamaciones
+  const [complaints,     setComplaints]     = useState<any[]>([]);
+  const [complaintPage,  setComplaintPage]  = useState(1);
+  const [complaintFilter, setComplaintFilter] = useState('all');
+  const [respondTarget,  setRespondTarget]  = useState<any | null>(null);
+  const [respondText,    setRespondText]    = useState('');
+  const [respondLoading, setRespondLoading] = useState(false);
+
   // Schedule
   const [schedule,        setSchedule]        = useState<BotSchedule | null>(null);
   const [schedEnabled,    setSchedEnabled]    = useState(true);
@@ -159,6 +167,10 @@ export default function AdminPanel() {
       else if (t === 'payments') {
         const r = await adminFetch('/admin/payments');
         setPayments(r.payments || []);
+      }
+      else if (t === 'complaints') {
+        const r = await adminFetch('/admin/complaints');
+        setComplaints(r.complaints || []);
       }
       else if (t === 'schedule') {
         const r = await adminFetch('/admin/bot-schedule');
@@ -247,6 +259,28 @@ export default function AdminPanel() {
     finally { setDeleteLoading(false); }
   }
 
+  // ── Libro de Reclamaciones ──
+  async function handleRespondComplaint(e: React.FormEvent) {
+    e.preventDefault(); if (!respondTarget || !respondText.trim()) return; setRespondLoading(true);
+    try {
+      await adminFetch(`/admin/complaints/${respondTarget.id}/respond`, undefined, {
+        method: 'PUT', body: JSON.stringify({ response: respondText.trim() }),
+      });
+      setToast({ msg: '✅ Respuesta enviada al consumidor', type: 'success' });
+      setComplaints(prev => prev.map(c => c.id === respondTarget.id ? { ...c, status: 'respondido', admin_response: respondText.trim() } : c));
+      setRespondTarget(null); setRespondText('');
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message : 'Error enviando respuesta', type: 'error' }); }
+    finally { setRespondLoading(false); }
+  }
+
+  async function handleCloseComplaint(id: string) {
+    try {
+      await adminFetch(`/admin/complaints/${id}/close`, undefined, { method: 'PUT' });
+      setComplaints(prev => prev.map(c => c.id === id ? { ...c, status: 'cerrado' } : c));
+      setToast({ msg: '✅ Reclamo cerrado', type: 'success' });
+    } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message : 'Error cerrando reclamo', type: 'error' }); }
+  }
+
   // ── Bots ──
   async function handleStartConnect() {
     setConnectLoading(true);
@@ -312,6 +346,7 @@ export default function AdminPanel() {
   const displayedOrders = statusFilteredOrders.slice((orderPage - 1) * ADMIN_PER_PAGE, orderPage * ADMIN_PER_PAGE);
 
   const filteredPayments = payFilter === 'all' ? payments : payments.filter((p: any) => p.status === payFilter);
+  const filteredComplaints = complaintFilter === 'all' ? complaints : complaints.filter((c: any) => c.status === complaintFilter);
   const filteredRCustomers = rCustomers.filter(c =>
     c.epic_username.toLowerCase().includes(rSearch.toLowerCase()) ||
     (c.email ?? '').toLowerCase().includes(rSearch.toLowerCase())
@@ -458,9 +493,13 @@ export default function AdminPanel() {
           ['bots',     'Cuentas Bot',  <Bot size={15}/>],
           ['payments', 'Pagos',        <CreditCard size={15}/>],
           ['schedule', 'Horario Bots', <Clock size={15}/>],
+          ['complaints', 'Reclamos',   <ClipboardList size={15}/>],
         ] as [AdminTab, string, React.ReactNode][]).map(([key, label, icon]) => (
           <Link key={key} to={`/admin/${key}`} className={`admin-tab ${tab===key?'active':''}`}>
             {icon} {label}
+            {key === 'complaints' && complaints.some((c: any) => c.status === 'pendiente') && (
+              <span className="adm-tab-badge">{complaints.filter((c: any) => c.status === 'pendiente').length}</span>
+            )}
           </Link>
         ))}
       </div>
@@ -824,6 +863,103 @@ export default function AdminPanel() {
             </table>
           </div>
           <AdminPagination page={paymentPage} total={Math.ceil(filteredPayments.length / ADMIN_PER_PAGE)} setPage={setPaymentPage}/>
+        </div>
+      )}
+
+      {/* ── LIBRO DE RECLAMACIONES ── */}
+      {tab === 'complaints' && !loading && (
+        <div className="admin-table-section">
+          <p className="admin-tab-sub">Libro de Reclamaciones Virtual — requisito legal (Ley N° 29571). Debes responder cada reclamo en un plazo máximo de 30 días calendario desde su presentación.</p>
+          <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="adm-count">{filteredComplaints.length} reclamo{filteredComplaints.length !== 1 ? 's' : ''}</span>
+            <div className="adm-filter-row">
+              {['all','pendiente','respondido','cerrado'].map(s => (
+                <button key={s} className={`adm-filter-btn ${complaintFilter === s ? 'active' : ''}`} onClick={() => setComplaintFilter(s)}>
+                  {s === 'all' ? 'Todos' : s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead><tr>
+                <th>Código</th><th>Tipo</th><th>Consumidor</th><th>Email</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
+              </tr></thead>
+              <tbody>
+                {filteredComplaints.slice((complaintPage-1)*ADMIN_PER_PAGE, complaintPage*ADMIN_PER_PAGE).map((c: any) => (
+                  <tr key={c.id}>
+                    <td><strong>{c.reference}</strong></td>
+                    <td style={{ textTransform: 'capitalize' }}>{c.kind}</td>
+                    <td>{c.full_name}</td>
+                    <td className="text-muted">{c.email}</td>
+                    <td>
+                      <span className="status-badge" style={{ '--badge-color':
+                        c.status === 'pendiente' ? '#f59e0b' : c.status === 'respondido' ? '#3b82f6' : '#6b7280'
+                      } as React.CSSProperties}>
+                        {c.status === 'pendiente' ? 'Pendiente' : c.status === 'respondido' ? 'Respondido' : 'Cerrado'}
+                      </span>
+                    </td>
+                    <td className="text-muted">{new Date(c.created_at).toLocaleDateString('es-PE')}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button className="adm-action-btn" title="Ver detalle / Responder"
+                          onClick={() => { setRespondTarget(c); setRespondText(c.admin_response || ''); }}>
+                          <Send size={14}/>
+                        </button>
+                        {c.status !== 'cerrado' && (
+                          <button className="adm-action-btn adm-cancel" title="Cerrar reclamo" onClick={() => handleCloseComplaint(c.id)}>
+                            <X size={14}/>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredComplaints.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin reclamos</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <AdminPagination page={complaintPage} total={Math.max(1, Math.ceil(filteredComplaints.length / ADMIN_PER_PAGE))} setPage={setComplaintPage}/>
+        </div>
+      )}
+
+      {/* ── Modal: detalle / responder reclamo ── */}
+      {respondTarget && (
+        <div className="confirm-modal-overlay" onClick={() => !respondLoading && setRespondTarget(null)}>
+          <div className="confirm-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 560 }}>
+            <div className="confirm-modal-header">
+              <h2><ClipboardList size={18}/> Reclamo {respondTarget.reference}</h2>
+              <button onClick={() => !respondLoading && setRespondTarget(null)} disabled={respondLoading}><X size={16}/></button>
+            </div>
+            <form onSubmit={handleRespondComplaint}>
+              <div className="confirm-modal-body">
+                <table className="admin-table" style={{ marginBottom: 16 }}>
+                  <tbody>
+                    <tr><td>Consumidor</td><td><strong>{respondTarget.full_name}</strong></td></tr>
+                    <tr><td>Documento</td><td>{respondTarget.document_type} {respondTarget.document_number}</td></tr>
+                    <tr><td>Email</td><td>{respondTarget.email}</td></tr>
+                    {respondTarget.phone && <tr><td>Teléfono</td><td>{respondTarget.phone}</td></tr>}
+                    {respondTarget.order_id && <tr><td>N° Pedido</td><td>{respondTarget.order_id}</td></tr>}
+                    {respondTarget.amount_involved != null && <tr><td>Monto</td><td>S/ {Number(respondTarget.amount_involved).toFixed(2)}</td></tr>}
+                    <tr><td>Bien contratado</td><td>{respondTarget.product_description}</td></tr>
+                    <tr><td>Detalle</td><td style={{ whiteSpace: 'pre-wrap' }}>{respondTarget.detail}</td></tr>
+                    <tr><td>Pedido del consumidor</td><td style={{ whiteSpace: 'pre-wrap' }}>{respondTarget.consumer_request}</td></tr>
+                  </tbody>
+                </table>
+                <label className="field">
+                  <span>Respuesta al consumidor</span>
+                  <textarea rows={4} required value={respondText} onChange={e => setRespondText(e.target.value)}
+                    placeholder="Se le enviará por correo al consumidor..." />
+                </label>
+              </div>
+              <div className="confirm-modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={() => setRespondTarget(null)} disabled={respondLoading}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" disabled={respondLoading || !respondText.trim()}>
+                  {respondLoading ? <Loader2 size={15} className="spin"/> : <><Send size={14}/> Enviar respuesta</>}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

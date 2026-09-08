@@ -60,6 +60,7 @@ export default function Footer() {
             <Link to="/terms">{es ? 'Términos y Condiciones' : 'Terms & Conditions'}</Link>
             <Link to="/privacy">{es ? 'Política de Privacidad' : 'Privacy Policy'}</Link>
             <Link to="/refunds">{es ? 'Política de Reembolsos' : 'Refund Policy'}</Link>
+            <Link to="/libro-de-reclamaciones">{es ? 'Libro de Reclamaciones' : 'Complaints Book'}</Link>
           </div>
         </div>
       </div>
