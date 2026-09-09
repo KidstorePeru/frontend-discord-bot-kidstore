@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-r
 import QRCode from 'qrcode';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { getMyOrders, getMe, updateProfile, updateAvatar, requestEmailChange, confirmEmailChange, startAccountLink, unlinkAccount, get2FAStatus, setup2FA, confirm2FA, disable2FA, deleteOwnAccount } from '../services/api';
+import { getMyOrders, getMyOrderStats, getMe, updateProfile, updateAvatar, requestEmailChange, confirmEmailChange, startAccountLink, unlinkAccount, get2FAStatus, setup2FA, confirm2FA, disable2FA, deleteOwnAccount } from '../services/api';
 import { KCBadge, PageLoader, Toast } from '../components/UI';
 import { GoogleIcon, DiscordIcon } from '../components/OAuthButtons';
 import type { Order, Customer } from '../types';
@@ -49,13 +49,36 @@ export default function Profile() {
   const { tab: tabParam } = useParams<{ tab: string }>();
   const es = lang === 'es';
   const [orders,  setOrders]  = useState<Order[]>([]);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // Totales calculados en el servidor sobre TODO el historial, no solo la
+  // página cargada — antes se mostraba orders.length (como mucho el primer
+  // lote) como si fuera el total real del cliente.
+  const [orderStats, setOrderStats] = useState({ total_orders: 0, sent_orders: 0, total_spent_kc: 0 });
   const [loading, setLoading] = useState(true);
   const [copied,  setCopied]  = useState(false);
   const [toast,   setToast]   = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
-    Promise.all([refresh(), getMyOrders(1, 200).then(r => setOrders(r.orders)).catch(() => [])]).finally(() => setLoading(false));
+    Promise.all([
+      refresh(),
+      getMyOrders(1, 100).then(r => { setOrders(r.orders); setOrdersTotal(r.total); }).catch(() => {}),
+      getMyOrderStats().then(setOrderStats).catch(() => {}),
+    ]).finally(() => setLoading(false));
   }, []);
+
+  async function loadMoreOrders() {
+    setLoadingMore(true);
+    try {
+      const next = ordersPage + 1;
+      const r = await getMyOrders(next, 100);
+      setOrders(prev => [...prev, ...r.orders]);
+      setOrdersTotal(r.total);
+      setOrdersPage(next);
+    } catch { /* se puede reintentar con el mismo botón */ }
+    finally { setLoadingMore(false); }
+  }
 
   if (loading || !customer) return <PageLoader />;
 
@@ -64,8 +87,7 @@ export default function Profile() {
   }
   const tab = tabParam as Tab;
 
-  const sentOrders   = orders.filter(o => o.status === 'sent');
-  const totalSpentKC = sentOrders.reduce((s, o) => s + o.price_kc, 0);
+  const totalSpentKC = orderStats.total_spent_kc;
   const memberSince  = new Date(customer.created_at).toLocaleDateString(es ? 'es-PE' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' });
   const level = totalSpentKC >= 10000 ? 'Legend' : totalSpentKC >= 4000 ? 'Pro' : totalSpentKC >= 1000 ? 'Gamer' : 'Starter';
   const levelColors: Record<string, string> = { Starter: '#3b82f6', Gamer: '#8b5cf6', Pro: '#f59e0b', Legend: '#ec4899' };
@@ -106,11 +128,11 @@ export default function Profile() {
         </div>
         <div className="pstat">
           <div className="pstat-icon"><Package size={22} /></div>
-          <div><span className="pstat-label">{t('profile.orders.total')}</span><span className="pstat-value">{orders.length}</span></div>
+          <div><span className="pstat-label">{t('profile.orders.total')}</span><span className="pstat-value">{orderStats.total_orders.toLocaleString()}</span></div>
         </div>
         <div className="pstat">
           <div className="pstat-icon"><CheckCircle2 size={22} /></div>
-          <div><span className="pstat-label">{t('profile.orders.sent')}</span><span className="pstat-value">{sentOrders.length}</span></div>
+          <div><span className="pstat-label">{t('profile.orders.sent')}</span><span className="pstat-value">{orderStats.sent_orders.toLocaleString()}</span></div>
         </div>
         <div className="pstat">
           <div className="pstat-icon"><TrendingUp size={22} /></div>
@@ -148,7 +170,7 @@ export default function Profile() {
           )}
 
           {tab === 'orders' && (
-            <OrdersTab orders={orders} lang={lang} />
+            <OrdersTab orders={orders} lang={lang} hasMore={orders.length < ordersTotal} loadingMore={loadingMore} onLoadMore={loadMoreOrders} />
           )}
         </div>
       </div>
@@ -978,7 +1000,9 @@ function matchesFilter(status: Order['status'], filter: OrderFilter): boolean {
   }
 }
 
-function OrdersTab({ orders, lang }: { orders: Order[]; lang: string }) {
+function OrdersTab({ orders, lang, hasMore, loadingMore, onLoadMore }: {
+  orders: Order[]; lang: string; hasMore: boolean; loadingMore: boolean; onLoadMore: () => void;
+}) {
   const es = lang === 'es';
   const [filter, setFilter] = useState<OrderFilter>('all');
   const [page, setPage] = useState(1);
@@ -1024,6 +1048,18 @@ function OrdersTab({ orders, lang }: { orders: Order[]; lang: string }) {
               <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight size={14}/></button>
             </div>
           )}
+          {/* El historial se carga de a 100 pedidos — si hay más, hace
+              falta pedir la siguiente página al servidor antes de que
+              aparezcan acá (antes, /perfil pedía 200 de una sola vez y el
+              backend los recortaba a 20 sin avisar; ahora si hay más de
+              los ya cargados, se ofrece traerlos explícitamente). */}
+          {hasMore && page >= totalPages && (
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <button className="btn btn-ghost" disabled={loadingMore} onClick={onLoadMore}>
+                {loadingMore ? (es ? 'Cargando...' : 'Loading...') : (es ? 'Cargar más pedidos' : 'Load more orders')}
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -1032,11 +1068,18 @@ function OrdersTab({ orders, lang }: { orders: Order[]; lang: string }) {
 
 function t_go(es: boolean) { return es ? 'Ir a la tienda' : 'Go to store'; }
 
+// "failed" y "refunded" se muestran distinto a propósito — un pedido pasa
+// por 'failed' apenas se intenta el reembolso, y recién queda 'refunded'
+// cuando ESE reembolso se confirma (ver failOrderAndRefund en el backend).
+// Casi siempre son segundos, pero en el caso raro de que el primer intento
+// falle (queda pendiente de un reintento automático), decir "Reembolsado"
+// sin que sea cierto todavía sería la misma promesa vacía que se corrigió
+// en el correo de pedido fallido.
 const STATUS_META: Record<Order['status'], { es: string; en: string; color: string }> = {
   pending:    { es: 'En procesamiento', en: 'Processing',  color: 'var(--amber-500)' },
   processing: { es: 'En entrega',       en: 'Out for delivery', color: 'var(--blue-500)' },
   sent:       { es: 'Completado',       en: 'Completed',   color: 'var(--green-500)' },
-  failed:     { es: 'Reembolsado',      en: 'Refunded',    color: 'var(--gray-500)' },
+  failed:     { es: 'Reembolso en proceso', en: 'Refund in progress', color: 'var(--amber-500)' },
   refunded:   { es: 'Reembolsado',      en: 'Refunded',    color: 'var(--gray-500)' },
 };
 

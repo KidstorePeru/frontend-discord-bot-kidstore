@@ -109,10 +109,13 @@ export default function AdminPanel() {
   const [stats, setStats] = useState<any>(null);
   const [slotPeriod, setSlotPeriod] = useState<'today' | 'week' | 'month' | 'all_time'>('all_time');
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [custTotal,   setCustTotal]   = useState(0);
   const [orders,    setOrders]    = useState<Order[]>([]);
+  const [orderTotal,  setOrderTotal]  = useState(0);
   const [custPage,    setCustPage]    = useState(1);
   const [orderPage,   setOrderPage]   = useState(1);
   const [payments,    setPayments]    = useState<any[]>([]);
+  const [paymentTotal, setPaymentTotal] = useState(0);
   const [paymentPage, setPaymentPage] = useState(1);
   const [payFilter,   setPayFilter]   = useState('all');
   const [orderFilter, setOrderFilter] = useState('all');
@@ -172,25 +175,66 @@ export default function AdminPanel() {
     if (!authLoading && !isAdmin) navigate('/dashboard');
   }, [authLoading, isAdmin, navigate]);
 
-  useEffect(() => { if (authed) loadTab(tab); }, [authed, tab]);
+  // customers/orders/payments se cargan con efectos dedicados más abajo
+  // (dependen de página/búsqueda/filtro, no solo del cambio de pestaña) —
+  // este efecto general cubre el resto.
+  useEffect(() => {
+    if (!authed) return;
+    if (tab === 'customers' || tab === 'orders' || tab === 'payments') return;
+    loadTab(tab);
+  }, [authed, tab]);
+
+  // Antes, el panel pedía un solo lote SIN page/limit/search y paginaba (y
+  // "buscaba") solo dentro de ese primer lote — con más clientes/pedidos de
+  // los que entraban ahí, ninguna página ni búsqueda podía llegar a
+  // encontrarlos. Ahora page/limit/search van al servidor en cada pedido,
+  // que ya soporta ambos (ver db.GetAllCustomers/GetAllOrders/GetAllPaymentTransactions).
+  useEffect(() => {
+    if (!authed || tab !== 'customers') return;
+    const h = setTimeout(() => loadTab('customers'), search ? 300 : 0);
+    return () => clearTimeout(h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, tab, custPage, search]);
+
+  useEffect(() => {
+    if (!authed || tab !== 'orders') return;
+    const h = setTimeout(() => loadTab('orders'), search ? 300 : 0);
+    return () => clearTimeout(h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, tab, orderPage, search, orderFilter]);
+
+  useEffect(() => {
+    if (!authed || tab !== 'payments') return;
+    loadTab('payments');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, tab, paymentPage, payFilter]);
 
   async function loadTab(t: AdminTab) {
     setLoading(true);
     try {
       if (t === 'stats')    setStats(await adminFetch('/admin/stats'));
-      else if (t === 'customers') { const r = await adminFetch('/admin/customers'); setCustomers(r.customers || []); }
-      else if (t === 'orders')    { const r = await adminFetch('/admin/orders'); setOrders(r.orders || []); }
+      else if (t === 'customers') {
+        const qs = new URLSearchParams({ page: String(custPage), limit: String(ADMIN_PER_PAGE), search }).toString();
+        const r = await adminFetch(`/admin/customers?${qs}`);
+        setCustomers(r.customers || []); setCustTotal(r.total || 0);
+      }
+      else if (t === 'orders') {
+        const qs = new URLSearchParams({ page: String(orderPage), limit: String(ADMIN_PER_PAGE), search, status: orderFilter }).toString();
+        const r = await adminFetch(`/admin/orders?${qs}`);
+        setOrders(r.orders || []); setOrderTotal(r.total || 0);
+      }
       else if (t === 'bots')      { const r = await adminFetch('/admin/bots'); setBots(r.accounts || []); }
       else if (t === 'recharge' && !rCustLoaded) {
-        const r = await adminFetch('/admin/customers');
+        const r = await adminFetch('/admin/customers?limit=200');
         setRCustomers(r.customers || []); setRCustLoaded(true);
       }
       else if (t === 'payments') {
-        const r = await adminFetch('/admin/payments');
-        setPayments(r.payments || []);
+        const qs = new URLSearchParams({ page: String(paymentPage), limit: String(ADMIN_PER_PAGE), status: payFilter }).toString();
+        const r = await adminFetch(`/admin/payments?${qs}`);
+        setPayments(r.payments || []); setPaymentTotal(r.total || 0);
       }
       else if (t === 'complaints') {
-        const r = await adminFetch('/admin/complaints');
+        const r = await adminFetch('/admin/complaints?limit=200');
         setComplaints(r.complaints || []);
       }
       else if (t === 'schedule') {
@@ -351,22 +395,23 @@ export default function AdminPanel() {
   }
 
   useEffect(() => { setCustPage(1); setOrderPage(1); }, [search]);
+  useEffect(() => { setOrderPage(1); }, [orderFilter]);
+  useEffect(() => { setPaymentPage(1); }, [payFilter]);
 
-  const filteredCustomers = customers.filter(c =>
-    c.epic_username.toLowerCase().includes(search.toLowerCase()) ||
-    (c.email ?? '').toLowerCase().includes(search.toLowerCase())
-  );
-  const custTotalPages = Math.max(1, Math.ceil(filteredCustomers.length / ADMIN_PER_PAGE));
-  const pagedCustomers = filteredCustomers.slice((custPage - 1) * ADMIN_PER_PAGE, custPage * ADMIN_PER_PAGE);
+  // customers/orders/payments ya llegan paginados, buscados y filtrados
+  // por el servidor (ver loadTab) — se mantienen estos alias para no tocar
+  // cada punto del render de abajo, pero ya no se vuelve a filtrar ni
+  // recortar nada del lado del cliente (antes SÍ, y ahí estaba el bug: solo
+  // se veía lo que hubiera entrado en el primer lote sin paginar).
+  const filteredCustomers = customers;
+  const custTotalPages = Math.max(1, Math.ceil(custTotal / ADMIN_PER_PAGE));
+  const pagedCustomers = customers;
 
-  const filteredOrders = orders.filter(o =>
-    o.epic_username.toLowerCase().includes(search.toLowerCase()) ||
-    o.item_name.toLowerCase().includes(search.toLowerCase())
-  );
-  const statusFilteredOrders = orderFilter === 'all' ? filteredOrders : filteredOrders.filter(o => o.status === orderFilter);
-  const displayedOrders = statusFilteredOrders.slice((orderPage - 1) * ADMIN_PER_PAGE, orderPage * ADMIN_PER_PAGE);
+  const displayedOrders = orders;
+  const orderTotalPages = Math.max(1, Math.ceil(orderTotal / ADMIN_PER_PAGE));
 
-  const filteredPayments = payFilter === 'all' ? payments : payments.filter((p: any) => p.status === payFilter);
+  const filteredPayments = payments;
+  const paymentTotalPages = Math.max(1, Math.ceil(paymentTotal / ADMIN_PER_PAGE));
   const filteredComplaints = complaintFilter === 'all' ? complaints : complaints.filter((c: any) => c.status === complaintFilter);
   const filteredRCustomers = rCustomers.filter(c =>
     c.epic_username.toLowerCase().includes(rSearch.toLowerCase()) ||
@@ -727,7 +772,7 @@ export default function AdminPanel() {
               <Search size={15}/>
               <input placeholder="Buscar por usuario o email..." value={search} onChange={e => setSearch(e.target.value)}/>
             </div>
-            <span className="adm-count">{filteredCustomers.length} cliente{filteredCustomers.length !== 1 ? 's' : ''}</span>
+            <span className="adm-count">{custTotal.toLocaleString()} cliente{custTotal !== 1 ? 's' : ''}</span>
           </div>
           <div className="admin-table-wrap">
             <table className="admin-table">
@@ -787,7 +832,7 @@ export default function AdminPanel() {
               <Search size={15}/>
               <input placeholder="Buscar por usuario o item..." value={search} onChange={e => setSearch(e.target.value)}/>
             </div>
-            <span className="adm-count">{filteredOrders.length} pedido{filteredOrders.length !== 1 ? 's' : ''}</span>
+            <span className="adm-count">{orderTotal.toLocaleString()} pedido{orderTotal !== 1 ? 's' : ''}</span>
             <div className="adm-filter-row">
               {['all','pending','processing','sent','failed','refunded'].map(s => (
                 <button key={s} className={`adm-filter-btn ${orderFilter === s ? 'active' : ''}`} onClick={() => setOrderFilter(s)}>
@@ -817,7 +862,7 @@ export default function AdminPanel() {
               </tbody>
             </table>
           </div>
-          <AdminPagination page={orderPage} total={Math.max(1, Math.ceil(statusFilteredOrders.length / ADMIN_PER_PAGE))} setPage={setOrderPage}/>
+          <AdminPagination page={orderPage} total={orderTotalPages} setPage={setOrderPage}/>
         </div>
       )}
 
@@ -826,7 +871,7 @@ export default function AdminPanel() {
         <div className="admin-table-section">
           <p className="admin-tab-sub">Recargas de KC pagadas por pasarela automática (MercadoPago, dLocal Go, PayPal, cripto). Los pagos manuales (Yape, Plin, banco) no aparecen aquí — esos se acreditan desde la pestaña "Recargar KC".</p>
           <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span className="adm-count">{payments.length} transacci{payments.length !== 1 ? 'ones' : 'ón'}</span>
+            <span className="adm-count">{paymentTotal.toLocaleString()} transacci{paymentTotal !== 1 ? 'ones' : 'ón'}</span>
             <div className="adm-filter-row">
               {['all','pending','approved','fulfilled','expired','failed'].map(s => (
                 <button key={s} className={`adm-filter-btn ${payFilter === s ? 'active' : ''}`} onClick={() => setPayFilter(s)}>
@@ -841,7 +886,7 @@ export default function AdminPanel() {
                 <th>Pasarela</th><th>Producto</th><th>Monto</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
               </tr></thead>
               <tbody>
-              {filteredPayments.slice((paymentPage-1)*ADMIN_PER_PAGE, paymentPage*ADMIN_PER_PAGE).map((p: any) => (
+              {filteredPayments.map((p: any) => (
                   <tr key={p.id}>
                     <td><span style={{textTransform:'capitalize', fontWeight:600}}>{p.gateway}</span></td>
                     <td>{p.product_name}</td>
@@ -883,7 +928,7 @@ export default function AdminPanel() {
               </tbody>
             </table>
           </div>
-          <AdminPagination page={paymentPage} total={Math.ceil(filteredPayments.length / ADMIN_PER_PAGE)} setPage={setPaymentPage}/>
+          <AdminPagination page={paymentPage} total={paymentTotalPages} setPage={setPaymentPage}/>
         </div>
       )}
 

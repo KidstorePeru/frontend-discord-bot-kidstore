@@ -221,6 +221,14 @@ export async function getMyOrders(page = 1, limit = 20): Promise<{ orders: Order
   return { orders: res.orders ?? [], total: res.total, page: res.page };
 }
 
+// Totales reales calculados en el servidor — a diferencia de derivarlos de
+// una página de pedidos ya cargada (que puede no ser el historial
+// completo), estos números son exactos sin importar cuántos pedidos tenga
+// el cliente.
+export async function getMyOrderStats(): Promise<{ total_orders: number; sent_orders: number; total_spent_kc: number }> {
+  return request('/store/orders/stats');
+}
+
 export async function updateProfile(data: {
   epic_username?: string;
   phone?: string | null;
