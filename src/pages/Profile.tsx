@@ -344,22 +344,30 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
   const [totpError, setTotpError] = useState('');
   const [showDisable2FA, setShowDisable2FA] = useState(false);
   const [disable2FAPassword, setDisable2FAPassword] = useState('');
+  const [showReplace2FA, setShowReplace2FA] = useState(false);
+  const [replace2FAPassword, setReplace2FAPassword] = useState('');
 
   useEffect(() => {
     if (!customer.is_admin) return;
     get2FAStatus().then(setTotpStatus).catch(() => {});
   }, [customer.is_admin]);
 
-  async function handleStart2FASetup() {
+  async function handleStart2FASetup(password?: string) {
     setTotpLoading(true); setTotpError('');
     try {
-      const data = await setup2FA();
+      const data = await setup2FA(password);
       setTotpSetupData(data);
+      setShowReplace2FA(false); setReplace2FAPassword('');
       const qr = await QRCode.toDataURL(data.otpauth_url, { width: 220, margin: 1 });
       setTotpQr(qr);
     } catch (err: unknown) {
       setTotpError(err instanceof Error ? err.message : (es ? 'Error iniciando la activación' : 'Error starting setup'));
     } finally { setTotpLoading(false); }
+  }
+
+  async function handleReplace2FASubmit(e: FormEvent) {
+    e.preventDefault();
+    await handleStart2FASetup(replace2FAPassword);
   }
 
   async function handleConfirm2FA(e: FormEvent) {
@@ -842,8 +850,29 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
                     ? `✅ Activado. Te quedan ${totpStatus.backup_codes_remaining} código(s) de respaldo sin usar.`
                     : `✅ Enabled. You have ${totpStatus.backup_codes_remaining} unused backup code(s) left.`}
                 </div>
-                {!showDisable2FA ? (
-                  <button className="btn btn-ghost" onClick={() => setShowDisable2FA(true)}>{es ? 'Desactivar 2FA' : 'Disable 2FA'}</button>
+                {!showDisable2FA && !showReplace2FA ? (
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button className="btn btn-ghost" onClick={() => { setShowReplace2FA(true); setTotpError(''); }}>{es ? 'Reemplazar 2FA' : 'Replace 2FA'}</button>
+                    <button className="btn btn-ghost" onClick={() => { setShowDisable2FA(true); setTotpError(''); }}>{es ? 'Desactivar 2FA' : 'Disable 2FA'}</button>
+                  </div>
+                ) : showReplace2FA ? (
+                  <form onSubmit={handleReplace2FASubmit}>
+                    <div className="sec-note" style={{ marginBottom: 14 }}>
+                      {es
+                        ? 'Vas a generar un secreto 2FA nuevo. El actual sigue activo hasta que confirmes el reemplazo con un código de tu nueva app.'
+                        : "You're about to generate a new 2FA secret. The current one stays active until you confirm the replacement with a code from your new app."}
+                    </div>
+                    <div className="sec-field">
+                      <label><Lock size={13} /> {es ? 'Confirma tu contraseña' : 'Confirm your password'}</label>
+                      <input type="password" value={replace2FAPassword} onChange={e => setReplace2FAPassword(e.target.value)} required autoFocus />
+                    </div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button type="button" className="btn btn-ghost" onClick={() => { setShowReplace2FA(false); setReplace2FAPassword(''); setTotpError(''); }}>{es ? 'Cancelar' : 'Cancel'}</button>
+                      <button className="btn btn-primary" type="submit" disabled={totpLoading}>
+                        {totpLoading ? <Loader2 className="spin" size={16} /> : (es ? 'Continuar' : 'Continue')}
+                      </button>
+                    </div>
+                  </form>
                 ) : (
                   <form onSubmit={handleDisable2FA}>
                     <div className="sec-field">
@@ -866,7 +895,7 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
                     ? 'Tu cuenta administra dinero real y datos de clientes — activa un segundo factor para protegerla mejor.'
                     : 'Your account manages real money and customer data — enable a second factor to protect it better.'}
                 </div>
-                <button className="btn btn-primary" onClick={handleStart2FASetup} disabled={totpLoading}>
+                <button className="btn btn-primary" onClick={() => handleStart2FASetup()} disabled={totpLoading}>
                   {totpLoading ? <Loader2 className="spin" size={16} /> : <Smartphone size={16} />} {es ? 'Activar 2FA' : 'Enable 2FA'}
                 </button>
               </>

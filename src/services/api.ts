@@ -144,8 +144,11 @@ export async function get2FAStatus(): Promise<{ enabled: boolean; backup_codes_r
   return request('/store/2fa/status');
 }
 
-export async function setup2FA(): Promise<{ secret: string; otpauth_url: string }> {
-  return request('/store/2fa/setup', { method: 'POST' });
+// password: obligatoria si la cuenta YA tiene 2FA activado (es una
+// sustitución) — el backend la exige en ese caso para confirmar identidad
+// antes de generar un secreto nuevo.
+export async function setup2FA(password?: string): Promise<{ secret: string; otpauth_url: string }> {
+  return request('/store/2fa/setup', { method: 'POST', body: password ? JSON.stringify({ password }) : undefined });
 }
 
 export async function confirm2FA(code: string): Promise<{ backup_codes: string[] }> {
