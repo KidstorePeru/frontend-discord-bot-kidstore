@@ -12,7 +12,7 @@ const FAQS_ES = [
   { q: '¿Puedo comprar si mi cuenta es nueva?', a: 'Sí, pero debes asegurarte de que tu cuenta de Fortnite esté habilitada para recibir regalos y haber sido amigo de los bots de KidStorePeru por al menos 48 horas antes de tu primer pedido.' },
   { q: '¿Qué pasa si el ítem que quiero no está disponible?', a: 'La tienda de Fortnite rota diariamente. Si el ítem que deseas no está disponible hoy, vuelve a revisar mañana.' },
   { q: '¿Puedo pedir un reembolso?', a: 'Todas las compras son finales por la naturaleza digital del producto. Sin embargo, si hubo un error de nuestra parte, evaluamos el caso y podemos emitir crédito en KidCoins.' },
-  { q: '¿En qué horario atienden?', a: 'Nuestro equipo atiende de Lunes a Domingo de 12:00 AM a 9:00 AM (hora Perú).' },
+  { q: '¿En qué horario atienden?', a: 'Nuestro equipo atiende todos los días, las 24 horas.' },
 ];
 
 const FAQS_EN = [
@@ -24,7 +24,7 @@ const FAQS_EN = [
   { q: 'Can I buy if my account is new?', a: 'Yes, but make sure your Fortnite account is enabled to receive gifts and that you\'ve been friends with KidStorePeru\'s bots for at least 48 hours before your first order.' },
   { q: 'What if the item I want is not available?', a: 'The Fortnite store rotates daily. If the item you want isn\'t available today, check back tomorrow.' },
   { q: 'Can I get a refund?', a: 'All purchases are final due to the digital nature of the product. However, if there was an error on our end, we evaluate the case and may issue KidCoins credit.' },
-  { q: 'What are your support hours?', a: 'Our team is available Monday to Sunday from 12:00 AM to 9:00 AM (Peru time).' },
+  { q: 'What are your support hours?', a: 'Our team is available every day, 24 hours a day.' },
 ];
 
 export default function FAQPage() {

@@ -27,7 +27,7 @@ export default function Footer() {
           <p>{es ? 'La tienda de Fortnite más confiable de Perú. Compra skins y emotes con KidCoins.' : 'The most trusted Fortnite store in Peru. Buy skins and emotes with KidCoins.'}</p>
           <div className="lv7-footer-hours">
             <span className="lv7-hours-dot"/>
-            <span><strong>{es ? 'Atención:' : 'Hours:'}</strong> {es ? 'Lun–Dom · 12:00 AM – 9:00 AM' : 'Mon–Sun · 12:00 AM – 9:00 AM'}</span>
+            <span><strong>{es ? 'Atención:' : 'Hours:'}</strong> {es ? 'Todos los días · 24/7' : 'Every day · 24/7'}</span>
           </div>
           <div className="lv7-socials">
             {SOCIAL_LINKS.map(s => (

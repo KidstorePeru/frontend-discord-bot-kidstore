@@ -51,7 +51,7 @@ const translations = {
   'land.trust.pay':     { es: 'Pago seguro',                            en: 'Secure payment' },
   'land.trust.pay.d':   { es: 'Transacciones protegidas y verificadas', en: 'Protected and verified transactions' },
   'land.trust.fast':    { es: 'Entrega rápida',                         en: 'Fast delivery' },
-  'land.trust.fast.d':  { es: 'Tu item en menos de 48 horas',           en: 'Your item in less than 48 hours' },
+  'land.trust.fast.d':  { es: 'Tu item en menos de 48h una vez agregados nuestros bots', en: 'Your item in less than 48h once you add our bots' },
   'land.trust.off':     { es: 'Items oficiales',                        en: 'Official items' },
   'land.trust.off.d':   { es: 'Directo de la tienda de Fortnite',       en: 'Straight from the Fortnite store' },
   'land.trust.sup':     { es: 'Soporte 24/7',                           en: 'Support 24/7' },
@@ -76,7 +76,7 @@ const translations = {
   'land.foot.contact':  { es: 'Contacto',                                en: 'Contact' },
   'land.foot.faq':      { es: 'FAQ',                                     en: 'FAQ' },
   'land.foot.support':  { es: 'Soporte',                                 en: 'Support' },
-  'land.foot.hours':    { es: 'Lun–Dom · 12:00 AM – 9:00 AM',           en: 'Mon–Sun · 12:00 AM – 9:00 AM' },
+  'land.foot.hours':    { es: 'Todos los días · 24/7',                  en: 'Every day · 24/7' },
   'land.foot.rights':   { es: 'Todos los derechos reservados',           en: 'All rights reserved' },
   'land.foot.epic':     { es: 'No afiliado con Epic Games',              en: 'Not affiliated with Epic Games' },
 

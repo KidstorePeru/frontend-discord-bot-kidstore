@@ -24,7 +24,7 @@ export default function Contact() {
           <p>{es ? 'Estamos disponibles para resolver tus dudas sobre pedidos, pagos o cualquier consulta.' : 'We\'re available to help with your questions about orders, payments, or anything else.'}</p>
           <div className="contact-hours">
             <Clock size={15}/>
-            <span><strong>{es ? 'Horario de atención:' : 'Support hours:'}</strong> {es ? 'Lunes – Domingo · 12:00 AM – 9:00 AM (hora Perú)' : 'Monday – Sunday · 12:00 AM – 9:00 AM (Peru time)'}</span>
+            <span><strong>{es ? 'Horario de atención:' : 'Support hours:'}</strong> {es ? 'Todos los días · 24/7' : 'Every day · 24/7'}</span>
           </div>
         </div>
         <div className="contact-channels">

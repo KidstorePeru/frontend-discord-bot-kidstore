@@ -281,7 +281,7 @@ function GlobalCart() {
                 <AlertCircle size={16} style={{ color: '#d97706', flexShrink: 0, marginTop: 2 }} />
                 <p style={{ margin: 0, fontSize: '.83rem', lineHeight: 1.55, color: 'var(--text-secondary)' }}>
                   <strong style={{ color: '#d97706', display: 'block', marginBottom: 3 }}>{es ? '¿Sin bot agregado? Lee esto antes de comprar' : 'No bot added? Read this before buying'}</strong>
-                  {es ? 'Si aún no tienes a ninguno de nuestros bots agregado en Epic Games, te recomendamos agregar primero y esperar la confirmación antes de realizar tu compra. El envío puede demorar hasta 48 horas.' : 'If you have not added any of our bots on Epic Games yet, we recommend adding them first and waiting for confirmation before purchasing. Delivery may take up to 48 hours.'}
+                  {es ? 'Si aún no tienes a ninguno de nuestros bots agregado en Epic Games, agrégalos antes de comprar: Epic Games exige 48 horas de amistad antes de poder enviar cualquier regalo, así que tu pedido quedará en espera hasta cumplir ese plazo. Una vez cumplido, la entrega suele tardar solo minutos.' : "If you haven't added any of our bots on Epic Games yet, add them before buying: Epic Games requires a 48-hour friendship window before any gift can be sent, so your order will stay on hold until that time passes. Once it does, delivery usually takes just minutes."}
                 </p>
               </div>
             </div>
