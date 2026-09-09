@@ -13,10 +13,13 @@ export default function Terms() {
           <div className="legal-icon"><FileText size={28}/></div>
           <div>
             <h1>{es ? 'Términos y Condiciones' : 'Terms and Conditions'}</h1>
-            <p className="legal-updated">{es ? 'Última actualización: 5 de setiembre de 2026' : 'Last updated: September 5, 2026'}</p>
+            <p className="legal-updated">{es ? 'Última actualización: 9 de setiembre de 2026' : 'Last updated: September 9, 2026'}</p>
           </div>
         </div>
         {es ? (<div className="legal-body"><p>Estos Términos y Condiciones regulan el uso del sitio web KidStorePeru y la compra de productos digitales ofrecidos. Al acceder, navegar o comprar, aceptas estos Términos.</p>
+            <div className="legal-highlight">
+              <strong>Titular del sitio:</strong> KidStorePeru es operado por Freddy Aystin Rodríguez Uricay, persona natural con negocio, RUC 10725091651, con domicilio en la Provincia Constitucional del Callao, Perú.
+            </div>
             <h2>1. Qué ofrecemos</h2>
             <p>KidStorePeru es una web dedicada a la venta de ítems digitales de Fortnite (skins, packs y cosméticos) y recargas de KidCoins, entregadas dentro del juego mediante la función de regalo (gifting) desde cuentas operativas.</p>
             <h2>2. No afiliación con Epic Games</h2>
@@ -41,6 +44,9 @@ export default function Terms() {
             <p>Por la naturaleza digital e inmediata de los productos, no hay reembolsos una vez completada la entrega. Los pagos realizados por MercadoPago o dLocal Go pueden ser disputados directamente a través de la pasarela correspondiente. Los pagos manuales no son reembolsables una vez acreditados los KC. Ver nuestra <Link to="/refunds" className="legal-link">Política de Reembolsos</Link>.</p>
             <h2>10. Contacto</h2>
             <p>Para consultas, contáctanos por nuestros <Link to="/contact" className="legal-link">canales de soporte</Link>.</p></div>) : (<div className="legal-body"><p>These Terms and Conditions govern the use of the KidStorePeru website and the purchase of digital products offered. By accessing, browsing, or purchasing, you accept these Terms.</p>
+            <div className="legal-highlight">
+              <strong>Site operator:</strong> KidStorePeru is operated by Freddy Aystin Rodríguez Uricay, a self-employed individual (persona natural con negocio) registered in Peru, Tax ID (RUC) 10725091651, domiciled in the Constitutional Province of Callao, Peru.
+            </div>
             <h2>1. What we offer</h2>
             <p>KidStorePeru sells digital Fortnite items (skins, packs, cosmetics) and KidCoins recharges, delivered in-game via the gifting feature from operational accounts.</p>
             <h2>2. No affiliation with Epic Games</h2>
