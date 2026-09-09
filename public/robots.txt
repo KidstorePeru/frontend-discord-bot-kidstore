@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /account
+Disallow: /admin
+Disallow: /bots
+Disallow: /recharge
+Disallow: /auth/
+Disallow: /payment/return
+Disallow: /verify-email
+Disallow: /reset-password
+
+Sitemap: https://www.kidstoreperu.net/sitemap.xml
