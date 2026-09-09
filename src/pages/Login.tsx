@@ -2,8 +2,8 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { login } from '../services/api';
-import { LogIn, Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
+import { login, verify2FA } from '../services/api';
+import { LogIn, Loader2, Mail, Lock, AlertCircle, ShieldCheck, ArrowLeft } from 'lucide-react';
 import OAuthButtons from '../components/OAuthButtons';
 
 const OAUTH_ERROR_MESSAGES: Record<string, { es: string; en: string }> = {
@@ -23,12 +23,29 @@ export default function Login() {
   const [params] = useSearchParams();
   const es = lang === 'es';
 
+  // Paso 2 (solo cuentas admin con 2FA activado): ya se validó la
+  // contraseña, falta el código de la app autenticadora (o un código de
+  // respaldo) antes de recibir un token real.
+  const [tempToken, setTempToken] = useState('');
+  const [twoFACode, setTwoFACode] = useState('');
+  const [verifying, setVerifying] = useState(false);
+
   useEffect(() => {
     const oauthError = params.get('oauth_error');
-    if (!oauthError) return;
-    const msg = OAUTH_ERROR_MESSAGES[oauthError];
-    setError(msg ? (es ? msg.es : msg.en) : (es ? 'Error al iniciar sesión. Intenta de nuevo.' : 'Login error. Please try again.'));
-    window.history.replaceState({}, '', '/login');
+    if (oauthError) {
+      const msg = OAUTH_ERROR_MESSAGES[oauthError];
+      setError(msg ? (es ? msg.es : msg.en) : (es ? 'Error al iniciar sesión. Intenta de nuevo.' : 'Login error. Please try again.'));
+      window.history.replaceState({}, '', '/login');
+      return;
+    }
+    // Llegó desde AuthCallback tras un login por Google/Discord en una
+    // cuenta admin con 2FA activado — falta el mismo segundo paso que en
+    // el login por contraseña.
+    const oauthTempToken = params.get('temp_token');
+    if (oauthTempToken) {
+      setTempToken(oauthTempToken);
+      window.history.replaceState({}, '', '/login');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -36,8 +53,12 @@ export default function Login() {
     e.preventDefault(); setError(''); setLoading(true);
     try {
       const res = await login(email.trim(), password);
-      setAuth(res.token, res.customer);
-      navigate('/dashboard');
+      if (res.requires2FA) {
+        setTempToken(res.tempToken);
+      } else {
+        setAuth(res.token, res.customer);
+        navigate('/dashboard');
+      }
     } catch (err: unknown) {
       if (err instanceof Error && (err as Error & { code?: string }).code === 'EMAIL_NOT_VERIFIED') {
         setError(es
@@ -47,6 +68,71 @@ export default function Login() {
         setError(err instanceof Error ? err.message : t('auth.error.login'));
       }
     } finally { setLoading(false); }
+  }
+
+  async function handleVerify2FA(e: FormEvent) {
+    e.preventDefault(); setError(''); setVerifying(true);
+    try {
+      const res = await verify2FA(tempToken, twoFACode.trim());
+      setAuth(res.token, res.customer);
+      navigate('/dashboard');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : (es ? 'Código incorrecto' : 'Incorrect code'));
+    } finally { setVerifying(false); }
+  }
+
+  if (tempToken) {
+    return (
+      <div className="auth-page">
+        <div className="auth-panel">
+          <img src="/logotipo.png" alt="KidStorePeru" className="auth-panel-logo" />
+          <h2 className="auth-panel-title">
+            {es ? 'Verificación en' : 'Two-factor'}<br />
+            <span>{es ? 'dos pasos' : 'verification'}</span>
+          </h2>
+          <p className="auth-panel-sub">
+            {es
+              ? 'Esta cuenta tiene un segundo factor activado para protegerla mejor.'
+              : 'This account has a second factor enabled for extra protection.'}
+          </p>
+        </div>
+        <div className="auth-right">
+          <form className="auth-card" onSubmit={handleVerify2FA}>
+            <div className="auth-icon"><ShieldCheck size={24} /></div>
+            <h1>{es ? 'Código de verificación' : 'Verification code'}</h1>
+            <p className="auth-sub">
+              {es ? 'Ingresa el código de 6 dígitos de tu app autenticadora, o un código de respaldo.' : 'Enter the 6-digit code from your authenticator app, or a backup code.'}
+            </p>
+
+            {error && <div className="auth-error"><AlertCircle size={15} />{error}</div>}
+
+            <label className="field">
+              <span>{es ? 'Código' : 'Code'}</span>
+              <input
+                type="text"
+                inputMode="text"
+                placeholder="123456"
+                value={twoFACode}
+                onChange={e => setTwoFACode(e.target.value)}
+                required
+                autoFocus
+                maxLength={9}
+              />
+            </label>
+
+            <button className="btn btn-primary btn-full" type="submit" disabled={verifying}>
+              {verifying ? <Loader2 className="spin" size={18} /> : <><ShieldCheck size={16} /> {es ? 'Verificar' : 'Verify'}</>}
+            </button>
+
+            <p className="auth-footer">
+              <a href="#" onClick={e => { e.preventDefault(); setTempToken(''); setTwoFACode(''); setError(''); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <ArrowLeft size={13} /> {es ? 'Volver' : 'Back'}
+              </a>
+            </p>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   return (

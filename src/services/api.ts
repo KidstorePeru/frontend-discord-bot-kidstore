@@ -104,15 +104,62 @@ export async function register(epic_username: string, email: string, password: s
   return { requires_verification: res.requires_verification };
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse & { refresh_token?: string }> {
-  const res = await request<{ success: boolean; token: string; refresh_token: string; customer: Customer }>('/store/login', {
+// LoginResult: o entra directo, o la cuenta tiene 2FA activado y hay que
+// completar con /store/login/2fa antes de tener un token real.
+export type LoginResult =
+  | { requires2FA: false; token: string; customer: Customer }
+  | { requires2FA: true; tempToken: string };
+
+export async function login(email: string, password: string): Promise<LoginResult> {
+  const res = await request<{ success: boolean; token?: string; refresh_token?: string; customer?: Customer; requires_2fa?: boolean; temp_token?: string }>('/store/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
+  });
+  if (res.requires_2fa && res.temp_token) {
+    return { requires2FA: true, tempToken: res.temp_token };
+  }
+  if (res.refresh_token) {
+    localStorage.setItem('kc_refresh_token', res.refresh_token);
+  }
+  return { requires2FA: false, token: res.token!, customer: res.customer! };
+}
+
+// verify2FA completa un login que quedó pendiente de segundo factor —
+// "code" acepta tanto un código TOTP de 6 dígitos como un código de
+// respaldo (formato XXXX-XXXX).
+export async function verify2FA(tempToken: string, code: string): Promise<AuthResponse & { refresh_token?: string }> {
+  const res = await request<{ success: boolean; token: string; refresh_token: string; customer: Customer }>('/store/login/2fa', {
+    method: 'POST',
+    body: JSON.stringify({ temp_token: tempToken, code }),
   });
   if (res.refresh_token) {
     localStorage.setItem('kc_refresh_token', res.refresh_token);
   }
   return { token: res.token, customer: res.customer };
+}
+
+/* ── 2FA management (cuentas admin) ── */
+
+export async function get2FAStatus(): Promise<{ enabled: boolean; backup_codes_remaining: number }> {
+  return request('/store/2fa/status');
+}
+
+export async function setup2FA(): Promise<{ secret: string; otpauth_url: string }> {
+  return request('/store/2fa/setup', { method: 'POST' });
+}
+
+export async function confirm2FA(code: string): Promise<{ backup_codes: string[] }> {
+  return request('/store/2fa/confirm', { method: 'POST', body: JSON.stringify({ code }) });
+}
+
+export async function disable2FA(password: string): Promise<void> {
+  await request('/store/2fa/disable', { method: 'POST', body: JSON.stringify({ password }) });
+}
+
+/* ── Eliminar cuenta propia ── */
+
+export async function deleteOwnAccount(password: string): Promise<void> {
+  await request('/store/account', { method: 'DELETE', body: JSON.stringify({ password }) });
 }
 
 // Revoca el refresh token del dispositivo actual del lado del servidor —

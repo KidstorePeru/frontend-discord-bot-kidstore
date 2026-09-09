@@ -16,6 +16,16 @@ export default function AuthCallback() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    // Cuenta admin con 2FA activado: el backend no entregó un token real,
+    // solo uno temporal — se manda a /login para completar con el código,
+    // el mismo paso 2 que usa el login por contraseña.
+    if (params.get('requires_2fa') === 'true') {
+      const tempToken = params.get('temp_token');
+      if (tempToken) {
+        navigate(`/login?temp_token=${encodeURIComponent(tempToken)}`, { replace: true });
+        return;
+      }
+    }
     const token = params.get('token');
     const refreshToken = params.get('refresh_token');
     if (!token) { setError(true); return; }

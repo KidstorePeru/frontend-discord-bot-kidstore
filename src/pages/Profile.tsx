@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef, type FormEvent } from 'react';
-import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import QRCode from 'qrcode';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { getMyOrders, getMe, updateProfile, updateAvatar, requestEmailChange, confirmEmailChange, startAccountLink, unlinkAccount } from '../services/api';
+import { getMyOrders, getMe, updateProfile, updateAvatar, requestEmailChange, confirmEmailChange, startAccountLink, unlinkAccount, get2FAStatus, setup2FA, confirm2FA, disable2FA, deleteOwnAccount } from '../services/api';
 import { KCBadge, PageLoader, Toast } from '../components/UI';
 import { GoogleIcon, DiscordIcon } from '../components/OAuthButtons';
 import type { Order, Customer } from '../types';
@@ -11,6 +12,7 @@ import {
   TrendingUp, ShoppingBag, Copy, Award,
   Shield, Mail, Key, AtSign, Lock, Eye, EyeOff, Loader2, Camera, AlertCircle,
   Phone, Clock, ChevronLeft, ChevronRight, RefreshCw, PackageCheck, PackageX, PackageSearch, ShieldCheck, Link2, Unlink,
+  Smartphone, Trash2, X,
 } from 'lucide-react';
 
 const BASE = (import.meta.env.VITE_API_URL as string) || '/api';
@@ -325,10 +327,82 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
 }) {
   const es = lang === 'es';
   const [searchParams, setSearchParams] = useSearchParams();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   // ── Cuentas vinculadas (Google / Discord) ──
   const [linking, setLinking] = useState<'google' | 'discord' | null>(null);
   const [unlinking, setUnlinking] = useState<'google' | 'discord' | null>(null);
+
+  // ── 2FA (solo cuentas admin) ──
+  const [totpStatus, setTotpStatus] = useState<{ enabled: boolean; backup_codes_remaining: number } | null>(null);
+  const [totpSetupData, setTotpSetupData] = useState<{ secret: string; otpauth_url: string } | null>(null);
+  const [totpQr, setTotpQr] = useState('');
+  const [totpConfirmCode, setTotpConfirmCode] = useState('');
+  const [totpBackupCodes, setTotpBackupCodes] = useState<string[] | null>(null);
+  const [totpLoading, setTotpLoading] = useState(false);
+  const [totpError, setTotpError] = useState('');
+  const [showDisable2FA, setShowDisable2FA] = useState(false);
+  const [disable2FAPassword, setDisable2FAPassword] = useState('');
+
+  useEffect(() => {
+    if (!customer.is_admin) return;
+    get2FAStatus().then(setTotpStatus).catch(() => {});
+  }, [customer.is_admin]);
+
+  async function handleStart2FASetup() {
+    setTotpLoading(true); setTotpError('');
+    try {
+      const data = await setup2FA();
+      setTotpSetupData(data);
+      const qr = await QRCode.toDataURL(data.otpauth_url, { width: 220, margin: 1 });
+      setTotpQr(qr);
+    } catch (err: unknown) {
+      setTotpError(err instanceof Error ? err.message : (es ? 'Error iniciando la activación' : 'Error starting setup'));
+    } finally { setTotpLoading(false); }
+  }
+
+  async function handleConfirm2FA(e: FormEvent) {
+    e.preventDefault(); setTotpLoading(true); setTotpError('');
+    try {
+      const res = await confirm2FA(totpConfirmCode.trim());
+      setTotpBackupCodes(res.backup_codes);
+      setTotpSetupData(null); setTotpQr(''); setTotpConfirmCode('');
+      setTotpStatus({ enabled: true, backup_codes_remaining: res.backup_codes.length });
+      setToast({ msg: es ? '✅ Verificación en dos pasos activada' : '✅ Two-factor verification enabled', type: 'success' });
+    } catch (err: unknown) {
+      setTotpError(err instanceof Error ? err.message : (es ? 'Código incorrecto' : 'Incorrect code'));
+    } finally { setTotpLoading(false); }
+  }
+
+  async function handleDisable2FA(e: FormEvent) {
+    e.preventDefault(); setTotpLoading(true); setTotpError('');
+    try {
+      await disable2FA(disable2FAPassword);
+      setTotpStatus({ enabled: false, backup_codes_remaining: 0 });
+      setShowDisable2FA(false); setDisable2FAPassword('');
+      setToast({ msg: es ? '✅ Verificación en dos pasos desactivada' : '✅ Two-factor verification disabled', type: 'success' });
+    } catch (err: unknown) {
+      setTotpError(err instanceof Error ? err.message : (es ? 'Contraseña incorrecta' : 'Incorrect password'));
+    } finally { setTotpLoading(false); }
+  }
+
+  // ── Eliminar cuenta ──
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteAccount(e: FormEvent) {
+    e.preventDefault(); setDeleting(true); setDeleteError('');
+    try {
+      await deleteOwnAccount(deletePassword);
+      logout();
+      navigate('/');
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : (es ? 'Contraseña incorrecta' : 'Incorrect password'));
+    } finally { setDeleting(false); }
+  }
 
   useEffect(() => {
     const linked = searchParams.get('linked');
@@ -710,6 +784,144 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
             : 'Link Google and/or Discord so you can log in with any of them, in addition to your email and password.'}
         </div>
       </div>
+
+      {/* ── 2FA (solo admin) ── */}
+      {customer.is_admin && (
+        <div className="security-card">
+          <div className="security-card-header">
+            <Smartphone size={18} />
+            <h3>{es ? 'Verificación en dos pasos' : 'Two-factor verification'}</h3>
+          </div>
+          <div style={{ padding: '0 24px 22px' }}>
+            {totpError && <div className="auth-error" style={{ marginBottom: 14 }}><AlertCircle size={15} />{totpError}</div>}
+
+            {/* Códigos de respaldo recién generados — se muestran una sola vez */}
+            {totpBackupCodes ? (
+              <div>
+                <div className="sec-note" style={{ marginBottom: 12 }}>
+                  {es
+                    ? '⚠️ Guarda estos 8 códigos de respaldo en un lugar seguro — cada uno sirve una sola vez, y es la única forma de entrar si pierdes tu teléfono. No se van a volver a mostrar.'
+                    : '⚠️ Save these 8 backup codes somewhere safe — each works once, and they are the only way in if you lose your phone. They will not be shown again.'}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontFamily: 'monospace', fontSize: '.9rem', marginBottom: 16 }}>
+                  {totpBackupCodes.map(code => (
+                    <div key={code} style={{ padding: '8px 12px', background: 'var(--bg-surface-2)', borderRadius: 8, textAlign: 'center' }}>{code}</div>
+                  ))}
+                </div>
+                <button className="btn btn-primary" onClick={() => setTotpBackupCodes(null)}>
+                  {es ? 'Ya los guardé' : "I've saved them"}
+                </button>
+              </div>
+            ) : totpSetupData ? (
+              <form onSubmit={handleConfirm2FA}>
+                <p className="sec-note" style={{ marginBottom: 14 }}>
+                  {es
+                    ? 'Escanea este código QR con Google Authenticator, Authy, o cualquier app compatible con TOTP. Si no puedes escanear, ingresa el código manualmente.'
+                    : 'Scan this QR code with Google Authenticator, Authy, or any TOTP-compatible app. If you can\'t scan it, enter the code manually.'}
+                </p>
+                {totpQr && <img src={totpQr} alt="QR 2FA" style={{ display: 'block', margin: '0 auto 14px', borderRadius: 12 }} />}
+                <div className="sec-field">
+                  <label>{es ? 'Código manual' : 'Manual code'}</label>
+                  <input type="text" readOnly value={totpSetupData.secret} onClick={e => (e.target as HTMLInputElement).select()} style={{ fontFamily: 'monospace' }} />
+                </div>
+                <div className="sec-field">
+                  <label>{es ? 'Código de 6 dígitos' : '6-digit code'}</label>
+                  <input type="text" placeholder="123456" value={totpConfirmCode} onChange={e => setTotpConfirmCode(e.target.value)} required autoFocus maxLength={6} />
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button type="button" className="btn btn-ghost" onClick={() => { setTotpSetupData(null); setTotpQr(''); setTotpError(''); }}>{es ? 'Cancelar' : 'Cancel'}</button>
+                  <button className="btn btn-primary" type="submit" disabled={totpLoading}>
+                    {totpLoading ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} {es ? 'Confirmar' : 'Confirm'}
+                  </button>
+                </div>
+              </form>
+            ) : totpStatus?.enabled ? (
+              <>
+                <div className="sec-note" style={{ marginBottom: 14 }}>
+                  {es
+                    ? `✅ Activado. Te quedan ${totpStatus.backup_codes_remaining} código(s) de respaldo sin usar.`
+                    : `✅ Enabled. You have ${totpStatus.backup_codes_remaining} unused backup code(s) left.`}
+                </div>
+                {!showDisable2FA ? (
+                  <button className="btn btn-ghost" onClick={() => setShowDisable2FA(true)}>{es ? 'Desactivar 2FA' : 'Disable 2FA'}</button>
+                ) : (
+                  <form onSubmit={handleDisable2FA}>
+                    <div className="sec-field">
+                      <label><Lock size={13} /> {es ? 'Confirma tu contraseña' : 'Confirm your password'}</label>
+                      <input type="password" value={disable2FAPassword} onChange={e => setDisable2FAPassword(e.target.value)} required autoFocus />
+                    </div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button type="button" className="btn btn-ghost" onClick={() => { setShowDisable2FA(false); setTotpError(''); }}>{es ? 'Cancelar' : 'Cancel'}</button>
+                      <button className="btn btn-primary" type="submit" disabled={totpLoading}>
+                        {totpLoading ? <Loader2 className="spin" size={16} /> : (es ? 'Desactivar' : 'Disable')}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="sec-note" style={{ marginBottom: 14 }}>
+                  {es
+                    ? 'Tu cuenta administra dinero real y datos de clientes — activa un segundo factor para protegerla mejor.'
+                    : 'Your account manages real money and customer data — enable a second factor to protect it better.'}
+                </div>
+                <button className="btn btn-primary" onClick={handleStart2FASetup} disabled={totpLoading}>
+                  {totpLoading ? <Loader2 className="spin" size={16} /> : <Smartphone size={16} />} {es ? 'Activar 2FA' : 'Enable 2FA'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Eliminar cuenta ── */}
+      {!customer.is_admin && (
+        <div className="security-card" style={{ borderColor: 'rgba(239,68,68,0.3)' }}>
+          <div className="security-card-header">
+            <Trash2 size={18} color="#ef4444" />
+            <h3 style={{ color: '#ef4444' }}>{es ? 'Eliminar cuenta' : 'Delete account'}</h3>
+          </div>
+          <div style={{ padding: '0 24px 22px' }}>
+            {!showDeleteAccount ? (
+              <>
+                <div className="sec-note" style={{ marginBottom: 14 }}>
+                  {es
+                    ? 'Esto elimina tus datos personales de forma permanente y no podrás volver a iniciar sesión. No se puede deshacer.'
+                    : 'This permanently removes your personal data and you will no longer be able to log in. This cannot be undone.'}
+                </div>
+                {!customer.has_password ? (
+                  <div className="sec-note">
+                    {es
+                      ? 'Tu cuenta no tiene contraseña (creada con Google/Discord) — contáctanos por soporte para eliminarla.'
+                      : "Your account doesn't have a password (created via Google/Discord) — contact support to delete it."}
+                  </div>
+                ) : (
+                  <button className="btn btn-ghost" style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }} onClick={() => setShowDeleteAccount(true)}>
+                    <Trash2 size={15} /> {es ? 'Eliminar mi cuenta' : 'Delete my account'}
+                  </button>
+                )}
+              </>
+            ) : (
+              <form onSubmit={handleDeleteAccount}>
+                {deleteError && <div className="auth-error" style={{ marginBottom: 14 }}><AlertCircle size={15} />{deleteError}</div>}
+                <div className="sec-field">
+                  <label><Lock size={13} /> {es ? 'Confirma tu contraseña para continuar' : 'Confirm your password to continue'}</label>
+                  <input type="password" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} required autoFocus />
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button type="button" className="btn btn-ghost" onClick={() => { setShowDeleteAccount(false); setDeletePassword(''); setDeleteError(''); }}>
+                    <X size={14} /> {es ? 'Cancelar' : 'Cancel'}
+                  </button>
+                  <button className="btn btn-primary" type="submit" disabled={deleting} style={{ background: '#ef4444' }}>
+                    {deleting ? <Loader2 className="spin" size={16} /> : <Trash2 size={16} />} {es ? 'Sí, eliminar permanentemente' : 'Yes, delete permanently'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );
