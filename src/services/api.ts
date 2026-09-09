@@ -293,9 +293,13 @@ export async function confirmEmailChange(code: string): Promise<{ token: string;
 
 /* ── Account linking (Google / Discord) ── */
 
-export async function startAccountLink(provider: 'google' | 'discord'): Promise<string> {
+// password: obligatoria si la cuenta YA tiene contraseña — el backend la
+// exige en ese caso para confirmar identidad antes de agregar un método de
+// acceso nuevo y permanente a la cuenta.
+export async function startAccountLink(provider: 'google' | 'discord', password?: string): Promise<string> {
   const res = await request<{ success: boolean; link_token: string }>(`/store/link/${provider}/start`, {
     method: 'POST',
+    body: password ? JSON.stringify({ password }) : undefined,
   });
   return res.link_token;
 }

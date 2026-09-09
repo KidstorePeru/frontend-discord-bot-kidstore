@@ -355,6 +355,11 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
   // ── Cuentas vinculadas (Google / Discord) ──
   const [linking, setLinking] = useState<'google' | 'discord' | null>(null);
   const [unlinking, setUnlinking] = useState<'google' | 'discord' | null>(null);
+  // Si la cuenta tiene contraseña, vincular un proveedor nuevo pide
+  // confirmarla primero (ver HandlerStartLink) — agrega un método de
+  // acceso permanente, así que no basta con tener la sesión abierta.
+  const [linkPasswordPrompt, setLinkPasswordPrompt] = useState<'google' | 'discord' | null>(null);
+  const [linkPassword, setLinkPassword] = useState('');
 
   // ── 2FA (solo cuentas admin) ──
   const [totpStatus, setTotpStatus] = useState<{ enabled: boolean; backup_codes_remaining: number } | null>(null);
@@ -452,15 +457,30 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleLink(provider: 'google' | 'discord') {
+  function requestLink(provider: 'google' | 'discord') {
+    if (customer!.has_password) { setLinkPasswordPrompt(provider); return; }
+    handleLink(provider);
+  }
+
+  async function handleLink(provider: 'google' | 'discord', password?: string) {
     setLinking(provider);
     try {
-      const linkToken = await startAccountLink(provider);
+      const linkToken = await startAccountLink(provider, password);
       window.location.href = `${BASE}/auth/${provider}?link_token=${encodeURIComponent(linkToken)}`;
     } catch (err: unknown) {
       setToast({ msg: err instanceof Error ? err.message : (es ? 'Error al iniciar la vinculación' : 'Error starting the link'), type: 'error' });
       setLinking(null);
     }
+  }
+
+  async function handleLinkPasswordSubmit(e: FormEvent) {
+    e.preventDefault();
+    const provider = linkPasswordPrompt;
+    if (!provider) return;
+    setLinkPasswordPrompt(null);
+    const pwd = linkPassword;
+    setLinkPassword('');
+    await handleLink(provider, pwd);
   }
 
   async function handleUnlink(provider: 'google' | 'discord') {
@@ -783,8 +803,17 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
               <button className="btn btn-ghost btn-sm" onClick={() => handleUnlink('google')} disabled={unlinking === 'google'}>
                 {unlinking === 'google' ? <Loader2 size={14} className="spin" /> : <Unlink size={14} />} {es ? 'Desvincular' : 'Unlink'}
               </button>
+            ) : linkPasswordPrompt === 'google' ? (
+              <form onSubmit={handleLinkPasswordSubmit} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input type="password" autoFocus required placeholder={es ? 'Tu contraseña' : 'Your password'}
+                  value={linkPassword} onChange={e => setLinkPassword(e.target.value)} style={{ width: 140 }} />
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setLinkPasswordPrompt(null); setLinkPassword(''); }}>{es ? 'Cancelar' : 'Cancel'}</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={linking === 'google'}>
+                  {linking === 'google' ? <Loader2 size={14} className="spin" /> : (es ? 'Confirmar' : 'Confirm')}
+                </button>
+              </form>
             ) : (
-              <button className="btn btn-primary btn-sm" onClick={() => handleLink('google')} disabled={linking === 'google'}>
+              <button className="btn btn-primary btn-sm" onClick={() => requestLink('google')} disabled={linking === 'google'}>
                 {linking === 'google' ? <Loader2 size={14} className="spin" /> : <Link2 size={14} />} {es ? 'Vincular' : 'Link'}
               </button>
             )}
@@ -801,8 +830,17 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
               <button className="btn btn-ghost btn-sm" onClick={() => handleUnlink('discord')} disabled={unlinking === 'discord'}>
                 {unlinking === 'discord' ? <Loader2 size={14} className="spin" /> : <Unlink size={14} />} {es ? 'Desvincular' : 'Unlink'}
               </button>
+            ) : linkPasswordPrompt === 'discord' ? (
+              <form onSubmit={handleLinkPasswordSubmit} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input type="password" autoFocus required placeholder={es ? 'Tu contraseña' : 'Your password'}
+                  value={linkPassword} onChange={e => setLinkPassword(e.target.value)} style={{ width: 140 }} />
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setLinkPasswordPrompt(null); setLinkPassword(''); }}>{es ? 'Cancelar' : 'Cancel'}</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={linking === 'discord'}>
+                  {linking === 'discord' ? <Loader2 size={14} className="spin" /> : (es ? 'Confirmar' : 'Confirm')}
+                </button>
+              </form>
             ) : (
-              <button className="btn btn-primary btn-sm" onClick={() => handleLink('discord')} disabled={linking === 'discord'}>
+              <button className="btn btn-primary btn-sm" onClick={() => requestLink('discord')} disabled={linking === 'discord'}>
                 {linking === 'discord' ? <Loader2 size={14} className="spin" /> : <Link2 size={14} />} {es ? 'Vincular' : 'Link'}
               </button>
             )}
