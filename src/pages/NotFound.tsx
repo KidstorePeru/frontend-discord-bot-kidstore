@@ -1,10 +1,17 @@
 import { Link } from 'react-router-dom';
 import { Compass, Home, ShoppingBag } from 'lucide-react';
 import { useLang } from '../context/LangContext';
+import { useSEO } from '../hooks/useSEO';
 
 export default function NotFound() {
   const { lang } = useLang();
   const es = lang === 'es';
+
+  // noindex — antes esta página (y cualquier URL rota que cayera acá) se
+  // indexaba con el título y la descripción de la portada, como si fuera
+  // contenido real.
+  useSEO({ title: es ? 'Página no encontrada' : 'Page not found', noindex: true });
+
   return (
     <div className="notfound-page">
       <div className="notfound-card">

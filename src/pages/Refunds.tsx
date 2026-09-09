@@ -1,10 +1,19 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { useLang } from '../context/LangContext';
+import { useSEO } from '../hooks/useSEO';
 
 export default function Refunds() {
   const { lang } = useLang();
   const es = lang === 'es';
+
+  useSEO({
+    title: es ? 'Política de Reembolsos' : 'Refund Policy',
+    description: es
+      ? 'Cuándo y cómo KidStorePeru reembolsa un pedido que no se pudo entregar.'
+      : "When and how KidStorePeru refunds an order that couldn't be delivered.",
+  });
+
   return (
     <div className="legal-page">
       <div className="legal-inner">

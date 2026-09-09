@@ -5,6 +5,7 @@ import { vbucksToKC } from '../services/constants';
 import { PageLoader, Toast } from '../components/UI';
 import { Search, RefreshCw, ShoppingCart, X, Clock, CheckCircle, ShoppingBag, Info } from 'lucide-react';
 import { useLang } from '../context/LangContext';
+import { useSEO } from '../hooks/useSEO';
 
 interface ShopItem {
   offerId: string; name: string;
@@ -107,6 +108,13 @@ export default function StorePage() {
   const { storeLang: lang, setStoreLang: setLang, t } = useLang();
   const [navOpen, setNavOpen] = useState(false);
   const countdown = useCountdown(shopDate);
+
+  useSEO({
+    title: lang === 'es' ? 'Tienda de Fortnite' : 'Fortnite Store',
+    description: lang === 'es'
+      ? 'Compra skins, packs y cosméticos de Fortnite con KidCoins. Catálogo actualizado según la tienda oficial.'
+      : 'Buy Fortnite skins, packs, and cosmetics with KidCoins. Catalog synced with the official store.',
+  });
   const [activeSec, setActiveSec] = useState('');
   const [showLoginModal, setShowLoginModal] = useState(false);
 

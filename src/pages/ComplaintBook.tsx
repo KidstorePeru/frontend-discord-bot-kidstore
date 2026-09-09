@@ -4,6 +4,7 @@ import { ArrowLeft, ClipboardList, CheckCircle2, AlertCircle, Loader2, Search } 
 import { useLang } from '../context/LangContext';
 import { submitComplaint, getComplaintStatus } from '../services/api';
 import type { ComplaintRequest, ComplaintStatus } from '../services/api';
+import { useSEO } from '../hooks/useSEO';
 
 const emptyForm: ComplaintRequest = {
   kind: 'reclamo',
@@ -25,6 +26,13 @@ const emptyForm: ComplaintRequest = {
 export default function ComplaintBook() {
   const { lang } = useLang();
   const es = lang === 'es';
+
+  useSEO({
+    title: es ? 'Libro de Reclamaciones Virtual' : 'Virtual Complaints Book',
+    description: es
+      ? 'Presenta un reclamo o queja conforme al Código de Protección y Defensa del Consumidor (Ley N° 29571).'
+      : "File a complaint or grievance under Peru's Consumer Protection and Defense Code (Law N° 29571).",
+  });
 
   const [form, setForm] = useState<ComplaintRequest>(emptyForm);
   const [submitting, setSubmitting] = useState(false);

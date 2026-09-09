@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HelpCircle, ChevronDown, ArrowLeft } from 'lucide-react';
 import { useLang } from '../context/LangContext';
+import { useSEO } from '../hooks/useSEO';
 
 const FAQS_ES = [
   { q: '¿Por qué debo añadir el bot como amigo durante 48 horas?', a: 'Epic Games exige una ventana de amistad de 48 horas antes de poder enviar cualquier regalo. Es una configuración de una sola vez — una vez que agregues los bots, tus próximos pedidos serán mucho más rápidos. Te guiamos paso a paso en nuestra sección de Bots.' },
@@ -32,6 +33,13 @@ export default function FAQPage() {
   const [open, setOpen] = useState<number | null>(0);
   const faqs = lang === 'es' ? FAQS_ES : FAQS_EN;
   const es = lang === 'es';
+
+  useSEO({
+    title: es ? 'Preguntas frecuentes' : 'FAQ',
+    description: es
+      ? 'Resolvemos tus dudas sobre KidStorePeru: entregas, KidCoins, métodos de pago, reembolsos y más.'
+      : 'Answers to your questions about KidStorePeru: deliveries, KidCoins, payment methods, refunds, and more.',
+  });
 
   return (
     <div className="legal-page">

@@ -1,10 +1,19 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { useLang } from '../context/LangContext';
+import { useSEO } from '../hooks/useSEO';
 
 export default function Privacy() {
   const { lang } = useLang();
   const es = lang === 'es';
+
+  useSEO({
+    title: es ? 'Política de Privacidad' : 'Privacy Policy',
+    description: es
+      ? 'Qué datos recopila KidStorePeru, cómo los usamos y con qué servicios los compartimos.'
+      : 'What data KidStorePeru collects, how we use it, and which services we share it with.',
+  });
+
   return (
     <div className="legal-page">
       <div className="legal-inner">

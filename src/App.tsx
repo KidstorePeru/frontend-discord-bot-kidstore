@@ -14,28 +14,35 @@ import GuestRoute from './components/GuestRoute';
 import Landing from './pages/Landing';
 import Register from './pages/Register';
 import Login from './pages/Login';
-import ResetPassword from './pages/ResetPassword';
-import VerifyEmail from './pages/VerifyEmail';
-import AuthCallback from './pages/AuthCallback';
-import CompleteOAuthRegistration from './pages/CompleteOAuthRegistration';
 import StorePage from './pages/Store';
-import Dashboard from './pages/Dashboard';
-import Recharge from './pages/Recharge';
-import Profile from './pages/Profile';
-import Bots from './pages/Bots';
-import AdminPanel from './pages/AdminPanel';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Refunds from './pages/Refunds';
 import FAQPage from './pages/FAQ';
 import Contact from './pages/Contact';
-import PaymentReturn from './pages/PaymentReturn';
-import Voucher from './pages/Voucher';
-import ComplaintBook from './pages/ComplaintBook';
 import NotFound from './pages/NotFound';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
-import { Toast, TrustpilotCTA } from './components/UI';
+import { Toast, TrustpilotCTA, PageLoader } from './components/UI';
+
+// Code-splitting por pantalla: antes TODA la app (panel admin incluido,
+// con sus tablas y gráficos) se empaquetaba en un solo archivo JS que
+// cualquier visitante descargaba entero con solo abrir la portada, aunque
+// nunca fuera a entrar a esas pantallas. Estas son secundarias (cuenta
+// autenticada, flujos de un solo uso) — se cargan bajo demanda, recién
+// cuando se navega a ellas.
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const CompleteOAuthRegistration = lazy(() => import('./pages/CompleteOAuthRegistration'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Recharge = lazy(() => import('./pages/Recharge'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Bots = lazy(() => import('./pages/Bots'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const PaymentReturn = lazy(() => import('./pages/PaymentReturn'));
+const Voucher = lazy(() => import('./pages/Voucher'));
+const ComplaintBook = lazy(() => import('./pages/ComplaintBook'));
 
 function KCIcon({ s = 16 }: { s?: number }) {
   return <img src="/kidcoin.png" alt="KC" width={s} height={s} style={{ objectFit: 'contain', flexShrink: 0 }} />;
@@ -316,33 +323,35 @@ export default function App() {
               <Navbar />
               <GlobalCart />
               <main className="main-content">
-                <Routes>
-                  <Route path="/"               element={<Landing />} />
-                  <Route path="/register"       element={<GuestRoute><Register /></GuestRoute>} />
-                  <Route path="/login"          element={<GuestRoute><Login /></GuestRoute>} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/verify-email"   element={<VerifyEmail />} />
-                  <Route path="/auth/callback"  element={<AuthCallback />} />
-                  <Route path="/auth/complete"  element={<CompleteOAuthRegistration />} />
-                  <Route path="/store"          element={<StorePage />} />
-                  <Route path="/admin"          element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
-                  <Route path="/admin/:tab"     element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
-                  <Route path="/dashboard"      element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                  <Route path="/dashboard/:tab" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                  <Route path="/recharge"       element={<ProtectedRoute><Recharge /></ProtectedRoute>} />
-                  <Route path="/account"        element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                  <Route path="/account/:tab"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                  <Route path="/bots"           element={<ProtectedRoute><Bots /></ProtectedRoute>} />
-                  <Route path="/terms"          element={<Terms />} />
-                  <Route path="/privacy"        element={<Privacy />} />
-                  <Route path="/refunds"        element={<Refunds />} />
-                  <Route path="/libro-de-reclamaciones" element={<ComplaintBook />} />
-                  <Route path="/faq"            element={<FAQPage />} />
-                  <Route path="/contact"        element={<Contact />} />
-                  <Route path="/payment/return" element={<PaymentReturn />} />
-                  <Route path="/dashboard/comprobantes/:kind/:id" element={<ProtectedRoute><Voucher /></ProtectedRoute>} />
-                  <Route path="*"               element={<NotFound />} />
-                </Routes>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/"               element={<Landing />} />
+                    <Route path="/register"       element={<GuestRoute><Register /></GuestRoute>} />
+                    <Route path="/login"          element={<GuestRoute><Login /></GuestRoute>} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/verify-email"   element={<VerifyEmail />} />
+                    <Route path="/auth/callback"  element={<AuthCallback />} />
+                    <Route path="/auth/complete"  element={<CompleteOAuthRegistration />} />
+                    <Route path="/store"          element={<StorePage />} />
+                    <Route path="/admin"          element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                    <Route path="/admin/:tab"     element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                    <Route path="/dashboard"      element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/dashboard/:tab" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/recharge"       element={<ProtectedRoute><Recharge /></ProtectedRoute>} />
+                    <Route path="/account"        element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/account/:tab"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/bots"           element={<ProtectedRoute><Bots /></ProtectedRoute>} />
+                    <Route path="/terms"          element={<Terms />} />
+                    <Route path="/privacy"        element={<Privacy />} />
+                    <Route path="/refunds"        element={<Refunds />} />
+                    <Route path="/libro-de-reclamaciones" element={<ComplaintBook />} />
+                    <Route path="/faq"            element={<FAQPage />} />
+                    <Route path="/contact"        element={<Contact />} />
+                    <Route path="/payment/return" element={<PaymentReturn />} />
+                    <Route path="/dashboard/comprobantes/:kind/:id" element={<ProtectedRoute><Voucher /></ProtectedRoute>} />
+                    <Route path="*"               element={<NotFound />} />
+                  </Routes>
+                </Suspense>
               </main>
               <GlobalFooter />
             </CartProvider>

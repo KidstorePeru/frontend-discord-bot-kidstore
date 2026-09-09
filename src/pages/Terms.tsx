@@ -1,10 +1,19 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { useLang } from '../context/LangContext';
+import { useSEO } from '../hooks/useSEO';
 
 export default function Terms() {
   const { lang } = useLang();
   const es = lang === 'es';
+
+  useSEO({
+    title: es ? 'Términos y Condiciones' : 'Terms and Conditions',
+    description: es
+      ? 'Condiciones de uso de KidStorePeru: compras, pagos, entregas y responsabilidades.'
+      : "KidStorePeru's terms of use: purchases, payments, deliveries, and responsibilities.",
+  });
+
   return (
     <div className="legal-page">
       <div className="legal-inner">
