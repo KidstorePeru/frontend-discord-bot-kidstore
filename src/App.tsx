@@ -33,7 +33,7 @@ import PaymentReturn from './pages/PaymentReturn';
 import Voucher from './pages/Voucher';
 import ComplaintBook from './pages/ComplaintBook';
 import NotFound from './pages/NotFound';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { Toast, TrustpilotCTA } from './components/UI';
 
@@ -59,6 +59,20 @@ function GlobalCart() {
 
   const es = lang === 'es';
   const hasBalance = customer ? customer.kc_balance >= cartTotal : false;
+
+  // Escape cierra el modal/panel que esté abierto en ese momento — antes
+  // solo se podía cerrar con el mouse (botón X o clic afuera), sin ninguna
+  // forma de hacerlo desde el teclado.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return;
+      if (purchaseResult !== null) { setPurchaseResult(null); return; }
+      if (showConfirm) { if (!confirming) setShowConfirm(false); return; }
+      if (cartOpen) { setCartOpen(false); return; }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [cartOpen, showConfirm, confirming, purchaseResult, setCartOpen]);
 
   function friendlyReason(msg: string): string {
     const isOffline = msg.includes('horario') || msg.includes('schedule') || msg.includes('BOTS_OFFLINE') || msg.includes('offline');
@@ -165,7 +179,7 @@ function GlobalCart() {
             {es ? 'Carrito' : 'Cart'}
             <span className="cart-count">{cartCount}</span>
           </h2>
-          <button className="cart-close" onClick={() => setCartOpen(false)}><X size={18} /></button>
+          <button className="cart-close" onClick={() => setCartOpen(false)} aria-label={es ? 'Cerrar carrito' : 'Close cart'}><X size={18} /></button>
         </div>
 
         {cart.length === 0 ? (
@@ -188,7 +202,7 @@ function GlobalCart() {
                     <div className="cart-item-price"><KCIcon s={14} />{item.price_kc.toLocaleString()} KC</div>
                     <div className="cart-item-vbucks"><VIcon s={13} />{item.finalPrice.toLocaleString()}</div>
                   </div>
-                  <button className="cart-item-remove" onClick={() => removeFromCart(item.offerId)}><Trash2 size={15} /></button>
+                  <button className="cart-item-remove" onClick={() => removeFromCart(item.offerId)} aria-label={es ? `Quitar ${item.name} del carrito` : `Remove ${item.name} from cart`}><Trash2 size={15} /></button>
                 </div>
               ))}
             </div>
@@ -221,7 +235,7 @@ function GlobalCart() {
           <div className="confirm-modal" onClick={e => e.stopPropagation()}>
             <div className="confirm-modal-header">
               <h2><ShoppingCart size={18} /> {es ? 'Confirmar compra' : 'Confirm purchase'}</h2>
-              <button onClick={() => !confirming && setShowConfirm(false)} disabled={confirming}><X size={16} /></button>
+              <button onClick={() => !confirming && setShowConfirm(false)} disabled={confirming} aria-label={es ? 'Cerrar' : 'Close'}><X size={16} /></button>
             </div>
             <div className="confirm-modal-body">
               <p className="confirm-modal-sub">

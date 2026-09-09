@@ -22,6 +22,7 @@ export function PageLoader() {
 }
 
 export function Toast({ message, type = 'info', onClose, duration = 4000 }: { message: string; type?: 'info' | 'success' | 'error'; onClose: () => void; duration?: number }) {
+  const { lang } = useLang();
   // Se cierra solo después de `duration` ms — antes se quedaba en pantalla
   // hasta que alguien le diera clic manualmente.
   useEffect(() => {
@@ -30,7 +31,7 @@ export function Toast({ message, type = 'info', onClose, duration = 4000 }: { me
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message]);
 
-  return <div className={`toast toast-${type}`} onClick={onClose}><span>{message}</span><button onClick={onClose}>&times;</button></div>;
+  return <div className={`toast toast-${type}`} onClick={onClose}><span>{message}</span><button onClick={onClose} aria-label={lang === 'es' ? 'Cerrar' : 'Close'}>&times;</button></div>;
 }
 
 // Invitación a dejar reseña en Trustpilot — se muestra tras una compra o

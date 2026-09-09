@@ -222,6 +222,9 @@ export default function StorePage() {
             <button
               className={`sc-cart ${inCart ? 'sc-cart-added' : ''}`}
               onClick={ev => { ev.stopPropagation(); inCart ? removeFromCart(item.offerId) : handleAddToCart(item); }}
+              aria-label={inCart
+                ? (es ? `Quitar ${item.name} del carrito` : `Remove ${item.name} from cart`)
+                : (es ? `Agregar ${item.name} al carrito` : `Add ${item.name} to cart`)}
             >
               {inCart ? <CheckCircle size={15} /> : <ShoppingCart size={15} />}
             </button>

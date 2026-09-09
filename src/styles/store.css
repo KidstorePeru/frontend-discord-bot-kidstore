@@ -592,12 +592,21 @@
   opacity: 0.5;
 }
 .text-muted-soft { color: var(--text-muted) !important; }
-/* ── Fix grid tienda ── */
+/* ── Fix grid tienda ──
+   Antes había una TERCERA regla .sg más abajo en este archivo (después de
+   los @media de acá abajo) que volvía a forzar 4 columnas con !important
+   pero SIN repetir los @media responsivos — en la cascada CSS, con la
+   misma especificidad, gana la regla que aparece más tarde en el archivo,
+   así que esa repetición anulaba el layout de 2/3 columnas en celular y
+   tablet sin que nada lo avisara. grid-auto-flow: dense (que sí hacía
+   falta) se movió acá, a la ÚNICA definición de .sg que ya trae sus
+   @media, en vez de vivir en una regla aparte que los rompía. */
 .sg {
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
   gap: 10px !important;
   align-items: start !important;
+  grid-auto-flow: dense !important; /* rellena huecos automáticamente */
 }
 .sc.sp1 { grid-column: span 1 !important; }
 .sc.sp2 { grid-column: span 2 !important; }
@@ -631,15 +640,6 @@
   pointer-events: none;
   min-height: 330px !important;
   opacity: 0;
-}
-
-/* ── Fix grid tienda ── */
-.sg {
-  display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  gap: 10px !important;
-  align-items: start !important;
-  grid-auto-flow: dense !important;  /* ← rellena huecos automáticamente */
 }
 
 /* ═══════════════════════════════════════════════════
