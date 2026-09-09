@@ -935,7 +935,7 @@ export default function AdminPanel() {
       {/* ── LIBRO DE RECLAMACIONES ── */}
       {tab === 'complaints' && !loading && (
         <div className="admin-table-section">
-          <p className="admin-tab-sub">Libro de Reclamaciones Virtual — requisito legal (Ley N° 29571). Debes responder cada reclamo en un plazo máximo de 30 días calendario desde su presentación.</p>
+          <p className="admin-tab-sub">Libro de Reclamaciones Virtual — requisito legal (Ley N° 29571, modificada por la Ley N° 31435). Debes responder cada reclamo en un plazo máximo de 15 días hábiles improrrogables desde su presentación.</p>
           <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="adm-count">{filteredComplaints.length} reclamo{filteredComplaints.length !== 1 ? 's' : ''}</span>
             <div className="adm-filter-row">

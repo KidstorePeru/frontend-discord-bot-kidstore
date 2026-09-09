@@ -94,8 +94,8 @@ export default function ComplaintBook() {
             </p>
             <p className="cb-success-plazo">
               {es
-                ? 'Tienes derecho a una respuesta en un plazo máximo de 30 días calendario, conforme al Código de Protección y Defensa del Consumidor (Ley N° 29571).'
-                : "You're entitled to a response within a maximum of 30 calendar days, under Peru's Consumer Protection and Defense Code (Law N° 29571)."}
+                ? 'Tienes derecho a una respuesta en un plazo máximo de 15 días hábiles improrrogables, conforme al Código de Protección y Defensa del Consumidor (Ley N° 29571, modificada por la Ley N° 31435).'
+                : "You're entitled to a response within a maximum of 15 business days, which cannot be extended, under Peru's Consumer Protection and Defense Code (Law N° 29571, as amended by Law N° 31435)."}
             </p>
             <div className="cb-success-actions">
               <button className="btn btn-ghost" onClick={() => { setResult(null); setForm(emptyForm); }}>

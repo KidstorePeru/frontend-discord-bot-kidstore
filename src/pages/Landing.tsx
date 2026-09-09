@@ -416,6 +416,7 @@ export default function Landing() {
               <Link to="/terms">{t('land.foot.terms')}</Link>
               <Link to="/privacy">{t('land.foot.priv')}</Link>
               <Link to="/refunds">{t('land.foot.refunds')}</Link>
+              <Link to="/libro-de-reclamaciones">{t('land.foot.complaints')}</Link>
             </div>
           </div>
         </div>

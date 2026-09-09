@@ -72,6 +72,7 @@ const translations = {
   'land.foot.terms':    { es: 'Términos y Condiciones',                  en: 'Terms & Conditions' },
   'land.foot.priv':     { es: 'Política de Privacidad',                  en: 'Privacy Policy' },
   'land.foot.refunds':  { es: 'Política de Reembolsos',                  en: 'Refund Policy' },
+  'land.foot.complaints': { es: 'Libro de Reclamaciones',                en: 'Complaints Book' },
   'land.foot.contact':  { es: 'Contacto',                                en: 'Contact' },
   'land.foot.faq':      { es: 'FAQ',                                     en: 'FAQ' },
   'land.foot.support':  { es: 'Soporte',                                 en: 'Support' },
