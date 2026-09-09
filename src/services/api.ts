@@ -2,7 +2,19 @@ import type { AuthResponse, Customer, Order, ShopResponse } from '../types';
 
 const BASE = import.meta.env.VITE_API_URL || '/api';
 
-let isRefreshing = false;
+// Renovación "single-flight": si varias peticiones descubren el token
+// vencido casi al mismo tiempo (muy común — un dashboard que dispara
+// varias llamadas en paralelo al cargar), TODAS esperan el resultado de la
+// MISMA renovación en vez de que solo la primera la intente y el resto se
+// rinda de inmediato. Antes, un simple booleano ("isRefreshing") hacía que
+// cualquier llamada que llegara mientras otra ya estaba renovando
+// devolviera false al toque — eso se interpretaba como "la sesión expiró"
+// y podía cerrar una sesión perfectamente válida solo por la mala suerte
+// de que dos pedidos de datos coincidieran justo cuando el token venció.
+// Exportado para que otros lugares que hacen fetch directo (panel admin,
+// seguimiento de pago) puedan compartir la misma renovación en vez de
+// tener cada uno su propia lógica de refresh (o ninguna).
+let refreshPromise: Promise<boolean> | null = null;
 
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('kc_token');
@@ -13,32 +25,36 @@ function getLang(): string {
   return localStorage.getItem('kc_lang') || 'es';
 }
 
-async function tryRefreshToken(): Promise<boolean> {
+export async function tryRefreshToken(): Promise<boolean> {
   const refreshToken = localStorage.getItem('kc_refresh_token');
-  if (!refreshToken || isRefreshing) return false;
+  if (!refreshToken) return false;
 
-  isRefreshing = true;
-  try {
-    const res = await fetch(`${BASE}/store/refresh-token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (res.ok && body.token) {
-      localStorage.setItem('kc_token', body.token);
-      localStorage.setItem('kc_refresh_token', body.refresh_token);
-      return true;
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${BASE}/store/refresh-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.token) {
+        localStorage.setItem('kc_token', body.token);
+        localStorage.setItem('kc_refresh_token', body.refresh_token);
+        return true;
+      }
+      // Refresh failed — clear tokens
+      localStorage.removeItem('kc_token');
+      localStorage.removeItem('kc_refresh_token');
+      return false;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
     }
-    // Refresh failed — clear tokens
-    localStorage.removeItem('kc_token');
-    localStorage.removeItem('kc_refresh_token');
-    return false;
-  } catch {
-    return false;
-  } finally {
-    isRefreshing = false;
-  }
+  })();
+  return refreshPromise;
 }
 
 async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {

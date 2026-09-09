@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { KC_PACKAGES, COMMISSIONS, withCommission, formatReferencePrice } from '../services/constants';
 import type { PaymentInfo } from '../services/constants';
-import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment } from '../services/api';
+import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefreshToken } from '../services/api';
 import type { KCPackage } from '../types';
 import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
@@ -41,6 +41,24 @@ const PKG_TAGS: Record<string, { label_es: string; label_en: string; color: stri
   pro:    { label_es:'🔥 Vendido', label_en:'🔥 Best Seller', color:'#f59e0b' },
   legend: { label_es:'👑 Premium', label_en:'👑 Premium',    color:'#ec4899' },
 };
+
+// Este polling usaba fetch() directo con el token pegado a mano, sin
+// ninguna renovación — si el token vencía justo durante los hasta 6
+// minutos que puede durar el polling de un pago, se quedaba pidiendo con
+// un token viejo sin nunca refrescarlo. Comparte la misma renovación
+// "single-flight" que el resto de la app (services/api.ts).
+async function fetchPaymentStatus(base: string, paymentId: string): Promise<{ status?: string; kc_amount?: number } | null> {
+  const doFetch = () => fetch(`${base}/store/payment-status/${paymentId}`, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
+  });
+  let res = await doFetch();
+  if (res.status === 401 && localStorage.getItem('kc_refresh_token')) {
+    if (await tryRefreshToken()) res = await doFetch();
+  }
+  if (!res.ok) return null;
+  const data = await res.json().catch(() => null);
+  return data?.transaction ?? null;
+}
 
 export default function Recharge() {
   const { customer, refresh } = useAuth();
@@ -168,15 +186,12 @@ export default function Recharge() {
         } catch { /* todavía en el dominio de la pasarela — normal */ }
 
         try {
-          const statusRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
-          });
-          if (!statusRes.ok) continue; // transient server error — retry
-          const data = await statusRes.json();
-          const st = data?.transaction?.status;
+          const tx = await fetchPaymentStatus(BASE, res.payment_id);
+          if (!tx) continue; // transient server error — retry
+          const st = tx.status;
           if (st === 'approved' || st === 'fulfilled') {
             setPayResult('success');
-            setPayKcCredited(data.transaction.kc_amount || 0);
+            setPayKcCredited(tx.kc_amount || 0);
             void refresh(); // actualiza el balance mostrado en el navbar/dashboard sin esperar a recargar la página
             try { payWindow.close(); } catch {}
             settled = true;
@@ -203,13 +218,10 @@ export default function Recharge() {
           if (payWindow.closed) {
             await new Promise(r => setTimeout(r, 5000));
             try {
-              const fRes = await fetch(`${BASE}/store/payment-status/${res.payment_id}`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('kc_token') || ''}` },
-              });
-              const fData = await fRes.json();
-              const fSt = fData?.transaction?.status;
+              const fTx = await fetchPaymentStatus(BASE, res.payment_id);
+              const fSt = fTx?.status;
               if (fSt === 'approved' || fSt === 'fulfilled') {
-                setPayResult('success'); setPayKcCredited(fData.transaction.kc_amount || 0);
+                setPayResult('success'); setPayKcCredited(fTx?.kc_amount || 0);
                 void refresh();
               } else if (fSt === 'failed' || fSt === 'expired') {
                 setPayResult('error');

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { tryRefreshToken } from '../services/api';
 import { KCBadge, StatusBadge, Toast } from '../components/UI';
 import type { Customer, Order } from '../types';
 import {
@@ -30,18 +31,38 @@ function AdminPagination({ page, total, setPage }: { page: number; total: number
 const BASE = (import.meta.env.VITE_API_URL as string) || '/api';
 
 async function adminFetch(path: string, _adminKey?: string, opts: RequestInit = {}) {
-  const token = localStorage.getItem('kc_token') || '';
   const apiKey = _adminKey || sessionStorage.getItem('kc_admin_key') || '';
-  const res = await fetch(`${BASE}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...(apiKey ? { 'X-Admin-Key': apiKey } : {}),
-      ...(opts.headers as Record<string, string> || {}),
-    },
-  });
-  const body = await res.json().catch(() => ({}));
+  const doFetch = () => {
+    const token = localStorage.getItem('kc_token') || '';
+    return fetch(`${BASE}${path}`, {
+      ...opts,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...(apiKey ? { 'X-Admin-Key': apiKey } : {}),
+        ...(opts.headers as Record<string, string> || {}),
+      },
+    });
+  };
+
+  let res = await doFetch();
+  let body = await res.json().catch(() => ({}));
+
+  // Un token vencido (sesión de más de 1h) antes tiraba error directo acá
+  // — el panel admin no tenía NINGUNA renovación automática, a diferencia
+  // del resto del sitio. Se comparte la misma renovación "single-flight"
+  // que usa el resto de la app (services/api.ts): si otra llamada ya está
+  // renovando, esta espera el mismo resultado en vez de fallar aparte. Si
+  // la petición se autenticó con X-Admin-Key (no JWT), renovar no cambia
+  // nada — el reintento igual no hace daño, simplemente no ayuda.
+  if (!res.ok && (res.status === 401 || body?.code === 'TOKEN_EXPIRED') && localStorage.getItem('kc_refresh_token')) {
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      res = await doFetch();
+      body = await res.json().catch(() => ({}));
+    }
+  }
+
   if (!res.ok) throw new Error(body.error || `Error ${res.status}`);
   return body;
 }
