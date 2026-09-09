@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { login, verify2FA } from '../services/api';
@@ -21,6 +21,7 @@ export default function Login() {
   const { t, lang } = useLang();
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const location = useLocation();
   const es = lang === 'es';
 
   // Paso 2 (solo cuentas admin con 2FA activado): ya se validó la
@@ -40,11 +41,11 @@ export default function Login() {
     }
     // Llegó desde AuthCallback tras un login por Google/Discord en una
     // cuenta admin con 2FA activado — falta el mismo segundo paso que en
-    // el login por contraseña.
-    const oauthTempToken = params.get('temp_token');
+    // el login por contraseña. Viaja por el state de la navegación (no por
+    // la URL) desde que AuthCallback canjea el código de un solo uso.
+    const oauthTempToken = (location.state as { tempToken?: string } | null)?.tempToken;
     if (oauthTempToken) {
       setTempToken(oauthTempToken);
-      window.history.replaceState({}, '', '/login');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

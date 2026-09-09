@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
+import { exchangeOAuthCode } from '../services/api';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 /** Destino del redirect que hace el backend tras un login exitoso con
- *  Google/Discord (cuenta ya existente o recien vinculada). Recibe el token
- *  y refresh_token por query string y termina de iniciar sesion en el frontend. */
+ *  Google/Discord (cuenta ya existente o recien vinculada). Recibe un
+ *  código de un solo uso por query (nunca el token real — ver punto 22 del
+ *  audit) y lo canjea por los tokens reales vía POST /auth/exchange, con
+ *  los tokens viajando en el cuerpo de la respuesta, no en la URL. */
 export default function AuthCallback() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -16,24 +19,22 @@ export default function AuthCallback() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    // Cuenta admin con 2FA activado: el backend no entregó un token real,
-    // solo uno temporal — se manda a /login para completar con el código,
-    // el mismo paso 2 que usa el login por contraseña.
-    if (params.get('requires_2fa') === 'true') {
-      const tempToken = params.get('temp_token');
-      if (tempToken) {
-        navigate(`/login?temp_token=${encodeURIComponent(tempToken)}`, { replace: true });
+    const code = params.get('code');
+    if (!code) { setError(true); return; }
+
+    exchangeOAuthCode(code).then(result => {
+      if (result.requires2FA) {
+        // Cuenta admin con 2FA activado: el backend no entregó un token
+        // real, solo uno temporal — se manda a /login para completar con
+        // el código, el mismo paso 2 que usa el login por contraseña. Se
+        // pasa por el state de la navegación, no por la URL.
+        navigate('/login', { replace: true, state: { tempToken: result.tempToken } });
         return;
       }
-    }
-    const token = params.get('token');
-    const refreshToken = params.get('refresh_token');
-    if (!token) { setError(true); return; }
-    localStorage.setItem('kc_token', token);
-    if (refreshToken) localStorage.setItem('kc_refresh_token', refreshToken);
-    refresh()
-      .then(() => navigate('/dashboard', { replace: true }))
-      .catch(() => setError(true));
+      localStorage.setItem('kc_token', result.token);
+      if (result.refreshToken) localStorage.setItem('kc_refresh_token', result.refreshToken);
+      return refresh().then(() => navigate('/dashboard', { replace: true }));
+    }).catch(() => setError(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

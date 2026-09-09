@@ -140,6 +140,25 @@ export async function login(email: string, password: string): Promise<LoginResul
   return { requires2FA: false, token: res.token!, customer: res.customer! };
 }
 
+// exchangeOAuthCode canjea el código de un solo uso que /auth/callback
+// recibe por query tras un login con Google/Discord — el código en sí no
+// sirve para nada (no es el token real), así que aunque quedara en la URL
+// visible o en el historial, no compromete la cuenta; los tokens de
+// verdad viajan acá, en el cuerpo de la respuesta, nunca en una URL.
+export async function exchangeOAuthCode(code: string): Promise<
+  { requires2FA: true; tempToken: string } | { requires2FA: false; token: string; refreshToken?: string }
+> {
+  const res = await request<{ success: boolean; token?: string; refresh_token?: string; requires_2fa?: boolean; temp_token?: string }>('/auth/exchange', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+  if (res.requires_2fa && res.temp_token) {
+    return { requires2FA: true, tempToken: res.temp_token };
+  }
+  if (!res.token) throw new Error('Código inválido o expirado');
+  return { requires2FA: false, token: res.token, refreshToken: res.refresh_token };
+}
+
 // verify2FA completa un login que quedó pendiente de segundo factor —
 // "code" acepta tanto un código TOTP de 6 dígitos como un código de
 // respaldo (formato XXXX-XXXX).
