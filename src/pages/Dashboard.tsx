@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { getMyOrders, getMyRecharges } from '../services/api';
+import { getMyOrders, getMyRecharges, getMyOrderStats, getMyRechargeStats } from '../services/api';
 import { KCBadge, StatusBadge, PageLoader } from '../components/UI';
 import type { Order } from '../types';
 import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coins, CreditCard, ChevronLeft, ChevronRight, Wallet, DollarSign } from 'lucide-react';
@@ -22,12 +22,21 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [orderPage, setOrderPage] = useState(1);
   const [rechargePage, setRechargePage] = useState(1);
+  // Totales calculados en el servidor sobre TODO el historial — antes se
+  // derivaban de sumar/filtrar los arrays ya cargados (orders tope 100,
+  // payments tope 50 sin aviso), y encima totalPENRechargedGateway sumaba
+  // amount_pen de TODOS los pagos sin filtrar por estado, inflando el total
+  // con intentos pendientes o fallidos que nunca acreditaron nada.
+  const [orderStats, setOrderStats] = useState({ total_orders: 0, sent_orders: 0, pending_orders: 0, total_spent_kc: 0 });
+  const [rechargeStats, setRechargeStats] = useState({ total_kc_recharged: 0, total_pen_recharged: 0, pending_payments: 0 });
 
   useEffect(() => {
     Promise.all([
       refresh(),
       getMyOrders(1, 100).then(r => setOrders(r.orders)).catch(() => []),
       getMyRecharges().then(r => { setRecharges(r.recharges); setPayments(r.payments); }).catch(() => {}),
+      getMyOrderStats().then(setOrderStats).catch(() => {}),
+      getMyRechargeStats().then(setRechargeStats).catch(() => {}),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -41,15 +50,16 @@ export default function Dashboard() {
   // ── KC recharge payments only (product_purchase payments no longer exist) ──
   const kcPayments = payments.filter(p => p.payment_type === 'kc_recharge');
 
-  // ── Order stats ──
-  const sentOrders    = orders.filter(o => o.status === 'sent').length;
-  const totalSpent    = orders.reduce((a, o) => a + o.price_kc, 0);
-  const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
+  // ── Order stats (calculados en el servidor sobre todo el historial) ──
+  const sentOrders    = orderStats.sent_orders;
+  const totalSpent     = orderStats.total_spent_kc;
+  const pendingOrders = orderStats.pending_orders;
 
-  // ── Recharge stats ──
-  const totalKCRecharged = recharges.reduce((a, r) => a + r.amount_kc, 0);
-  const totalPENRechargedGateway = kcPayments.reduce((a, p) => a + p.amount_pen, 0);
-  const pendingRecharges = kcPayments.filter(p => p.status === 'pending').length;
+  // ── Recharge stats (idem — total_pen_recharged ya excluye pagos
+  // pendientes/fallidos, nunca los suma como si fueran plata cobrada) ──
+  const totalKCRecharged = rechargeStats.total_kc_recharged;
+  const totalPENRechargedGateway = rechargeStats.total_pen_recharged;
+  const pendingRecharges = rechargeStats.pending_payments;
 
   // ── Recharge items: manual KC + gateway KC ──
   const allRechargeItemsFiltered = [

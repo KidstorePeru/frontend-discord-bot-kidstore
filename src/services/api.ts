@@ -225,8 +225,15 @@ export async function getMyOrders(page = 1, limit = 20): Promise<{ orders: Order
 // una página de pedidos ya cargada (que puede no ser el historial
 // completo), estos números son exactos sin importar cuántos pedidos tenga
 // el cliente.
-export async function getMyOrderStats(): Promise<{ total_orders: number; sent_orders: number; total_spent_kc: number }> {
+export async function getMyOrderStats(): Promise<{ total_orders: number; sent_orders: number; pending_orders: number; total_spent_kc: number }> {
   return request('/store/orders/stats');
+}
+
+// total_pen_recharged solo cuenta pagos ya aprobados/cumplidos — nunca
+// pendientes o fallidos, a diferencia de sumar amount_pen del historial de
+// pagos tal cual llega del backend.
+export async function getMyRechargeStats(): Promise<{ total_kc_recharged: number; total_pen_recharged: number; pending_payments: number }> {
+  return request('/store/recharges/stats');
 }
 
 export async function updateProfile(data: {
