@@ -34,7 +34,7 @@ import Voucher from './pages/Voucher';
 import ComplaintBook from './pages/ComplaintBook';
 import NotFound from './pages/NotFound';
 import { useState } from 'react';
-import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { Toast, TrustpilotCTA } from './components/UI';
 
 function KCIcon({ s = 16 }: { s?: number }) {
@@ -52,76 +52,98 @@ function GlobalCart() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [purchaseSuccess, setPurchaseSuccess] = useState<number | null>(null);
+  // purchaseResult reemplaza al viejo purchaseSuccess (solo un número) —
+  // ahora guarda el resultado de CADA producto, porque una compra de
+  // varios items puede terminar parcial (algunos sí, otros no).
+  const [purchaseResult, setPurchaseResult] = useState<{ name: string; ok: boolean; reason?: string }[] | null>(null);
 
   const es = lang === 'es';
   const hasBalance = customer ? customer.kc_balance >= cartTotal : false;
+
+  function friendlyReason(msg: string): string {
+    const isOffline = msg.includes('horario') || msg.includes('schedule') || msg.includes('BOTS_OFFLINE') || msg.includes('offline');
+    if (isOffline) return es ? '🤖 Bots fuera de horario' : '🤖 Bots offline';
+    return msg;
+  }
 
   async function handleConfirmPurchase() {
     if (!customer || cart.length === 0) return;
     if (!hasBalance) { setToast({ msg: es ? 'KC insuficientes — ¡Recarga!' : 'Insufficient KC — Recharge!', type: 'error' }); return; }
     setConfirming(true);
-    try {
-      const firstItem = cart[0];
-      await createOrder({
-        item_offer_id: firstItem.offerId,
-        item_name:     firstItem.name,
-        item_image:    firstItem.featuredImg || firstItem.albumArt || firstItem.renderImg,
-        price_kc:      firstItem.price_kc,
-        price_vbucks:  firstItem.finalPrice,
-      });
-      const errors: string[] = [];
-      for (const item of cart.slice(1)) {
-        try {
-          await createOrder({
-            item_offer_id: item.offerId,
-            item_name:     item.name,
-            item_image:    item.featuredImg || item.albumArt || item.renderImg,
-            price_kc:      item.price_kc,
-            price_vbucks:  item.finalPrice,
-          });
-        } catch { errors.push(item.name); }
-      }
-      await refresh();
-      setConfirming(false);
-      setShowConfirm(false);
-      setCartOpen(false);
-      clearCart();
-      if (errors.length === 0) {
-        setPurchaseSuccess(cartCount);
-      } else {
-        setToast({
-          msg: es ? `Algunos items fallaron: ${errors.join(', ')}` : `Some items failed: ${errors.join(', ')}`,
-          type: 'error',
+
+    // Cada producto se pide POR SEPARADO y con su propio try/catch — antes,
+    // si el PRIMER item fallaba, ni siquiera se intentaban los demás
+    // (la excepción cortaba toda la función), y al final SIEMPRE se
+    // vaciaba el carrito entero sin importar cuántos hubieran fallado. Acá
+    // se intentan todos, y solo se retiran del carrito los que realmente
+    // se pidieron — los que fallaron quedan para reintentar.
+    const results: { offerId: string; name: string; ok: boolean; reason?: string }[] = [];
+    for (const item of cart) {
+      try {
+        await createOrder({
+          item_offer_id: item.offerId,
+          item_name:     item.name,
+          item_image:    item.featuredImg || item.albumArt || item.renderImg,
+          price_kc:      item.price_kc,
+          price_vbucks:  item.finalPrice,
         });
+        results.push({ offerId: item.offerId, name: item.name, ok: true });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : (es ? 'Error al procesar' : 'Processing error');
+        results.push({ offerId: item.offerId, name: item.name, ok: false, reason: friendlyReason(msg) });
       }
-    } catch (err: unknown) {
-      setConfirming(false);
-      const msg = err instanceof Error ? err.message : (es ? 'Error al procesar la compra' : 'Purchase error');
-      const isOffline = msg.includes('horario') || msg.includes('schedule') || msg.includes('BOTS_OFFLINE') || msg.includes('offline');
-      setToast({
-        msg: isOffline
-          ? (es ? '🤖 Los bots están fuera de horario. Intenta durante el horario de operación.' : '🤖 Bots are offline. Please try during operating hours.')
-          : msg,
-        type: 'error',
-      });
     }
+
+    results.filter(r => r.ok).forEach(r => removeFromCart(r.offerId));
+    await refresh();
+    setConfirming(false);
+    setShowConfirm(false);
+    if (results.some(r => r.ok)) setCartOpen(false); // si TODO falló, se deja el carrito abierto para reintentar
+    setPurchaseResult(results.map(({ name, ok, reason }) => ({ name, ok, reason })));
   }
 
-  const successModal = purchaseSuccess !== null && (
+  const anySucceeded = purchaseResult?.some(r => r.ok);
+  const anyFailed = purchaseResult?.some(r => !r.ok);
+  const successModal = purchaseResult !== null && (
     <div className="pc-modal-ov">
       <div className="pc-modal" style={{ maxWidth: 420, textAlign: 'center', padding: '40px 32px' }}>
-        <CheckCircle size={48} style={{ color: '#22c55e', marginBottom: 16 }} />
+        {anyFailed ? (
+          <AlertTriangle size={48} style={{ color: anySucceeded ? '#f59e0b' : '#dc2626', marginBottom: 16 }} />
+        ) : (
+          <CheckCircle size={48} style={{ color: '#22c55e', marginBottom: 16 }} />
+        )}
         <h3 style={{ margin: '0 0 8px', fontWeight: 800, fontSize: '1.1rem' }}>
-          {es ? '¡Compra completada!' : 'Purchase complete!'}
+          {!anyFailed
+            ? (es ? '¡Compra completada!' : 'Purchase complete!')
+            : anySucceeded
+              ? (es ? 'Compra parcial' : 'Partial purchase')
+              : (es ? 'No se pudo completar la compra' : 'Purchase could not be completed')}
         </h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: '0 0 4px' }}>
-          {es
-            ? `${purchaseSuccess} item${purchaseSuccess > 1 ? 's' : ''} pedido${purchaseSuccess > 1 ? 's' : ''}. Te avisaremos por correo cuando se entregue.`
-            : `${purchaseSuccess} item${purchaseSuccess > 1 ? 's' : ''} ordered. We'll email you once it's delivered.`}
-        </p>
-        <TrustpilotCTA />
-        <button onClick={() => setPurchaseSuccess(null)} className="btn btn-ghost" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }}>
+        {/* Resultado de CADA producto — antes solo se listaban los nombres
+            de los que fallaban, sin decir qué pasó con cada uno. */}
+        <div style={{ textAlign: 'left', margin: '12px 0', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {purchaseResult.map((r, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '.82rem' }}>
+              {r.ok
+                ? <CheckCircle size={15} style={{ color: '#22c55e', flexShrink: 0 }} />
+                : <X size={15} style={{ color: '#dc2626', flexShrink: 0 }} />}
+              <span style={{ flex: 1, color: 'var(--text-muted)' }}>{r.name}</span>
+              {!r.ok && <span style={{ color: '#dc2626', fontSize: '.75rem' }}>{r.reason}</span>}
+            </div>
+          ))}
+        </div>
+        {anySucceeded && (
+          <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: '0 0 4px' }}>
+            {es ? 'Te avisaremos por correo cuando se entregue.' : "We'll email you once it's delivered."}
+          </p>
+        )}
+        {anyFailed && (
+          <p style={{ color: 'var(--text-muted)', fontSize: '.8rem', margin: '4px 0' }}>
+            {es ? 'Los productos que fallaron siguen en tu carrito — puedes reintentar.' : 'The products that failed are still in your cart — you can retry.'}
+          </p>
+        )}
+        {anySucceeded && <TrustpilotCTA />}
+        <button onClick={() => setPurchaseResult(null)} className="btn btn-ghost" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }}>
           {es ? 'Cerrar' : 'Close'}
         </button>
       </div>
