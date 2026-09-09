@@ -43,7 +43,7 @@ const PKG_TAGS: Record<string, { label_es: string; label_en: string; color: stri
 };
 
 export default function Recharge() {
-  const { customer }  = useAuth();
+  const { customer, refresh } = useAuth();
   const { t, lang }   = useLang();
   const { currency: refCurrency, rates: refRates } = useCurrency();
   const [copied, setCopied]         = useState('');
@@ -61,7 +61,11 @@ export default function Recharge() {
   const [payTab, setPayTab] = useState<'online' | 'manual'>('online');
   const [payLoading, setPayLoading] = useState('');
   const [payPending, setPayPending] = useState(false);
-  const [payResult, setPayResult] = useState<'success'|'error'|null>(null);
+  // 'error' es solo para cuando el backend CONFIRMÓ que el pago falló o
+  // expiró. 'unconfirmed' es para cuando cerrar la ventana o que se agote
+  // el tiempo de espera nos deja sin saber qué pasó — eso no prueba que el
+  // pago haya fallado, así que nunca se muestra como si lo fuera.
+  const [payResult, setPayResult] = useState<'success'|'error'|'unconfirmed'|null>(null);
   const [payKcCredited, setPayKcCredited] = useState(0);
 
   useEffect(() => {
@@ -173,13 +177,25 @@ export default function Recharge() {
           if (st === 'approved' || st === 'fulfilled') {
             setPayResult('success');
             setPayKcCredited(data.transaction.kc_amount || 0);
+            void refresh(); // actualiza el balance mostrado en el navbar/dashboard sin esperar a recargar la página
             try { payWindow.close(); } catch {}
             settled = true;
             break;
           }
-          if (st === 'failed' || st === 'expired' || returnedAsFailure) {
+          if (st === 'failed' || st === 'expired') {
+            // Confirmado por el backend — acá sí es correcto decir "no hubo cargo".
             setPayResult('error');
             try { payWindow.close(); } catch {}
+            settled = true;
+            break;
+          }
+          if (returnedAsFailure) {
+            // Solo sabemos que la pasarela redirigió el popup como
+            // cancelado/fallido — el backend todavía no lo confirmó. No es
+            // lo mismo que un fallo verificado.
+            setPayResult('unconfirmed');
+            try { payWindow.close(); } catch {}
+            cancelPayment(res.payment_id).catch(() => {});
             settled = true;
             break;
           }
@@ -194,21 +210,27 @@ export default function Recharge() {
               const fSt = fData?.transaction?.status;
               if (fSt === 'approved' || fSt === 'fulfilled') {
                 setPayResult('success'); setPayKcCredited(fData.transaction.kc_amount || 0);
-              } else {
+                void refresh();
+              } else if (fSt === 'failed' || fSt === 'expired') {
                 setPayResult('error');
-                // El usuario cerró la ventana sin completar el pago — avisar al
-                // backend para que no se quede "pendiente" en su historial.
+                cancelPayment(res.payment_id).catch(() => {});
+              } else {
+                // Cerrar la ventana no prueba que el pago haya fallado — el
+                // backend sigue sin confirmar nada definitivo.
+                setPayResult('unconfirmed');
                 cancelPayment(res.payment_id).catch(() => {});
               }
-            } catch { setPayResult('error'); }
+            } catch { setPayResult('unconfirmed'); }
             settled = true;
             break;
           }
         } catch { /* transient network error — retry next iteration */ }
       }
-      // Polling timed out without a definitive status — show error so user is not left hanging
+      // Se agotó el tiempo de espera (6 min) sin un status definitivo — un
+      // timeout tampoco prueba que el pago haya fallado, así que se muestra
+      // como sin confirmar, no como un fallo.
       if (!settled) {
-        setPayResult('error');
+        setPayResult('unconfirmed');
         cancelPayment(res.payment_id).catch(() => {});
       }
     } catch (err: unknown) {
@@ -666,6 +688,23 @@ export default function Recharge() {
                   {es ? 'No se realizó ningún cargo. Puedes intentar de nuevo.' : 'No charges were made. You can try again.'}
                 </p>
                 <button onClick={() => { setPayPending(false); setPayResult(null); }} className="btn btn-ghost">{es ? 'Intentar de nuevo' : 'Try again'}</button>
+              </>
+            )}
+            {payResult === 'unconfirmed' && (
+              <>
+                <Loader2 size={48} style={{ color: 'var(--text-muted)', marginBottom: 16 }}/>
+                <h3 style={{ margin: '0 0 8px', fontWeight: 800, fontSize: '1.1rem' }}>
+                  {es ? 'No pudimos confirmar tu pago' : "We couldn't confirm your payment"}
+                </h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: '0 0 16px', lineHeight: 1.6 }}>
+                  {es
+                    ? 'Si se realizó algún cargo, tu KC se acreditará automáticamente en cuanto se confirme — no necesitas volver a pagar. Revisa tu historial de recargas en unos minutos antes de intentar de nuevo.'
+                    : "If a charge went through, your KC will be credited automatically once it's confirmed — no need to pay again. Check your recharge history in a few minutes before trying again."}
+                </p>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                  <a href="/dashboard" className="btn btn-primary" style={{ gap: 6 }}>{es ? 'Ver mi historial' : 'View my history'} <ArrowRight size={14}/></a>
+                  <button onClick={() => { setPayPending(false); setPayResult(null); }} className="btn btn-ghost">{es ? 'Cerrar' : 'Close'}</button>
+                </div>
               </>
             )}
           </div>

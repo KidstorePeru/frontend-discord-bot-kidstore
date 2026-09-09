@@ -6,7 +6,13 @@ import { getPaymentStatus, cancelPayment } from '../services/api';
 import { CheckCircle, XCircle, Loader2, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
 
-type PayState = 'loading' | 'pending' | 'processing' | 'success' | 'error';
+// 'error' se reserva para cuando el backend CONFIRMÓ que el pago falló o
+// expiró — ahí sí es correcto decir "no se realizó ningún cargo".
+// 'unconfirmed' es distinto: la pasarela nos redirigió con status=failure
+// (o hubo un error de red consultando el estado), pero el backend TODAVÍA
+// no confirmó nada — cerrar la ventana o un timeout no prueban que el pago
+// haya fallado, así que acá nunca se afirma que no hubo cargo.
+type PayState = 'loading' | 'pending' | 'processing' | 'success' | 'error' | 'unconfirmed';
 
 export default function PaymentReturn() {
   const [params] = useSearchParams();
@@ -42,7 +48,15 @@ export default function PaymentReturn() {
           // al backend para que quede reflejado ya mismo en el historial de
           // recargas del cliente, no recién cuando la expire el barrido.
           if (status === 'failure') {
-            setState('error');
+            // La pasarela dice que se canceló/falló, pero el backend todavía
+            // no lo confirmó (si lo hubiera confirmado, ya habríamos vuelto
+            // arriba en el chequeo de 'failed'/'expired') — no se puede
+            // afirmar que no hubo ningún cargo. Se le avisa al backend para
+            // que no quede "pending" hasta que lo expire el barrido de 30
+            // min (CancelPendingPayment no hace nada si en realidad ya se
+            // aprobó, así que es seguro), pero la UI muestra un estado
+            // honesto, no un error definitivo.
+            setState('unconfirmed');
             cancelPayment(paymentId).catch(() => {});
             return;
           }
@@ -50,7 +64,7 @@ export default function PaymentReturn() {
           setState('pending');
         };
         await check(8);
-      } catch { setState(status === 'failure' ? 'error' : 'pending'); }
+      } catch { setState(status === 'failure' ? 'unconfirmed' : 'pending'); }
     }
     process();
   }, [paymentId, status, refresh]);
@@ -67,7 +81,7 @@ export default function PaymentReturn() {
       <div className="pr-container">
 
         {/* Stepper */}
-        {state !== 'error' && (
+        {state !== 'error' && state !== 'unconfirmed' && (
           <div className="pr-stepper">
             {steps.map((step, i) => (
               <div key={i} className="pr-step-group">
@@ -136,7 +150,7 @@ export default function PaymentReturn() {
             </div>
           )}
 
-          {/* Error */}
+          {/* Error confirmado (el backend verificó que falló o expiró) */}
           {state === 'error' && (
             <div className="pr-center">
               <XCircle size={52} className="pr-icon-error"/>
@@ -144,6 +158,25 @@ export default function PaymentReturn() {
               <p>{es ? 'No se realizó ningún cargo a tu cuenta. Puedes intentar de nuevo.' : 'No charges were made to your account. You can try again.'}</p>
               <div className="pr-actions">
                 <Link to="/store" className="btn btn-primary pr-btn">{es ? 'Volver a la tienda' : 'Back to store'}</Link>
+                <Link to="/contact" className="btn btn-ghost pr-btn">{es ? 'Contactar soporte' : 'Contact support'}</Link>
+              </div>
+            </div>
+          )}
+
+          {/* Sin confirmar (la pasarela redirigió como cancelado/fallido,
+              pero el backend todavía no lo verificó — no se afirma que no
+              hubo cargo, porque cerrar la ventana o un timeout no lo prueban) */}
+          {state === 'unconfirmed' && (
+            <div className="pr-center">
+              <Clock size={52} className="pr-icon-warning"/>
+              <h1>{es ? 'No pudimos confirmar tu pago' : 'We couldn\'t confirm your payment'}</h1>
+              <p>
+                {es
+                  ? 'Si se realizó algún cargo, tu KC se acreditará automáticamente en cuanto se confirme — no necesitas volver a pagar. Si prefieres asegurarte, revisa tu historial de recargas en unos minutos antes de intentar de nuevo.'
+                  : "If a charge went through, your KC will be credited automatically once it's confirmed — no need to pay again. If you'd rather be sure, check your recharge history in a few minutes before trying again."}
+              </p>
+              <div className="pr-actions">
+                <Link to="/dashboard" className="btn btn-primary pr-btn">{es ? 'Ver mi historial' : 'View my history'} <ArrowRight size={14}/></Link>
                 <Link to="/contact" className="btn btn-ghost pr-btn">{es ? 'Contactar soporte' : 'Contact support'}</Link>
               </div>
             </div>
