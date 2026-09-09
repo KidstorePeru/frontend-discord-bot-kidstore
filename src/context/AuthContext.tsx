@@ -30,6 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // sesión". No hace falta esperar la respuesta, la sesión local ya se
     // limpió igual.
     void logoutRequest(refreshToken);
+    // Defensa adicional: pedirle al service worker que borre todo su cache
+    // — el propio worker ya no cachea respuestas de la API (solo recursos
+    // estáticos), pero esto cubre el caso de una pestaña que todavía tenga
+    // corriendo una versión anterior mientras se actualiza.
+    navigator.serviceWorker?.controller?.postMessage('CLEAR_CACHES');
   }, []);
 
   const setAuth = useCallback((t: string, c: Customer) => {
