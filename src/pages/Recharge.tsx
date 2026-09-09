@@ -631,7 +631,7 @@ export default function Recharge() {
                   {es ? 'Completa el pago en la ventana abierta' : 'Complete payment in the opened window'}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: 0, lineHeight: 1.6 }}>
-                  {es ? 'No cierres esta ventana. Esperando confirmacion del pago...' : 'Don\'t close this window. Waiting for payment confirmation...'}
+                  {es ? 'No cierres esta ventana. Esperando confirmación del pago...' : 'Don\'t close this window. Waiting for payment confirmation...'}
                 </p>
               </>
             )}
@@ -663,7 +663,7 @@ export default function Recharge() {
                   {es ? 'Pago no completado' : 'Payment not completed'}
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: '0 0 16px' }}>
-                  {es ? 'No se realizo ningun cargo. Puedes intentar de nuevo.' : 'No charges were made. You can try again.'}
+                  {es ? 'No se realizó ningún cargo. Puedes intentar de nuevo.' : 'No charges were made. You can try again.'}
                 </p>
                 <button onClick={() => { setPayPending(false); setPayResult(null); }} className="btn btn-ghost">{es ? 'Intentar de nuevo' : 'Try again'}</button>
               </>

@@ -141,7 +141,7 @@ export default function PaymentReturn() {
             <div className="pr-center">
               <XCircle size={52} className="pr-icon-error"/>
               <h1>{es ? 'Pago no completado' : 'Payment not completed'}</h1>
-              <p>{es ? 'No se realizo ningun cargo a tu cuenta. Puedes intentar de nuevo.' : 'No charges were made to your account. You can try again.'}</p>
+              <p>{es ? 'No se realizó ningún cargo a tu cuenta. Puedes intentar de nuevo.' : 'No charges were made to your account. You can try again.'}</p>
               <div className="pr-actions">
                 <Link to="/store" className="btn btn-primary pr-btn">{es ? 'Volver a la tienda' : 'Back to store'}</Link>
                 <Link to="/contact" className="btn btn-ghost pr-btn">{es ? 'Contactar soporte' : 'Contact support'}</Link>
