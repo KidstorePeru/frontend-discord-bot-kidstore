@@ -133,6 +133,16 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2;
 .fade-up { animation: fadeUp 0.5s ease-out both; }
 .spin    { animation: spin  0.8s linear infinite; }
 
+/* ── Accesibilidad: respeta la preferencia de menos movimiento ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -144,27 +154,67 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2;
 
 
 /* ═══════════════════════════════════════════════════
-   BUTTONS
+   BUTTONS — v4: jerarquía por rol + respuesta física
+   (barrido de brillo, hundimiento al presionar, onda al clic)
    ═══════════════════════════════════════════════════ */
 .btn {
-  display: inline-flex; align-items: center; gap: 8px;
+  position: relative; isolation: isolate; overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 10px 22px; border-radius: var(--radius-full);
-  font-weight: 700; font-size: 0.9rem; transition: all 0.2s;
+  font-weight: 700; font-size: 0.9rem;
+  transition: transform 0.16s cubic-bezier(.34,1.4,.64,1), box-shadow 0.2s, filter 0.2s, background 0.2s, color 0.2s, border-color 0.2s;
   white-space: nowrap; cursor: pointer; border: none;
 }
+.btn:active { transform: translateY(0) scale(0.97); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.btn:disabled { opacity: 0.5; pointer-events: none; filter: grayscale(0.3); }
+
+/* Barrido de brillo — solo en botones con relleno sólido */
+.btn-primary::after, .btn-gold::after, .btn-danger::after {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.32) 50%, transparent 70%);
+  transform: translateX(-120%); transition: transform 0.6s ease;
+}
+.btn-primary:hover::after, .btn-gold:hover::after, .btn-danger:hover::after { transform: translateX(120%); }
+
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff; box-shadow: 0 3px 12px var(--accent-glow);
+  color: #fff; box-shadow: 0 3px 14px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.18);
 }
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.25); }
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--kc-gold), #f59e0b);
+  color: #fff; box-shadow: 0 3px 14px var(--kc-gold-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--kc-gold-glow), inset 0 1px 0 rgba(255,255,255,0.28); }
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--red-500), #b91c1c);
+  color: #fff; box-shadow: 0 3px 14px rgba(220,38,38,0.28), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-danger:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(220,38,38,0.32), inset 0 1px 0 rgba(255,255,255,0.22); }
+
 .btn-ghost {
   background: var(--bg-surface); color: var(--text-secondary);
   border: 1px solid var(--border-bright);
 }
-.btn-ghost:hover { background: var(--bg-surface-2); color: var(--text-primary); }
+.btn-ghost:hover { background: var(--bg-surface-2); color: var(--text-primary); border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+
 .btn-lg   { padding: 13px 30px; font-size: 1rem; }
 .btn-sm   { padding: 7px 16px;  font-size: 0.82rem; }
 .btn-full { width: 100%; justify-content: center; }
+
+/* Confirmación tras una acción exitosa (pagos, recargas) — la fija el JS
+   añadiendo .btn-ok un momento antes de continuar. */
+.btn-ok, .btn-ok:hover { background: linear-gradient(135deg, var(--green-500), #15803d); color: #fff; box-shadow: 0 3px 14px rgba(22,163,74,0.3); transform: none; }
+
+/* Onda al hacer clic — el elemento .btn-ripple lo inyecta lib/ripple.ts */
+.btn-ripple {
+  position: absolute; border-radius: 50%; background: rgba(255,255,255,0.5);
+  transform: scale(0); animation: btnRipple 0.6s ease-out; pointer-events: none; z-index: 0;
+}
+@keyframes btnRipple { to { transform: scale(2.6); opacity: 0; } }
 
 
 /* ══════════════════════════════════════════════
