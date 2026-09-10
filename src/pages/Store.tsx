@@ -281,20 +281,23 @@ export default function StorePage() {
 
       {/* ── Hero ── */}
       <div className="sh-hero">
-        <div className="sh-hero-top">
-          <span className="sh-badge">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6l2 2-2 2v6h12v-6l-2-2 2-2V2H6zm10 9.5l-4 2-4-2V4h8v7.5z"/></svg>
-            {t('store.official')} · {total} {t('store.items')}
-          </span>
-          <h1 className="sh-title">{t('store.title')}</h1>
-          <p className="sh-date">{today.charAt(0).toUpperCase() + today.slice(1)}</p>
+        <div className="sh-hero-main">
+          <div className="sh-hero-lead">
+            <span className="sh-badge">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6l2 2-2 2v6h12v-6l-2-2 2-2V2H6zm10 9.5l-4 2-4-2V4h8v7.5z"/></svg>
+              {t('store.official')} · {total} {t('store.items')}
+            </span>
+            <h1 className="sh-title">{t('store.title')}</h1>
+            <p className="sh-date">{today.charAt(0).toUpperCase() + today.slice(1)}</p>
+          </div>
+
           {cd && (
             <div
-              className="sh-countdown"
+              className={`sh-countdown ${cd.done ? 'is-done' : ''}`}
               role="timer"
               aria-label={`${t('store.rotates')} ${countdownLabel(cd, es)}`}
             >
-              <span className="sh-cd-label"><Clock size={13} /> {t('store.rotates')}</span>
+              <span className="sh-cd-label"><Clock size={12} /> {t('store.rotates')}</span>
               {cd.done ? (
                 <div className="sh-cd-clock sh-cd-done">{es ? 'Actualizando…' : 'Refreshing…'}</div>
               ) : (
@@ -315,34 +318,36 @@ export default function StorePage() {
             </div>
           )}
         </div>
-        <div className="sh-bottom">
+
+        <div className="sh-toolbar">
           <div className="sh-search">
-            <Search size={18} />
+            <Search size={17} />
             <input placeholder={t('store.search')} value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <div className="sh-row">
-            <div className="sh-lang">
-              <button className={`sh-lb ${lang==='es'?'on':''}`} onClick={() => setLang('es')}>
-                <svg className="sh-flag-svg" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg"><rect width="30" height="20" fill="#D91023"/><rect x="10" width="10" height="20" fill="#fff"/></svg>
-                <span>ES</span>
+            {search && (
+              <button className="sh-search-clear" onClick={() => setSearch('')} aria-label={es ? 'Limpiar búsqueda' : 'Clear search'}>
+                <X size={14} />
               </button>
-              <button className={`sh-lb ${lang==='en'?'on':''}`} onClick={() => setLang('en')}>
-                <svg className="sh-flag-svg" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="30" height="20" fill="#B22234"/>
-                  <rect y="1.54" width="30" height="1.54" fill="#fff"/><rect y="4.62" width="30" height="1.54" fill="#fff"/>
-                  <rect y="7.69" width="30" height="1.54" fill="#fff"/><rect y="10.77" width="30" height="1.54" fill="#fff"/>
-                  <rect y="13.85" width="30" height="1.54" fill="#fff"/><rect y="16.92" width="30" height="1.54" fill="#fff"/>
-                  <rect width="12" height="10.77" fill="#3C3B6E"/>
-                  <circle cx="2" cy="2" r="0.8" fill="#fff"/><circle cx="4" cy="2" r="0.8" fill="#fff"/><circle cx="6" cy="2" r="0.8" fill="#fff"/><circle cx="8" cy="2" r="0.8" fill="#fff"/><circle cx="10" cy="2" r="0.8" fill="#fff"/>
-                  <circle cx="3" cy="4" r="0.8" fill="#fff"/><circle cx="5" cy="4" r="0.8" fill="#fff"/><circle cx="7" cy="4" r="0.8" fill="#fff"/><circle cx="9" cy="4" r="0.8" fill="#fff"/>
-                  <circle cx="2" cy="6" r="0.8" fill="#fff"/><circle cx="4" cy="6" r="0.8" fill="#fff"/><circle cx="6" cy="6" r="0.8" fill="#fff"/><circle cx="8" cy="6" r="0.8" fill="#fff"/><circle cx="10" cy="6" r="0.8" fill="#fff"/>
-                  <circle cx="3" cy="8" r="0.8" fill="#fff"/><circle cx="5" cy="8" r="0.8" fill="#fff"/><circle cx="7" cy="8" r="0.8" fill="#fff"/><circle cx="9" cy="8" r="0.8" fill="#fff"/>
-                </svg>
-                <span>EN</span>
-              </button>
-            </div>
-            <button className="sh-ref" onClick={load}><RefreshCw size={15} /> {t('store.refresh')}</button>
+            )}
           </div>
+          <div className="sh-lang" role="group" aria-label={es ? 'Idioma del catálogo' : 'Catalog language'}>
+            <button className={`sh-lb ${lang === 'es' ? 'on' : ''}`} onClick={() => setLang('es')} aria-pressed={lang === 'es'}>
+              <svg className="sh-flag-svg" viewBox="0 0 30 20"><rect width="30" height="20" fill="#D91023"/><rect x="10" width="10" height="20" fill="#fff"/></svg>
+              ES
+            </button>
+            <button className={`sh-lb ${lang === 'en' ? 'on' : ''}`} onClick={() => setLang('en')} aria-pressed={lang === 'en'}>
+              <svg className="sh-flag-svg" viewBox="0 0 30 20">
+                <rect width="30" height="20" fill="#B22234"/>
+                <rect y="1.54" width="30" height="1.54" fill="#fff"/><rect y="4.62" width="30" height="1.54" fill="#fff"/>
+                <rect y="7.69" width="30" height="1.54" fill="#fff"/><rect y="10.77" width="30" height="1.54" fill="#fff"/>
+                <rect y="13.85" width="30" height="1.54" fill="#fff"/><rect y="16.92" width="30" height="1.54" fill="#fff"/>
+                <rect width="12" height="10.77" fill="#3C3B6E"/>
+              </svg>
+              EN
+            </button>
+          </div>
+          <button className="sh-ref" onClick={load} aria-label={t('store.refresh')} title={t('store.refresh')}>
+            <RefreshCw size={16} />
+          </button>
         </div>
       </div>
 
