@@ -25,9 +25,10 @@
 .toast {
   position: fixed; bottom: 22px; right: 22px; display: flex; align-items: center;
   gap: 10px; padding: 12px 18px; border-radius: var(--radius-md); font-size: 0.88rem;
-  font-weight: 600; z-index: 999; animation: fadeUp 0.3s ease-out both; cursor: pointer;
+  font-weight: 600; z-index: 999; animation: toastIn 0.45s cubic-bezier(0.34,1.5,0.6,1) both; cursor: pointer;
   box-shadow: var(--shadow-lg); border: 1px solid transparent;
 }
+@keyframes toastIn { from { opacity: 0; transform: translateX(32px) scale(0.92); } to { opacity: 1; transform: none; } }
 .toast button { font-size: 1.1rem; opacity: 0.7; }
 .toast-success { background: color-mix(in srgb, var(--green-500) 10%, var(--bg-surface)); color: var(--green-500); border-color: color-mix(in srgb, var(--green-500) 25%, transparent); }
 .toast-error   { background: color-mix(in srgb, var(--red-500) 10%, var(--bg-surface)); color: var(--red-500); border-color: color-mix(in srgb, var(--red-500) 25%, transparent); }

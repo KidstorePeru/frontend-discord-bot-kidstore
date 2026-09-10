@@ -6,6 +6,7 @@ import { useCart } from '../context/CartContext';
 import CurrencySelector from './CurrencySelector';
 import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart, Shield } from 'lucide-react';
 import { useState } from 'react';
+import { useCountUp } from '../hooks/useCountUp';
 
 export default function Navbar() {
   const { customer, logout, isAdmin } = useAuth();
@@ -14,6 +15,7 @@ export default function Navbar() {
   const { cartCount, setCartOpen } = useCart();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const balance = useCountUp(customer?.kc_balance ?? 0);
 
   const links = customer
     ? [
@@ -42,7 +44,7 @@ export default function Navbar() {
         {customer && (
           <div className="navbar-balance">
             <img src="/kidcoin.png" alt="KC" className="kc-icon-sm" />
-            <span>{customer.kc_balance.toLocaleString()} KC</span>
+            <span>{balance.toLocaleString()} KC</span>
           </div>
         )}
 
@@ -71,7 +73,7 @@ export default function Navbar() {
               aria-label="Carrito"
             >
               <ShoppingCart size={18} />
-              <span className="navbar-cart-badge">{cartCount}</span>
+              <span className="navbar-cart-badge" key={cartCount}>{cartCount}</span>
             </button>
           )}
 
