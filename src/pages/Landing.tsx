@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { formatReferencePrice } from '../services/constants';
-import { ArrowRight, ChevronRight, ShieldCheck, Zap, Clock, Package, Headphones, Star } from 'lucide-react';
+import { ArrowRight, ChevronRight, ChevronDown, ShieldCheck, Zap, Clock, Star, Wallet, BadgeCheck, RotateCcw } from 'lucide-react';
 
 function IconStar()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>; }
 function IconFire()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-4.4 0-8-3.6-8-8 0-3.5 2.3-6.5 5.5-7.6-.3 1-.2 2.1.4 3 .3.5.8.9 1.3 1.1C10.1 9.4 10 7 10.8 5c.8-2 2.4-3.5 4.2-4.5-.3 1.6.1 3.3 1.2 4.5.7.8 1.5 1.3 2.5 1.6-1 1.2-1.7 2.7-1.7 4.4 0 3.3 2 4.5 2 7C19 19.4 15.4 23 12 23z"/></svg>; }
@@ -143,6 +143,36 @@ function useRotatingWord(words: string[]) {
   return { word: words[index], phase, ref };
 }
 
+// Acordeón de preguntas frecuentes para la portada — una versión corta de
+// /faq, con las 5 dudas más comunes antes de la primera compra.
+function LandingFAQ({ items }: { items: { q: string; a: string }[] }) {
+  const [open, setOpen] = useState<number | null>(0);
+  return (
+    <div className="lv7-faq">
+      {items.map((it, i) => {
+        const isOpen = open === i;
+        return (
+          <div className={`lv7-faq-item ${isOpen ? 'open' : ''}`} key={i}>
+            <button
+              className="lv7-faq-q"
+              aria-expanded={isOpen}
+              onClick={() => setOpen(isOpen ? null : i)}
+            >
+              <span>{it.q}</span>
+              <ChevronDown size={18} className="lv7-faq-chev" />
+            </button>
+            {isOpen && (
+              <div className="lv7-faq-a">
+                <p>{it.a}</p>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Landing() {
   const { t, lang } = useLang();
   const { customer } = useAuth();
@@ -212,6 +242,11 @@ export default function Landing() {
 
           <p className="lv7-desc">{t('land.desc')}</p>
 
+          <div className="lv7-value">
+            <Wallet size={15} />
+            <span>{t('land.hero.value')}</span>
+          </div>
+
           <div className="lv7-btns">
             <Link to="/store" className="lv7-btn-primary">{t('land.btn.store')} <ArrowRight size={17} /></Link>
             {isLogged
@@ -231,6 +266,27 @@ export default function Landing() {
           <img src="/sung.png" alt="Fortnite" className="lv7-hero-img" />
           <div className="lv7-img-stat lv7-is1"><strong>200+</strong><span>{lang === 'es' ? 'Items hoy' : 'Items today'}</span></div>
           <div className="lv7-img-stat lv7-is2"><strong>48h</strong><span>{lang === 'es' ? 'Entrega máx.' : 'Max delivery'}</span></div>
+        </div>
+      </section>
+
+      <section className="lv7-stats" aria-label={lang === 'es' ? 'En números' : 'By the numbers'}>
+        <div className="lv7-stats-inner">
+          <div className="lv7-stat">
+            <strong>{t('land.stats.orders')}</strong>
+            <span>{t('land.stats.orders.l')}</span>
+          </div>
+          <div className="lv7-stat">
+            <strong className="lv7-stat-rating">{t('land.stats.rating')} <Star size={16} fill="currentColor" /></strong>
+            <span>{t('land.stats.rating.l')}</span>
+          </div>
+          <div className="lv7-stat">
+            <strong>{t('land.stats.since')}</strong>
+            <span>{t('land.stats.since.l')}</span>
+          </div>
+          <div className="lv7-stat">
+            <strong>{t('land.stats.items')}</strong>
+            <span>{t('land.stats.items.l')}</span>
+          </div>
         </div>
       </section>
 
@@ -254,6 +310,10 @@ export default function Landing() {
                 <div className="lv7-step-bar" style={{background:s.c}} />
               </div>
             ))}
+          </div>
+          <div className="lv7-note">
+            <Clock size={16} />
+            <p>{t('land.step1.note')}</p>
           </div>
         </div>
       </section>
@@ -294,6 +354,7 @@ export default function Landing() {
               </div>
             ))}
           </div>
+          <p className="lv7-pkg-note">{t('land.pkg.note')}</p>
           <div className="lv7-pay">
             <p className="lv7-pay-title">{t('land.pay.title')}</p>
             <div className="lv7-pay-wrap">
@@ -313,12 +374,17 @@ export default function Landing() {
 
       <section className="lv7-sec lv7-sec-trust">
         <div className="lv7-inner">
+          <div className="lv7-head">
+            <span className="lv7-tag">{t('land.why.tag')}</span>
+            <h2>{t('land.why.title')}</h2>
+            <p>{t('land.why.sub')}</p>
+          </div>
           <div className="lv7-trust-grid">
             {[
-              { icon:<ShieldCheck size={26}/>, c:'#22c55e', ti:t('land.trust.pay'),  td:t('land.trust.pay.d') },
-              { icon:<Zap size={26}/>,         c:'#f59e0b', ti:t('land.trust.fast'), td:t('land.trust.fast.d') },
-              { icon:<Package size={26}/>,     c:'#3b82f6', ti:t('land.trust.off'),  td:t('land.trust.off.d') },
-              { icon:<Headphones size={26}/>,  c:'#8b5cf6', ti:t('land.trust.sup'),  td:t('land.trust.sup.d') },
+              { icon:<Wallet size={26}/>,      c:'#22c55e', ti:t('land.why.price'), td:t('land.why.price.d') },
+              { icon:<Zap size={26}/>,         c:'#f59e0b', ti:t('land.why.pay'),   td:t('land.why.pay.d') },
+              { icon:<BadgeCheck size={26}/>,  c:'#3b82f6', ti:t('land.why.off'),   td:t('land.why.off.d') },
+              { icon:<RotateCcw size={26}/>,   c:'#8b5cf6', ti:t('land.why.safe'),  td:t('land.why.safe.d') },
             ].map(tr => (
               <div className="lv7-trust-card" key={tr.ti}>
                 <div className="lv7-trust-ico" style={{color:tr.c, background:tr.c+'15'}}>{tr.icon}</div>
@@ -376,6 +442,40 @@ export default function Landing() {
           </div>
         </section>
       )}
+
+      <section className="lv7-sec lv7-sec-faq">
+        <div className="lv7-inner lv7-inner-narrow">
+          <div className="lv7-head">
+            <span className="lv7-tag">{t('land.faq.tag')}</span>
+            <h2>{t('land.faq.title')}</h2>
+            <p>{t('land.faq.sub')}</p>
+          </div>
+          <LandingFAQ
+            items={[
+              { q: t('land.faq.q1'), a: t('land.faq.a1') },
+              { q: t('land.faq.q2'), a: t('land.faq.a2') },
+              { q: t('land.faq.q3'), a: t('land.faq.a3') },
+              { q: t('land.faq.q4'), a: t('land.faq.a4') },
+              { q: t('land.faq.q5'), a: t('land.faq.a5') },
+            ]}
+          />
+          <Link to="/faq" className="lv7-faq-more">{t('land.faq.more')} <ArrowRight size={15} /></Link>
+        </div>
+      </section>
+
+      <section className="lv7-cta">
+        <div className="lv7-cta-inner">
+          <h2>{t('land.cta.title')}</h2>
+          <p>{t('land.cta.sub')}</p>
+          <div className="lv7-btns">
+            <Link to="/store" className="lv7-btn-primary">{t('land.btn.store')} <ArrowRight size={17} /></Link>
+            {isLogged
+              ? <Link to="/dashboard" className="lv7-btn-ghost lv7-btn-ghost-onaccent">{lang === 'es' ? 'Mi Dashboard' : 'My Dashboard'}</Link>
+              : <Link to="/register" className="lv7-btn-ghost lv7-btn-ghost-onaccent">{t('land.btn.account')}</Link>
+            }
+          </div>
+        </div>
+      </section>
 
       <footer className="lv7-footer">
         <div className="lv7-footer-inner">
