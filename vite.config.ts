@@ -1,9 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// `vite preview` es lo que realmente sirve www.kidstoreperu.net en
-// producción (ver "start" en package.json) — por eso los headers de
-// seguridad van aquí y no solo en el backend Go, que no toca este dominio.
+// Producción sirve www.kidstoreperu.net con `serve -s dist -l 4173` (ver
+// "start" en package.json), NO con `vite preview` — desde el commit 44eff2a.
+// Por eso las cabeceras de seguridad reales de producción viven en
+// public/serve.json (que Vite copia a dist/ y `serve` detecta solo).
+// El bloque `preview.headers` de abajo es SOLO para revisar un build local
+// con `npm run preview`; si cambias la CSP, actualiza también serve.json.
 const BACKEND_ORIGIN = 'https://backend-discord-bot-kidstore-production.up.railway.app';
 
 const csp = [
