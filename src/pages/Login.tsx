@@ -5,6 +5,7 @@ import { useLang } from '../context/LangContext';
 import { login, verify2FA } from '../services/api';
 import { LogIn, Loader2, Mail, Lock, AlertCircle, ShieldCheck, ArrowLeft } from 'lucide-react';
 import OAuthButtons from '../components/OAuthButtons';
+import AuthSwitch from '../components/AuthSwitch';
 
 const OAUTH_ERROR_MESSAGES: Record<string, { es: string; en: string }> = {
   invalid_state:      { es: 'La sesión de inicio expiró, intenta de nuevo.', en: 'The login session expired, please try again.' },
@@ -160,6 +161,7 @@ export default function Login() {
       {/* Panel derecho — formulario */}
       <div className="auth-right">
         <form className="auth-card" onSubmit={handleSubmit}>
+          <AuthSwitch current="login" />
           <div className="auth-icon"><LogIn size={24} /></div>
           <h1>{t('auth.login.title')}</h1>
           <p className="auth-sub">{t('auth.login.sub')}</p>

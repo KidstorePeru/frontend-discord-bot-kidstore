@@ -30,6 +30,7 @@
   width: 320px; height: 320px;
   background: radial-gradient(circle, rgba(124,58,237,0.35) 0%, transparent 70%);
   border-radius: 50%;
+  animation: authOrb 15s ease-in-out infinite;
 }
 .auth-panel::after {
   content: '';
@@ -38,6 +39,11 @@
   width: 280px; height: 280px;
   background: radial-gradient(circle, rgba(6,182,212,0.25) 0%, transparent 70%);
   border-radius: 50%;
+  animation: authOrb 19s ease-in-out infinite reverse;
+}
+@keyframes authOrb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(26px, -20px) scale(1.06); }
 }
 .auth-panel-logo {
   height: 36px;
@@ -116,6 +122,18 @@
   box-shadow: 0 8px 40px rgba(0,0,0,0.08);
   animation: fadeUp 0.4s ease-out both;
 }
+
+/* Selector Ingresar / Crear cuenta */
+.auth-switch { display: flex; width: 100%; margin-bottom: 24px; }
+.auth-switch .segtabs-btn { flex: 1; }
+
+/* Entrada escalonada de los campos — guía la mirada hacia el CTA */
+.auth-card .field { animation: authFieldIn 0.45s cubic-bezier(0.2,0.7,0.3,1) both; }
+.auth-card .field:nth-of-type(1) { animation-delay: 0.06s; }
+.auth-card .field:nth-of-type(2) { animation-delay: 0.12s; }
+.auth-card .field:nth-of-type(3) { animation-delay: 0.18s; }
+.auth-card .oauth-buttons { animation: authFieldIn 0.4s 0.02s cubic-bezier(0.2,0.7,0.3,1) both; }
+@keyframes authFieldIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 [data-theme="dark"] .auth-card {
   box-shadow: 0 8px 40px rgba(0,0,0,0.3);
 }
@@ -130,7 +148,9 @@
   border: 1px solid rgba(124,58,237,0.2);
   color: var(--accent);
   margin-bottom: 20px;
+  animation: authIconIn 0.5s cubic-bezier(0.34,1.6,0.5,1) both;
 }
+@keyframes authIconIn { from { opacity: 0; transform: scale(0.8) rotate(-10deg); } to { opacity: 1; transform: none; } }
 
 /* Title & sub */
 .auth-card h1 {
@@ -189,7 +209,7 @@
 .field input:focus {
   border-color: var(--accent);
   background: var(--bg-surface);
-  box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 .field input::placeholder { color: var(--text-muted); }
 .field select, .field textarea {
@@ -208,7 +228,7 @@
 .field select:focus, .field textarea:focus {
   border-color: var(--accent);
   background: var(--bg-surface);
-  box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 .field textarea::placeholder { color: var(--text-muted); }
 .field .field-hint { font-size: .74rem; color: var(--text-muted); text-transform: none; letter-spacing: normal; font-weight: 500; margin-top: 2px; }

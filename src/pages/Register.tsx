@@ -4,6 +4,7 @@ import { useLang } from '../context/LangContext';
 import { register, resendVerification } from '../services/api';
 import { UserPlus, Loader2, Gamepad2, Mail, Lock, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import OAuthButtons from '../components/OAuthButtons';
+import AuthSwitch from '../components/AuthSwitch';
 
 export default function Register() {
   const [epicUsername, setEpicUsername] = useState('');
@@ -140,6 +141,7 @@ export default function Register() {
 
       <div className="auth-right">
         <form className="auth-card" onSubmit={handleSubmit}>
+          <AuthSwitch current="register" />
           <div className="auth-icon"><UserPlus size={24} /></div>
           <h1>{t('auth.register.title')}</h1>
           <p className="auth-sub">{t('auth.register.sub')}</p>
