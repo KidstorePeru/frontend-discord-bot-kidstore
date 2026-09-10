@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getMyOrders, getMyOrderStats, getMe, updateProfile, updateAvatar, requestEmailChange, confirmEmailChange, startAccountLink, unlinkAccount, get2FAStatus, setup2FA, confirm2FA, disable2FA, deleteOwnAccount } from '../services/api';
 import { KCBadge, PageLoader, Toast } from '../components/UI';
+import SegTabs from '../components/SegTabs';
 import { GoogleIcon, DiscordIcon } from '../components/OAuthButtons';
 import type { Order, Customer } from '../types';
 import {
@@ -1057,14 +1058,23 @@ function OrdersTab({ orders, lang, hasMore, loadingMore, onLoadMore }: {
         <h2><Package size={20} /> {es ? 'Mis Órdenes' : 'My Orders'}</h2>
       </div>
 
-      <div className="order-filters">
-        {ORDER_TABS.map(f => (
-          <button key={f.key} className={`order-filter-btn ${filter === f.key ? 'active' : ''}`} onClick={() => selectFilter(f.key)}>
-            {f.icon} {es ? f.es : f.en}
-            <span className="order-filter-count">{orders.filter(o => matchesFilter(o.status, f.key)).length}</span>
-          </button>
-        ))}
-      </div>
+      <SegTabs
+        className="order-filters"
+        variant="surface"
+        size="sm"
+        activeKey={filter}
+        onSelect={(k) => selectFilter(k as OrderFilter)}
+        ariaLabel={es ? 'Filtrar órdenes' : 'Filter orders'}
+        items={ORDER_TABS.map(f => ({
+          key: f.key,
+          label: (
+            <>
+              {f.icon} {es ? f.es : f.en}
+              <span className="seg-count">{orders.filter(o => matchesFilter(o.status, f.key)).length}</span>
+            </>
+          ),
+        }))}
+      />
 
       {filtered.length === 0 ? (
         <div className="empty-state">

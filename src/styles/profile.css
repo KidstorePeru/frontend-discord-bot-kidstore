@@ -903,25 +903,8 @@
 /* ══════════════════════════════════════════════
    MIS ORDENES — filtros y detalle
    ══════════════════════════════════════════════ */
-.order-filters {
-  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
-}
-.order-filter-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 14px; border-radius: var(--radius-full);
-  background: var(--bg-surface-2); border: 1.5px solid var(--border);
-  color: var(--text-secondary); font-size: 0.8rem; font-weight: 700;
-  cursor: pointer; transition: all 0.2s;
-}
-.order-filter-btn:hover { border-color: var(--accent); color: var(--text-primary); }
-.order-filter-btn.active {
-  background: var(--accent); border-color: var(--accent); color: #fff;
-}
-.order-filter-count {
-  font-size: 0.68rem; font-weight: 800; padding: 1px 7px; border-radius: 100px;
-  background: rgba(0,0,0,0.12); color: inherit;
-}
-.order-filter-btn.active .order-filter-count { background: rgba(255,255,255,0.25); }
+/* Filtros de órdenes — usa el componente SegTabs (styles/segtabs.css) */
+.order-filters { margin-bottom: 20px; }
 
 .order-detail-list { display: flex; flex-direction: column; gap: 12px; }
 .order-detail-card {

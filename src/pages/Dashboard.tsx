@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getMyOrders, getMyRecharges, getMyOrderStats, getMyRechargeStats } from '../services/api';
 import { KCBadge, StatusBadge, PageLoader } from '../components/UI';
+import SegTabs from '../components/SegTabs';
 import type { Order } from '../types';
 import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coins, CreditCard, ChevronLeft, ChevronRight, Wallet, DollarSign } from 'lucide-react';
 
@@ -118,14 +119,15 @@ export default function Dashboard() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="dash-tabs">
-        <Link to="/dashboard/orders" className={`dash-tab ${tab === 'orders' ? 'active' : ''}`}>
-          <Package size={16}/> {es ? 'Mis Pedidos' : 'My Orders'}
-        </Link>
-        <Link to="/dashboard/recharges" className={`dash-tab ${tab === 'recharges' ? 'active' : ''}`}>
-          <Coins size={16}/> {es ? 'Historial de Recargas' : 'Recharge History'}
-        </Link>
-      </div>
+      <SegTabs
+        className="dash-tabs"
+        activeKey={tab}
+        ariaLabel={es ? 'Secciones del panel' : 'Dashboard sections'}
+        items={[
+          { key: 'orders',    to: '/dashboard/orders',    label: <><Package size={16}/> {es ? 'Mis Pedidos' : 'My Orders'}</> },
+          { key: 'recharges', to: '/dashboard/recharges', label: <><Coins size={16}/> {es ? 'Historial de Recargas' : 'Recharge History'}</> },
+        ]}
+      />
 
       {/* ══════════ TAB: MIS PEDIDOS ══════════ */}
       {tab === 'orders' && <>

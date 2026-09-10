@@ -11,3 +11,5 @@ dist
 
 # Editor
 .vscode
+# Claude Code local tooling
+.claude/

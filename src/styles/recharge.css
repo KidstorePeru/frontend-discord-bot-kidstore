@@ -1275,9 +1275,7 @@
 }
 
 /* ── Payment tab selector + online gateways ── */
-.rc-pay-tabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; }
-.rc-pay-tab { padding: 10px 24px; border-radius: 999px; border: 1.5px solid var(--border); background: var(--bg-surface); font-weight: 700; font-size: .85rem; cursor: pointer; transition: all .2s; color: var(--text-secondary); }
-.rc-pay-tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.rc-pay-tabs { display: flex; justify-content: center; margin-bottom: 20px; }
 .rc-gateways { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 16px 0; }
 .rc-gateway-btn { display: flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg-surface); cursor: pointer; font-weight: 700; font-size: .88rem; transition: all .2s; min-width: 180px; }
 .rc-gateway-btn:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.1); }

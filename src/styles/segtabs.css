@@ -1,0 +1,117 @@
+/* ═══════════════════════════════════════════════════
+   SEG TABS — control segmentado con indicador deslizante
+   (componente SegTabs.tsx)
+   ═══════════════════════════════════════════════════ */
+.segtabs {
+  position: relative;
+  display: inline-flex;
+  padding: 5px;
+  gap: 2px;
+  background: var(--bg-surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-full);
+  max-width: 100%;
+}
+.segtabs-thumb {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 0;
+  width: 0;
+  border-radius: var(--radius-full);
+  pointer-events: none;
+  transition:
+    transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.2s;
+}
+.segtabs-accent .segtabs-thumb {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+.segtabs-surface .segtabs-thumb {
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm), 0 0 0 1px var(--border);
+}
+
+.segtabs-btn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: var(--radius-full);
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.28s;
+}
+.segtabs-btn svg {
+  transition: transform 0.42s cubic-bezier(0.34, 1.7, 0.5, 1);
+}
+.segtabs-btn:hover:not([aria-selected='true']) {
+  color: var(--text-secondary);
+}
+.segtabs-btn[aria-selected='true'] {
+  color: var(--text-primary);
+}
+.segtabs-btn[aria-selected='true'] svg {
+  transform: scale(1.15) translateY(-1px);
+}
+.segtabs-accent .segtabs-btn[aria-selected='true'] {
+  color: #fff;
+}
+.segtabs-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.segtabs-sm .segtabs-btn {
+  padding: 7px 13px;
+  font-size: 0.78rem;
+}
+
+/* Contador dentro de una pestaña (filtros de órdenes) */
+.segtabs-btn .seg-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.28s, color 0.28s;
+}
+.segtabs-accent .segtabs-btn[aria-selected='true'] .seg-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+.segtabs-surface .segtabs-btn[aria-selected='true'] .seg-count {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segtabs-thumb { transition: opacity 0.2s; }
+}
+
+@media (max-width: 640px) {
+  .segtabs {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .segtabs::-webkit-scrollbar { display: none; }
+  .segtabs-btn { flex: 0 0 auto; }
+}

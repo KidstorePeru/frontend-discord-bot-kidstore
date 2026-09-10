@@ -359,22 +359,8 @@
 }
 .dash-order-info span { font-size:0.73rem; color:var(--text-muted); margin-top:2px; }
 
-/* Dashboard tabs */
-.dash-tabs {
-  display: flex; gap: 6px; margin-bottom: 20px;
-}
-.dash-tab {
-  display: flex; align-items: center; gap: 7px;
-  padding: 10px 20px; border-radius: var(--radius-full);
-  background: var(--bg-surface); border: 1.5px solid var(--border);
-  color: var(--text-secondary); font-size: .85rem; font-weight: 700;
-  cursor: pointer; transition: all .2s;
-}
-.dash-tab:hover { border-color: var(--accent); color: var(--text-primary); }
-.dash-tab.active {
-  background: var(--accent); border-color: var(--accent);
-  color: #fff; box-shadow: 0 2px 12px var(--accent-glow);
-}
+/* Dashboard tabs — ahora usa el componente SegTabs (styles/segtabs.css) */
+.dash-tabs { margin-bottom: 20px; }
 
 /* Pagination */
 .dash-pagination {
@@ -394,8 +380,3 @@
 }
 .dash-pagination button:disabled { opacity: .3; cursor: not-allowed; }
 
-@media (max-width: 640px) {
-  .dash-tabs { overflow-x: auto; scrollbar-width: none; }
-  .dash-tabs::-webkit-scrollbar { display: none; }
-  .dash-tab { white-space: nowrap; padding: 8px 14px; font-size: .78rem; }
-}

@@ -4,6 +4,7 @@ import App from './App';
 import { initRipple } from './lib/ripple';
 import './styles/base.css';
 import './styles/navbar.css';
+import './styles/segtabs.css';
 import './styles/landing.css';
 import './styles/auth.css';
 import './styles/dashboard.css';

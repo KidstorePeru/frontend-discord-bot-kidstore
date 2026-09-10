@@ -8,6 +8,7 @@ import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefr
 import type { KCPackage } from '../types';
 import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
+import SegTabs from '../components/SegTabs';
 
 // Pago manual solo existe para PEN (Perú) y EUR (España) — para las demás
 // divisas se usa el pago automático (dLocal Go, PayPal, Cripto).
@@ -430,8 +431,15 @@ export default function Recharge() {
 
           {/* Payment tab selector */}
           <div className="rc-pay-tabs">
-            <button className={`rc-pay-tab ${payTab==='online'?'on':''}`} onClick={()=>setPayTab('online')}>{txt.tabOnline}</button>
-            <button className={`rc-pay-tab ${payTab==='manual'?'on':''}`} onClick={()=>setPayTab('manual')}>{txt.tabManual}</button>
+            <SegTabs
+              activeKey={payTab}
+              onSelect={(k) => setPayTab(k as 'online' | 'manual')}
+              ariaLabel={es ? 'Tipo de pago' : 'Payment type'}
+              items={[
+                { key: 'online', label: txt.tabOnline },
+                { key: 'manual', label: txt.tabManual },
+              ]}
+            />
           </div>
 
           {/* ── Online tab: MercadoPago (Perú) o dLocal Go + PayPal + Cripto (resto del mundo) ── */}
