@@ -14,12 +14,13 @@ const translations = {
   'bots.sub':      { es: 'Estas cuentas envían los items a tu cuenta de Fortnite.', en: 'These accounts send items to your Fortnite account.' },
   'bots.why':      { es: '¿Por qué debo agregarlas?',            en: 'Why should I add them?' },
   'bots.why.desc': { es: 'Fortnite requiere ser amigos 48h antes de poder enviarte un regalo. Agrega todas las cuentas para garantizar la entrega.', en: 'Fortnite requires 48h of friendship before sending a gift. Add all accounts to guarantee delivery.' },
-  'bots.copy':     { es: 'Copiar',                               en: 'Copy' },
+  'bots.copy':     { es: 'Copiar ID',                            en: 'Copy ID' },
   'bots.copied':   { es: 'Copiado',                              en: 'Copied' },
-  'bots.active':   { es: 'Activa',                               en: 'Active' },
-  'bots.inactive': { es: 'Inactiva',                             en: 'Inactive' },
-  'bots.gifts':    { es: 'Envíos disponibles',                   en: 'Available gifts' },
-  'bots.add':      { es: 'Agregar como amigo',                   en: 'Add as friend' },
+  'bots.label':    { es: 'Cuenta bot',                           en: 'Bot account' },
+  'bots.list.title': { es: 'Agrégalas como amigos en Epic Games', en: 'Add them as friends in Epic Games' },
+  'bots.list.sub': { es: 'Copia el nombre y agrégalo desde el juego o la app de Epic Games. Con una basta, pero mientras más agregues, más rápida la entrega.', en: 'Copy the name and add it from the game or the Epic Games app. One is enough, but the more you add, the faster delivery.' },
+  'bots.st.nogifts': { es: 'Sin envíos por hoy · se renueva a medianoche', en: 'No deliveries left today · resets at midnight' },
+  'bots.st.inactive':{ es: 'Fuera de servicio temporalmente',    en: 'Temporarily out of service' },
 
   // Landing v7 — todas las claves
   'land.words':         { es: 'Skins,Emotes,Picos,Planeadores,Mochilas,Gestos,Envolturas,Objetos', en: 'Skins,Emotes,Pickaxes,Gliders,Backpacks,Dances,Wraps,Items' },
