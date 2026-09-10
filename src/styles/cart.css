@@ -92,9 +92,15 @@
 .cart-total span { font-size: 0.88rem; font-weight: 600; color: var(--text-secondary); }
 .cart-total-amount { display: flex; align-items: center; gap: 6px; font-size: 1.1rem; font-weight: 900; color: var(--kc-gold); }
 .cart-warning {
-  display: flex; align-items: center; gap: 6px; font-size: 0.8rem;
+  display: flex; align-items: flex-start; gap: 7px; font-size: 0.8rem;
   color: var(--red-500); background: color-mix(in srgb, var(--red-500) 8%, transparent);
-  padding: 8px 12px; border-radius: var(--radius-sm); font-weight: 600;
+  padding: 8px 12px; border-radius: var(--radius-sm); font-weight: 600; line-height: 1.45;
+}
+.cart-warning svg { flex-shrink: 0; margin-top: 2px; }
+.cart-warning-amber {
+  color: var(--amber-500);
+  background: color-mix(in srgb, var(--amber-500) 10%, transparent);
+  margin: 0 0 10px;
 }
 .cart-actions { display: flex; gap: 8px; }
 .cart-actions .btn-ghost { white-space: nowrap; }

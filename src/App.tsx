@@ -214,6 +214,15 @@ function GlobalCart() {
               ))}
             </div>
 
+            {cart.some(i => i.isBundle) && (
+              <div className="cart-warning cart-warning-amber">
+                <AlertTriangle size={14} />
+                {es
+                  ? 'Tu carrito tiene un Lote: si ya posees alguno de sus objetos, Epic no permitirá enviarlo. Revisa tu inventario antes de confirmar.'
+                  : 'Your cart has a Bundle: if you already own any of its items, Epic won’t allow it to be sent. Check your inventory before confirming.'}
+              </div>
+            )}
+
             <div className="cart-footer">
               <div className="cart-total">
                 <span>{es ? 'Total' : 'Total'}</span>

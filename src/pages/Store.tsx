@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 import { getShop } from '../services/api';
 import { vbucksToKC } from '../services/constants';
 import { PageLoader, Toast } from '../components/UI';
-import { Search, RefreshCw, ShoppingCart, X, Clock, CheckCircle, ShoppingBag, Info } from 'lucide-react';
+import { Search, RefreshCw, ShoppingCart, X, Clock, CheckCircle, ShoppingBag, Info, AlertTriangle } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 import { useSEO } from '../hooks/useSEO';
 
@@ -73,21 +73,37 @@ function groupSections(items: ShopItem[]): Section[] {
   return [...m.values()].sort((a,b) => b.rank - a.rank);
 }
 
-function useCountdown(target?: string) {
-  const [t, setT] = useState('');
+interface CountdownParts { d: number; h: number; m: number; s: number; done: boolean; }
+
+// Cuenta regresiva al segundo hasta `target`. Devuelve las partes ya
+// calculadas para poder mostrarlas con formato hh:mm:ss.
+function useCountdown(target?: string): CountdownParts | null {
+  const [parts, setParts] = useState<CountdownParts | null>(null);
   useEffect(() => {
-    if (!target) return;
+    if (!target) { setParts(null); return; }
     const tick = () => {
       const ms = new Date(target).getTime() - Date.now();
-      if (ms <= 0) { setT('0h 0m'); return; }
-      const d = Math.floor(ms/86400000), h = Math.floor((ms%86400000)/3600000), m = Math.floor((ms%3600000)/60000);
-      setT(d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`);
+      if (ms <= 0) { setParts({ d: 0, h: 0, m: 0, s: 0, done: true }); return; }
+      setParts({
+        d: Math.floor(ms / 86_400_000),
+        h: Math.floor((ms % 86_400_000) / 3_600_000),
+        m: Math.floor((ms % 3_600_000) / 60_000),
+        s: Math.floor((ms % 60_000) / 1000),
+        done: false,
+      });
     };
     tick();
-    const id = setInterval(tick, 30000);
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [target]);
-  return t;
+  return parts;
+}
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+function countdownLabel(c: CountdownParts, es: boolean): string {
+  if (c.done) return es ? 'actualizando…' : 'refreshing…';
+  const parts = [c.d && `${c.d}${es ? 'd' : 'd'}`, `${pad2(c.h)}h`, `${pad2(c.m)}m`, `${pad2(c.s)}s`].filter(Boolean);
+  return parts.join(' ');
 }
 
 function VIcon({ s=16 }: { s?: number }) {
@@ -107,7 +123,7 @@ export default function StorePage() {
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const { storeLang: lang, setStoreLang: setLang, t } = useLang();
   const [navOpen, setNavOpen] = useState(false);
-  const countdown = useCountdown(shopDate);
+  const cd = useCountdown(shopDate);
 
   useSEO({
     title: lang === 'es' ? 'Tienda de Fortnite' : 'Fortnite Store',
@@ -148,6 +164,14 @@ export default function StorePage() {
   }, []);
 
   useEffect(() => { load(); }, [lang]);
+
+  // Cuando la cuenta regresiva llega a cero, la tienda oficial ya rotó —
+  // recarga sola para traer el nuevo catálogo.
+  useEffect(() => {
+    if (!cd?.done) return;
+    const id = setTimeout(() => load(), 5000);
+    return () => clearTimeout(id);
+  }, [cd?.done]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     setLoading(true);
@@ -210,7 +234,6 @@ export default function StorePage() {
         key={item.offerId + idx}
         style={bg}
       >
-        {countdown && <span className="sc-time"><Clock size={10} /> {countdown}</span>}
         {item.banner && <span className="sc-ban">{item.banner.backendValue === 'New' ? '¡NUEVO!' : item.banner.value}</span>}
         {inCart && <span className="sc-added-badge"><CheckCircle size={10} /> {es ? 'En carrito' : 'In cart'}</span>}
         {showRender && <div className="sc-render"><img src={item.renderImg} alt={item.name} loading="lazy" /></div>}
@@ -219,7 +242,11 @@ export default function StorePage() {
         <div className="sc-info">
           {item.rarityText && <span className="sc-rar">{item.rarityText.toUpperCase()}</span>}
           <span className="sc-name">{item.name}</span>
-          {item.isBundle && <span className="sc-lote">LOTE</span>}
+          {item.isBundle && (
+            <span className="sc-lote" title={t('store.bundle.short')}>
+              <AlertTriangle size={10} /> {t('store.lote')}
+            </span>
+          )}
           <div className="sc-bot">
             <div className="sc-pr">
               <span className="sc-vb" title={es ? 'Precio oficial en V-Bucks' : 'Official V-Bucks price'}><VIcon s={16} /> <b>{item.finalPrice.toLocaleString()}</b></span>
@@ -261,11 +288,30 @@ export default function StorePage() {
           </span>
           <h1 className="sh-title">{t('store.title')}</h1>
           <p className="sh-date">{today.charAt(0).toUpperCase() + today.slice(1)}</p>
-          {countdown && (
-            <div className="sh-cd">
-              <Clock size={14} />
-              {t('store.new')}
-              <strong>{countdown}</strong>
+          {cd && (
+            <div
+              className="sh-countdown"
+              role="timer"
+              aria-label={`${t('store.rotates')} ${countdownLabel(cd, es)}`}
+            >
+              <span className="sh-cd-label"><Clock size={13} /> {t('store.rotates')}</span>
+              {cd.done ? (
+                <div className="sh-cd-clock sh-cd-done">{es ? 'Actualizando…' : 'Refreshing…'}</div>
+              ) : (
+                <div className="sh-cd-clock" aria-hidden="true">
+                  {cd.d > 0 && (
+                    <>
+                      <span className="sh-cd-seg"><b>{cd.d}</b><i>{es ? 'días' : 'days'}</i></span>
+                      <span className="sh-cd-sep">:</span>
+                    </>
+                  )}
+                  <span className="sh-cd-seg"><b>{pad2(cd.h)}</b><i>{es ? 'horas' : 'hrs'}</i></span>
+                  <span className="sh-cd-sep">:</span>
+                  <span className="sh-cd-seg"><b>{pad2(cd.m)}</b><i>min</i></span>
+                  <span className="sh-cd-sep">:</span>
+                  <span className="sh-cd-seg sh-cd-sec"><b>{pad2(cd.s)}</b><i>seg</i></span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -327,6 +373,16 @@ export default function StorePage() {
       </aside>
 
       <p className="sh-price-legend"><Info size={13} /> {t('store.price.legend')}</p>
+
+      {/* Aviso sobre los Lotes — Epic bloquea el regalo de un lote si ya
+          tienes cualquiera de sus objetos. */}
+      <div className="sh-bundle-notice" role="note">
+        <AlertTriangle size={17} />
+        <div>
+          <strong>{t('store.bundle.title')}</strong>
+          <p>{t('store.bundle.body')}</p>
+        </div>
+      </div>
 
       {/* ── Grid de items ── */}
       <div className="sh-body">
