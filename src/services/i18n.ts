@@ -26,7 +26,7 @@ const translations = {
   'land.eyebrow':       { es: 'Tienda Oficial KidStorePeru',            en: 'Official KidStorePeru Store' },
   'land.season':        { es: 'Capítulo 7: Temporada 2',                en: 'Chapter 7: Season 2' },
   'land.season.name':   { es: '«Duelo Final»',                          en: '"Final Showdown"' },
-  'land.title.1':       { es: 'Compra tus',                             en: 'Get your' },
+  'land.title.1':       { es: 'Compra tus ',                            en: 'Get your ' },
   'land.title.sub':     { es: 'de Fortnite favoritos',                  en: 'favorite Fortnite items' },
   'land.desc':          { es: 'Usa KidCoins (KC) para comprar cualquier item. Recarga fácil, precios justos, entrega automática en Perú.', en: 'Use KidCoins (KC) to buy any item. Easy recharge, fair prices, automatic delivery in Peru.' },
   'land.btn.store':     { es: 'Ver tienda',                             en: 'View store' },
