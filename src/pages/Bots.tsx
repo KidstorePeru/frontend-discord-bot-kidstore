@@ -2,24 +2,23 @@ import { useState, useEffect } from 'react';
 import { useLang } from '../context/LangContext';
 import { getBotsStatus } from '../services/api';
 import type { BotsStatusResponse } from '../services/api';
-import { Copy, CheckCircle2, Clock, Bot, Moon } from 'lucide-react';
+import { Copy, CheckCircle2, Clock, Bot, Moon, WifiOff } from 'lucide-react';
 
-// Colores para los avatares — se asignan por posición.
+// Roster fijo: siempre se muestran 20 cuentas. Las que la API reporta como
+// conectadas llevan su nombre y estado reales; las demás aparecen como
+// "Desconectado".
+const ROSTER_SIZE = 20;
+const ROSTER = Array.from({ length: ROSTER_SIZE }, (_, i) => `KidStore${String(i + 1).padStart(4, '0')}`);
+
 const AVATAR_COLORS = [
   '#818cf8', '#34d399', '#f472b6', '#60a5fa', '#fb923c',
   '#a78bfa', '#4ade80', '#f87171', '#38bdf8', '#facc15',
   '#e879f9', '#2dd4bf', '#fb7185', '#a3e635', '#c084fc',
+  '#93c5fd', '#6ee7b7', '#fca5a5', '#d8b4fe', '#fde047',
 ];
 
-// Lista de respaldo si la API de estado falla — solo nombres, sin estado.
-const FALLBACK_BOTS = Array.from({ length: 15 }, (_, i) => ({
-  display_name: `KidStore${String(i + 1).padStart(4, '0')}`,
-  is_active: true,
-  remaining_gifts: 5,
-  id: `fallback-${i}`,
-}));
-
 type BotAccount = BotsStatusResponse['accounts'][number];
+type Tone = 'ok' | 'warn' | 'off' | 'sleep' | 'gone' | 'unknown';
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
@@ -53,15 +52,25 @@ export default function Bots() {
   }
 
   const es = lang === 'es';
-
-  // Cuentas a mostrar: las reales de la API, o el respaldo si falló.
-  const list = (accounts && accounts.length > 0 ? accounts : FALLBACK_BOTS) as BotAccount[];
-
+  const apiFailed = !loading && accounts === null;
+  const connected = accounts ?? [];
   const scheduleText = schedule
     ? `${pad(schedule.start_hour)}:00 – ${pad(schedule.end_hour)}:00 (${schedule.timezone})`
     : '';
 
-  function statusOf(bot: BotAccount): { label: string; tone: 'ok' | 'warn' | 'off' | 'sleep' } {
+  // Arma exactamente 20 tarjetas: primero las conectadas (datos reales),
+  // luego se rellena con slots del roster hasta llegar a 20.
+  const connectedNames = new Set(connected.map(a => a.display_name.toLowerCase()));
+  const fillers = ROSTER.filter(n => !connectedNames.has(n.toLowerCase()));
+  const needed = Math.max(0, ROSTER_SIZE - connected.length);
+  const cards: { key: string; name: string; account: BotAccount | null }[] = [
+    ...connected.map(a => ({ key: a.id || a.display_name, name: a.display_name, account: a })),
+    ...fillers.slice(0, needed).map(n => ({ key: n, name: n, account: null as BotAccount | null })),
+  ];
+
+  function statusOf(account: BotAccount | null): { label: string; tone: Tone } {
+    if (apiFailed) return { label: es ? 'Estado no disponible' : 'Status unavailable', tone: 'unknown' };
+    if (!account) return { label: es ? 'Desconectado' : 'Disconnected', tone: 'gone' };
     if (!inSchedule) {
       return {
         label: es
@@ -70,15 +79,17 @@ export default function Bots() {
         tone: 'sleep',
       };
     }
-    if (!bot.is_active) return { label: t('bots.st.inactive'), tone: 'off' };
-    if (bot.remaining_gifts <= 0) return { label: t('bots.st.nogifts'), tone: 'warn' };
+    if (!account.is_active) return { label: t('bots.st.inactive'), tone: 'off' };
+    if (account.remaining_gifts <= 0) return { label: t('bots.st.nogifts'), tone: 'warn' };
     return {
       label: es
-        ? `${bot.remaining_gifts} envío${bot.remaining_gifts === 1 ? '' : 's'} disponible${bot.remaining_gifts === 1 ? '' : 's'} hoy`
-        : `${bot.remaining_gifts} deliver${bot.remaining_gifts === 1 ? 'y' : 'ies'} available today`,
+        ? `${account.remaining_gifts} envío${account.remaining_gifts === 1 ? '' : 's'} disponible${account.remaining_gifts === 1 ? '' : 's'} hoy`
+        : `${account.remaining_gifts} deliver${account.remaining_gifts === 1 ? 'y' : 'ies'} available today`,
       tone: 'ok',
     };
   }
+
+  const onlineCount = connected.filter(a => a.is_active).length;
 
   return (
     <div className="bots-page">
@@ -88,6 +99,12 @@ export default function Bots() {
           <h1>{t('bots.title')}</h1>
           <p className="bots-sub">{t('bots.sub')}</p>
         </div>
+        {!loading && !apiFailed && (
+          <span className="bots-header-count" title={es ? 'Cuentas activas ahora mismo' : 'Accounts active right now'}>
+            <span className="bots-count-dot" />
+            {onlineCount} / {ROSTER_SIZE} {es ? 'activas' : 'active'}
+          </span>
+        )}
       </header>
 
       <div className="bots-info">
@@ -98,7 +115,7 @@ export default function Bots() {
         </div>
       </div>
 
-      {!loading && !inSchedule && (
+      {!loading && !inSchedule && !apiFailed && (
         <div className="bots-offline" role="note">
           <span className="bots-offline-ic"><Moon size={16} /></span>
           <div>
@@ -118,30 +135,39 @@ export default function Bots() {
       </div>
 
       <div className="bots-grid">
-        {list.map((bot, i) => {
+        {cards.map((card, i) => {
           const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
-          const st = statusOf(bot);
-          const initial = (bot.display_name || '?').trim().charAt(0).toUpperCase();
+          const st = statusOf(card.account);
+          const initial = (card.name || '?').trim().charAt(0).toUpperCase();
+          const canCopy = st.tone !== 'gone';
           return (
-            <article className={`bot-card tone-${st.tone}`} key={bot.id || bot.display_name}>
+            <article className={`bot-card tone-${st.tone}`} key={card.key}>
               <div className="bot-card-top">
                 <span className={`bot-dot tone-${st.tone}`} aria-hidden="true" />
                 <div className="bot-avatar" style={{ '--bc': color } as React.CSSProperties}>
-                  {st.tone === 'sleep' ? <Moon size={20} /> : <span className="bot-avatar-letter">{initial}</span>}
+                  {st.tone === 'gone'
+                    ? <WifiOff size={19} />
+                    : st.tone === 'sleep'
+                      ? <Moon size={20} />
+                      : <span className="bot-avatar-letter">{initial}</span>}
                 </div>
               </div>
 
               <div className="bot-card-body">
                 <span className="bot-label">{t('bots.label')}</span>
-                <strong className="bot-name" title={bot.display_name}>{bot.display_name}</strong>
+                <strong className="bot-name" title={card.name}>{card.name}</strong>
                 <span className={`bot-status tone-${st.tone}`}>{st.label}</span>
               </div>
 
-              <button className="bot-copy" onClick={() => copyId(bot.display_name)}>
-                {copied === bot.display_name
-                  ? <><CheckCircle2 size={15} /> {t('bots.copied')}</>
-                  : <><Copy size={15} /> {t('bots.copy')}</>}
-              </button>
+              {canCopy ? (
+                <button className="bot-copy" onClick={() => copyId(card.name)}>
+                  {copied === card.name
+                    ? <><CheckCircle2 size={15} /> {t('bots.copied')}</>
+                    : <><Copy size={15} /> {t('bots.copy')}</>}
+                </button>
+              ) : (
+                <span className="bot-copy bot-copy-disabled">{es ? 'No disponible' : 'Unavailable'}</span>
+              )}
             </article>
           );
         })}

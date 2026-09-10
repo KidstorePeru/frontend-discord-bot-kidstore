@@ -31,12 +31,29 @@
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 6px 20px rgba(124,58,237,0.28);
 }
-.bots-header-text { position: relative; z-index: 1; min-width: 0; }
+.bots-header-text { position: relative; z-index: 1; min-width: 0; flex: 1; }
 .bots-header h1 {
   font-size: clamp(1.5rem, 3vw, 1.95rem); font-weight: 900;
   color: #fff; letter-spacing: -0.025em; margin: 0 0 4px;
 }
 .bots-sub { font-size: 0.86rem; color: rgba(255,255,255,0.6); margin: 0; line-height: 1.45; }
+.bots-header-count {
+  position: relative; z-index: 1; flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 13px; border-radius: 100px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  font-size: 0.75rem; font-weight: 800; color: rgba(255,255,255,0.85);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.bots-count-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+  box-shadow: 0 0 7px #4ade80;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bots-count-dot { animation: botDotPulse2 2s ease-in-out infinite; }
+}
+@keyframes botDotPulse2 { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
 
 /* Nota informativa (48h) — estilo "bueno saberlo" */
 .bots-info {
@@ -109,6 +126,14 @@
 }
 [data-theme="dark"] .bot-card:hover { box-shadow: 0 14px 34px rgba(0,0,0,0.35); }
 .bot-card.tone-off, .bot-card.tone-sleep { opacity: 0.72; }
+.bot-card.tone-gone {
+  opacity: 0.85;
+  background: var(--bg-surface-2);
+  border-style: dashed;
+  border-color: var(--border-bright);
+}
+.bot-card.tone-gone:hover { transform: none; border-color: var(--border-bright); box-shadow: none; }
+.bot-card.tone-unknown { opacity: 0.9; }
 
 .bot-card-top { position: relative; }
 .bot-avatar {
@@ -126,6 +151,13 @@
   background: linear-gradient(135deg, #64748b, #475569);
   box-shadow: none;
 }
+.bot-card.tone-gone .bot-avatar,
+.bot-card.tone-unknown .bot-avatar {
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+  border: 1.5px solid var(--border-bright);
+  box-shadow: none;
+}
 
 .bot-dot {
   position: absolute; top: -3px; right: -3px; z-index: 2;
@@ -136,6 +168,7 @@
 .bot-dot.tone-warn  { background: var(--amber-500); }
 .bot-dot.tone-off   { background: var(--red-500); }
 .bot-dot.tone-sleep { background: var(--blue-500); opacity: 0.7; }
+.bot-dot.tone-gone, .bot-dot.tone-unknown { background: var(--text-muted); opacity: 0.55; }
 @media (prefers-reduced-motion: no-preference) {
   .bot-dot.tone-ok { animation: botDotPulse 2s ease-in-out infinite; }
 }
@@ -157,6 +190,7 @@
 .bot-status.tone-warn  { color: var(--amber-500); }
 .bot-status.tone-off   { color: var(--red-500); }
 .bot-status.tone-sleep { color: var(--blue-500); }
+.bot-status.tone-gone, .bot-status.tone-unknown { color: var(--text-muted); }
 
 .bot-copy {
   display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
@@ -168,6 +202,12 @@
 }
 .bot-copy:hover { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
 .bot-copy:active { transform: scale(0.97); }
+.bot-copy-disabled {
+  background: transparent; color: var(--text-muted);
+  border: 1px dashed var(--border-bright);
+  font-weight: 700; cursor: default;
+}
+.bot-copy-disabled:hover { background: transparent; color: var(--text-muted); border-color: var(--border-bright); }
 
 @media (max-width: 560px) {
   .bots-page { padding: 16px 14px 56px; }
