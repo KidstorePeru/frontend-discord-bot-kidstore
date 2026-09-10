@@ -22,7 +22,7 @@ import FAQPage from './pages/FAQ';
 import Contact from './pages/Contact';
 import NotFound from './pages/NotFound';
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { ShoppingCart, X, Trash2, CheckCircle, AlertCircle, AlertTriangle, Info, Loader2 } from 'lucide-react';
 import { Toast, TrustpilotCTA, PageLoader } from './components/UI';
 
 // Code-splitting por pantalla: antes TODA la app (panel admin incluido,
@@ -215,11 +215,11 @@ function GlobalCart() {
             </div>
 
             {cart.some(i => i.isBundle) && (
-              <div className="cart-warning cart-warning-amber">
-                <AlertTriangle size={14} />
+              <div className="cart-warning cart-warning-info">
+                <Info size={14} />
                 {es
-                  ? 'Tu carrito tiene un Lote: si ya posees alguno de sus objetos, Epic no permitirá enviarlo. Revisa tu inventario antes de confirmar.'
-                  : 'Your cart has a Bundle: if you already own any of its items, Epic won’t allow it to be sent. Check your inventory before confirming.'}
+                  ? 'Tienes un Lote en el carrito. Recuerda: Epic solo permite enviarlo si no posees ninguno de sus objetos.'
+                  : 'You have a Bundle in your cart. Reminder: Epic only allows it to be sent if you own none of its items.'}
               </div>
             )}
 

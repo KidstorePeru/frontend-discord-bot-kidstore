@@ -199,18 +199,14 @@ const translations = {
   },
   'store.rotates':  { es: 'La tienda cambia en', en: 'Shop rotates in' },
   'store.lote':     { es: 'LOTE', en: 'BUNDLE' },
-  'store.bundle.title': { es: 'Antes de comprar un Lote', en: 'Before buying a Bundle' },
+  'store.bundle.title': { es: 'Cómo funcionan los Lotes', en: 'How Bundles work' },
   'store.bundle.body': {
-    es: 'Si ya tienes en tu cuenta de Fortnite cualquier objeto incluido en un Lote, Epic bloquea el regalo completo y no se puede enviar. Antes sí se permitía, pero se abusaba porque salía más barato comprar el lote, y Epic lo parchó. Revisa tu inventario antes de comprar un Lote.',
-    en: 'If you already own any item included in a Bundle on your Fortnite account, Epic blocks the whole gift and it can’t be sent. It used to be allowed, but people abused it because the bundle was cheaper, so Epic patched it. Check your inventory before buying a Bundle.',
+    es: 'Epic solo permite regalar un Lote si no tienes ninguno de sus objetos. Si ya posees alguno, el envío del Lote completo queda bloqueado (antes se permitía, pero se abusaba porque salía más barato, y Epic lo cambió). Es simple: antes de comprar un Lote, revisa que no tengas nada de lo que incluye.',
+    en: 'Epic only lets a Bundle be gifted if you own none of its items. If you already have any of them, sending the full Bundle is blocked (it used to be allowed, but people abused it because it was cheaper, so Epic changed it). It’s simple: before buying a Bundle, make sure you don’t own anything it includes.',
   },
   'store.bundle.short': {
     es: 'No se puede enviar si ya tienes uno de los objetos del lote',
     en: 'Can’t be sent if you already own one of the bundle’s items',
-  },
-  'store.bundle.cart': {
-    es: 'Tu carrito tiene un Lote: si ya posees alguno de sus objetos, Epic no dejará enviarlo.',
-    en: 'Your cart has a Bundle: if you already own any of its items, Epic won’t allow it to be sent.',
   },
 
   'status.pending': { es: 'Pendiente', en: 'Pending' },

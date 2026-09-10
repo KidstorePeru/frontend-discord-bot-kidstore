@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 import { getShop } from '../services/api';
 import { vbucksToKC } from '../services/constants';
 import { PageLoader, Toast } from '../components/UI';
-import { Search, RefreshCw, ShoppingCart, X, Clock, CheckCircle, ShoppingBag, Info, AlertTriangle } from 'lucide-react';
+import { Search, RefreshCw, ShoppingCart, X, Clock, CheckCircle, ShoppingBag, Info } from 'lucide-react';
 import { useLang } from '../context/LangContext';
 import { useSEO } from '../hooks/useSEO';
 
@@ -244,7 +244,7 @@ export default function StorePage() {
           <span className="sc-name">{item.name}</span>
           {item.isBundle && (
             <span className="sc-lote" title={t('store.bundle.short')}>
-              <AlertTriangle size={10} /> {t('store.lote')}
+              <Info size={10} /> {t('store.lote')}
             </span>
           )}
           <div className="sc-bot">
@@ -379,10 +379,10 @@ export default function StorePage() {
 
       <p className="sh-price-legend"><Info size={13} /> {t('store.price.legend')}</p>
 
-      {/* Aviso sobre los Lotes — Epic bloquea el regalo de un lote si ya
-          tienes cualquiera de sus objetos. */}
+      {/* Nota informativa sobre los Lotes — Epic solo permite regalar un
+          lote si el cliente no posee ninguno de sus objetos. */}
       <div className="sh-bundle-notice" role="note">
-        <AlertTriangle size={17} />
+        <span className="sh-bundle-notice-ic"><Info size={15} /></span>
         <div>
           <strong>{t('store.bundle.title')}</strong>
           <p>{t('store.bundle.body')}</p>

@@ -97,11 +97,12 @@
   padding: 8px 12px; border-radius: var(--radius-sm); font-weight: 600; line-height: 1.45;
 }
 .cart-warning svg { flex-shrink: 0; margin-top: 2px; }
-.cart-warning-amber {
-  color: var(--amber-500);
-  background: color-mix(in srgb, var(--amber-500) 10%, transparent);
+.cart-warning-info {
+  color: var(--text-secondary);
+  background: var(--accent-soft);
   margin: 0 0 10px;
 }
+.cart-warning-info svg { color: var(--accent); }
 .cart-actions { display: flex; gap: 8px; }
 .cart-actions .btn-ghost { white-space: nowrap; }
 .cart-actions .btn-primary { flex: 1; justify-content: center; }
