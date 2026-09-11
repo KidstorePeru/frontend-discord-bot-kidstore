@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { getShop } from '../services/api';
 import { vbucksToKC } from '../services/constants';
@@ -417,12 +418,12 @@ export default function StorePage() {
               : 'You need an account to purchase products. Log in or create a free account.'
             }</p>
             <div className="login-modal-buttons">
-              <a href="/login" className="btn btn-primary btn-full">
+              <Link to="/login" className="btn btn-primary btn-full">
                 {es ? 'Iniciar sesión' : 'Log in'}
-              </a>
-              <a href="/login" className="btn btn-ghost btn-full">
+              </Link>
+              <Link to="/register" className="btn btn-ghost btn-full">
                 {es ? 'Crear cuenta gratis' : 'Create free account'}
-              </a>
+              </Link>
             </div>
           </div>
         </div>

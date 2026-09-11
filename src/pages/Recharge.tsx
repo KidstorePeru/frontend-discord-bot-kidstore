@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -651,9 +652,9 @@ export default function Recharge() {
               </p>
               <p className="rc-confirm-note">{t('rech.confirm.note')}</p>
             </div>
-            <a href="/contact" className="rc-confirm-btn">
+            <Link to="/contact" className="rc-confirm-btn">
               {txt.contactar} <ArrowRight size={13}/>
-            </a>
+            </Link>
           </div>
           </>}
             </>
@@ -693,7 +694,7 @@ export default function Recharge() {
                 </p>
                 <TrustpilotCTA />
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16 }}>
-                  <a href="/dashboard" className="btn btn-primary" style={{ gap: 6 }}>{es ? 'Ir al dashboard' : 'Go to dashboard'} <ArrowRight size={14}/></a>
+                  <Link to="/dashboard" className="btn btn-primary" style={{ gap: 6 }}>{es ? 'Ir al dashboard' : 'Go to dashboard'} <ArrowRight size={14}/></Link>
                   <button onClick={() => { setPayPending(false); setPayResult(null); window.location.reload(); }} className="btn btn-ghost">{es ? 'Seguir recargando' : 'Recharge more'}</button>
                 </div>
               </>
@@ -722,7 +723,7 @@ export default function Recharge() {
                     : "If a charge went through, your KC will be credited automatically once it's confirmed — no need to pay again. Check your recharge history in a few minutes before trying again."}
                 </p>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                  <a href="/dashboard" className="btn btn-primary" style={{ gap: 6 }}>{es ? 'Ver mi historial' : 'View my history'} <ArrowRight size={14}/></a>
+                  <Link to="/dashboard" className="btn btn-primary" style={{ gap: 6 }}>{es ? 'Ver mi historial' : 'View my history'} <ArrowRight size={14}/></Link>
                   <button onClick={() => { setPayPending(false); setPayResult(null); }} className="btn btn-ghost">{es ? 'Cerrar' : 'Close'}</button>
                 </div>
               </>
