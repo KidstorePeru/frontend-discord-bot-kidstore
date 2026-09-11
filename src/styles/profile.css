@@ -246,7 +246,8 @@
 .btn-copy-sm:hover { background: var(--accent-soft); color: var(--accent); }
 
 /* ── Cuentas vinculadas ── */
-.linked-accounts { display: flex; flex-direction: column; padding: 8px 24px 4px; }
+.linked-accounts { display: flex; flex-direction: column; padding: 8px 24px 0; }
+.linked-accounts-note { margin: 14px 24px 22px; }
 .linked-account-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .linked-account-row:last-child { border-bottom: none; }
 .linked-account-info { display: flex; align-items: center; gap: 12px; }

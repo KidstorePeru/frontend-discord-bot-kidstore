@@ -12,7 +12,7 @@ import {
   Package, Zap, User, Calendar, CheckCircle2,
   TrendingUp, ShoppingBag, Copy, Award,
   Shield, Mail, Key, AtSign, Lock, Eye, EyeOff, Loader2, Camera, AlertCircle,
-  Phone, Clock, ChevronLeft, ChevronRight, RefreshCw, PackageCheck, PackageX, PackageSearch, ShieldCheck, Link2, Unlink,
+  Phone, Clock, ChevronLeft, ChevronRight, ShieldCheck, Link2, Unlink,
   Smartphone, Trash2, X,
 } from 'lucide-react';
 
@@ -847,7 +847,7 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
             )}
           </div>
         </div>
-        <div className="sec-note" style={{ margin: '0 24px 22px' }}>
+        <div className="sec-note linked-accounts-note">
           {es
             ? 'Vincula Google y/o Discord para poder iniciar sesión con cualquiera de ellos, además de tu correo y contraseña.'
             : 'Link Google and/or Discord so you can log in with any of them, in addition to your email and password.'}
@@ -1019,12 +1019,12 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
 
 /* ── Mis Ordenes ── */
 type OrderFilter = 'all' | 'processing' | 'delivery' | 'completed' | 'refunded';
-const ORDER_TABS: { key: OrderFilter; es: string; en: string; icon: React.ReactNode }[] = [
-  { key: 'all',        es: 'Todos',        en: 'All',        icon: <Package size={14}/> },
-  { key: 'processing', es: 'Procesamiento', en: 'Processing', icon: <PackageSearch size={14}/> },
-  { key: 'delivery',   es: 'Entrega',      en: 'Delivery',   icon: <RefreshCw size={14}/> },
-  { key: 'completed',  es: 'Completado',   en: 'Completed',  icon: <PackageCheck size={14}/> },
-  { key: 'refunded',   es: 'Reembolsado',  en: 'Refunded',   icon: <PackageX size={14}/> },
+const ORDER_TABS: { key: OrderFilter; es: string; en: string }[] = [
+  { key: 'all',        es: 'Todos',        en: 'All' },
+  { key: 'processing', es: 'Procesamiento', en: 'Processing' },
+  { key: 'delivery',   es: 'Entrega',      en: 'Delivery' },
+  { key: 'completed',  es: 'Completado',   en: 'Completed' },
+  { key: 'refunded',   es: 'Reembolsado',  en: 'Refunded' },
 ];
 const ORDERS_PER_PAGE = 8;
 
@@ -1069,7 +1069,7 @@ function OrdersTab({ orders, lang, hasMore, loadingMore, onLoadMore }: {
           key: f.key,
           label: (
             <>
-              {f.icon} {es ? f.es : f.en}
+              {es ? f.es : f.en}
               <span className="seg-count">{orders.filter(o => matchesFilter(o.status, f.key)).length}</span>
             </>
           ),
