@@ -861,8 +861,8 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
             <Smartphone size={18} />
             <h3>{es ? 'Verificación en dos pasos' : 'Two-factor verification'}</h3>
           </div>
-          <div style={{ padding: '0 24px 22px' }}>
-            {totpError && <div className="auth-error" style={{ marginBottom: 14 }}><AlertCircle size={15} />{totpError}</div>}
+          <div className="security-form">
+            {totpError && <div className="auth-error"><AlertCircle size={15} />{totpError}</div>}
 
             {/* Códigos de respaldo recién generados — se muestran una sola vez */}
             {totpBackupCodes ? (
@@ -906,7 +906,7 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
               </form>
             ) : totpStatus?.enabled ? (
               <>
-                <div className="sec-note" style={{ marginBottom: 14 }}>
+                <div className="sec-note">
                   {es
                     ? `✅ Activado. Te quedan ${totpStatus.backup_codes_remaining} código(s) de respaldo sin usar.`
                     : `✅ Enabled. You have ${totpStatus.backup_codes_remaining} unused backup code(s) left.`}
@@ -951,7 +951,7 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
               </>
             ) : (
               <>
-                <div className="sec-note" style={{ marginBottom: 14 }}>
+                <div className="sec-note">
                   {es
                     ? 'Tu cuenta administra dinero real y datos de clientes — activa un segundo factor para protegerla mejor.'
                     : 'Your account manages real money and customer data — enable a second factor to protect it better.'}
@@ -972,7 +972,7 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
             <Trash2 size={18} />
             <h3>{es ? 'Eliminar cuenta' : 'Delete account'}</h3>
           </div>
-          <div className="security-form" style={{ paddingTop: 0 }}>
+          <div className="security-form">
             {!showDeleteAccount ? (
               <>
                 <div className="sec-note sec-note-danger">
