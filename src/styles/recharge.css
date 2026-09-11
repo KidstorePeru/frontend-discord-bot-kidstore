@@ -914,7 +914,7 @@
 .rc-hero {
   position: relative; overflow: hidden;
   background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #1e3a5f 100%);
-  border-radius: 0 0 28px 28px; margin-bottom: 36px;
+  border-radius: 20px; margin: 20px 24px 28px;
   padding: 40px 44px 36px;
 }
 .rc-hero-bg {

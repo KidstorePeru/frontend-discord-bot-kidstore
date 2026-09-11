@@ -138,8 +138,6 @@
 }
 .profile-section .section-header h2 { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 800; }
 .profile-section .section-header .btn { align-self: center; margin: 0; }
-.profile-section .orders-list { display: flex; flex-direction: column; gap: 10px; }
-.profile-section .order-row { margin: 0; }
 
 /* ── Perfil / Seguridad (tarjetas) ── */
 .security-section { display: flex; flex-direction: column; gap: 16px; animation: fadeUp 0.5s ease-out both; }
