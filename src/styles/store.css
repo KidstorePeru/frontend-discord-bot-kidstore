@@ -50,8 +50,9 @@
   width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
   box-shadow: 0 0 7px #4ade80;
 }
+.bots-count-dot.is-zero { background: rgba(255,255,255,0.35); box-shadow: none; }
 @media (prefers-reduced-motion: no-preference) {
-  .bots-count-dot { animation: botDotPulse2 2s ease-in-out infinite; }
+  .bots-count-dot:not(.is-zero) { animation: botDotPulse2 2s ease-in-out infinite; }
 }
 @keyframes botDotPulse2 { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
 

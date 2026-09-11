@@ -217,13 +217,6 @@ const translations = {
   'status.refunded': { es: 'Reembolsado', en: 'Refunded' },
   'loading': { es: 'Cargando...', en: 'Loading...' },
 
-  // Bots page — estado fuera de horario
-  'bots.offline.title':   { es: 'Bots fuera de horario de trabajo',    en: 'Bots outside working hours' },
-  'bots.offline.desc':    { es: 'El servicio opera de {schedule}. Hora Lima actual: {time}. Los envíos se reanudan automáticamente en el horario indicado.', en: 'Service operates from {schedule}. Current Lima time: {time}. Deliveries resume automatically during operating hours.' },
-  'bots.offline.badge':   { es: '🌙 Sin horario',                      en: '🌙 Offline' },
-  'bots.offline.resumes': { es: 'Retoma a las {hour}:00 hora Lima',    en: 'Resumes at {hour}:00 Lima time' },
-  'bots.offline.hours':   { es: 'Fuera de horario',                    en: 'Outside hours' },
-
   // Admin panel — tab de horario de bots
   'admin.schedule.title':     { es: 'Horario de operación de bots',       en: 'Bot operating schedule' },
   'admin.schedule.enabled':   { es: 'Bots habilitados',                   en: 'Bots enabled' },

@@ -99,7 +99,10 @@ export default function Bots() {
     };
   }
 
-  const onlineCount = connected.filter(a => a.is_active).length;
+  // Si están fuera de horario ninguna puede entregar ahora mismo, aunque
+  // el backend las marque `is_active` — si no, el chip diría "3 activas"
+  // mientras cada tarjeta dice "Fuera de horario", contradiciéndose.
+  const onlineCount = inSchedule ? connected.filter(a => a.is_active).length : 0;
 
   return (
     <div className="bots-page">
@@ -111,7 +114,7 @@ export default function Bots() {
         </div>
         {!loading && !apiFailed && (
           <span className="bots-header-count" title={es ? 'Cuentas activas ahora mismo' : 'Accounts active right now'}>
-            <span className="bots-count-dot" />
+            <span className={`bots-count-dot ${onlineCount === 0 ? 'is-zero' : ''}`} />
             {onlineCount} / {ROSTER_SIZE} {es ? 'activas' : 'active'}
           </span>
         )}
