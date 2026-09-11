@@ -5,6 +5,7 @@
 .segtabs {
   position: relative;
   display: flex;
+  width: fit-content;
   padding: 5px;
   gap: 2px;
   background: var(--bg-surface-2);
