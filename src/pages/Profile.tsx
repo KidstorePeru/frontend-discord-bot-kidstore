@@ -967,15 +967,15 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
 
       {/* ── Eliminar cuenta ── */}
       {!customer.is_admin && (
-        <div className="security-card" style={{ borderColor: 'rgba(239,68,68,0.3)' }}>
+        <div className="security-card danger">
           <div className="security-card-header">
-            <Trash2 size={18} color="#ef4444" />
-            <h3 style={{ color: '#ef4444' }}>{es ? 'Eliminar cuenta' : 'Delete account'}</h3>
+            <Trash2 size={18} />
+            <h3>{es ? 'Eliminar cuenta' : 'Delete account'}</h3>
           </div>
-          <div style={{ padding: '0 24px 22px' }}>
+          <div className="security-form" style={{ paddingTop: 0 }}>
             {!showDeleteAccount ? (
               <>
-                <div className="sec-note" style={{ marginBottom: 14 }}>
+                <div className="sec-note sec-note-danger">
                   {es
                     ? 'Esto elimina tus datos personales de forma permanente y no podrás volver a iniciar sesión. No se puede deshacer.'
                     : 'This permanently removes your personal data and you will no longer be able to log in. This cannot be undone.'}
@@ -987,7 +987,7 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
                       : "Your account doesn't have a password (created via Google/Discord) — contact support to delete it."}
                   </div>
                 ) : (
-                  <button className="btn btn-ghost" style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }} onClick={() => setShowDeleteAccount(true)}>
+                  <button className="btn btn-danger" style={{ alignSelf: 'flex-start' }} onClick={() => setShowDeleteAccount(true)}>
                     <Trash2 size={15} /> {es ? 'Eliminar mi cuenta' : 'Delete my account'}
                   </button>
                 )}
@@ -1003,7 +1003,7 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
                   <button type="button" className="btn btn-ghost" onClick={() => { setShowDeleteAccount(false); setDeletePassword(''); setDeleteError(''); }}>
                     <X size={14} /> {es ? 'Cancelar' : 'Cancel'}
                   </button>
-                  <button className="btn btn-primary" type="submit" disabled={deleting} style={{ background: '#ef4444' }}>
+                  <button className="btn btn-danger" type="submit" disabled={deleting}>
                     {deleting ? <Loader2 className="spin" size={16} /> : <Trash2 size={16} />} {es ? 'Sí, eliminar permanentemente' : 'Yes, delete permanently'}
                   </button>
                 </div>

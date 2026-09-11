@@ -4,14 +4,19 @@
    ═══════════════════════════════════════════════════ */
 .segtabs {
   position: relative;
-  display: inline-flex;
+  display: flex;
   padding: 5px;
   gap: 2px;
   background: var(--bg-surface-2);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-full);
   max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.segtabs::-webkit-scrollbar { display: none; }
 .segtabs-thumb {
   position: absolute;
   top: 5px;
@@ -38,6 +43,7 @@
   position: relative;
   z-index: 1;
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: 7px;
@@ -106,12 +112,3 @@
   .segtabs-thumb { transition: opacity 0.2s; }
 }
 
-@media (max-width: 640px) {
-  .segtabs {
-    display: flex;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .segtabs::-webkit-scrollbar { display: none; }
-  .segtabs-btn { flex: 0 0 auto; }
-}
