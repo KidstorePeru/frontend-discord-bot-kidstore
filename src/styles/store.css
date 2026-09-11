@@ -126,14 +126,11 @@
 }
 [data-theme="dark"] .bot-card:hover { box-shadow: 0 14px 34px rgba(0,0,0,0.35); }
 .bot-card.tone-off, .bot-card.tone-sleep { opacity: 0.72; }
-.bot-card.tone-gone {
-  opacity: 0.85;
-  background: var(--bg-surface-2);
-  border-style: dashed;
-  border-color: var(--border-bright);
-}
-.bot-card.tone-gone:hover { transform: none; border-color: var(--border-bright); box-shadow: none; }
-.bot-card.tone-unknown { opacity: 0.9; }
+/* tone-extra: sin datos en vivo todavía (no está en el sistema de estado,
+   o la API no respondió) — no es una cuenta "caída", así que lleva el
+   mismo tratamiento a color que una confirmada. Solo el punto y el texto
+   la distinguen, sin alarmar. */
+.bot-card.tone-extra { border-color: color-mix(in srgb, var(--accent) 22%, var(--border)); }
 
 .bot-card-top { position: relative; }
 .bot-avatar {
@@ -151,13 +148,6 @@
   background: linear-gradient(135deg, #64748b, #475569);
   box-shadow: none;
 }
-.bot-card.tone-gone .bot-avatar,
-.bot-card.tone-unknown .bot-avatar {
-  background: var(--bg-sunken);
-  color: var(--text-muted);
-  border: 1.5px solid var(--border-bright);
-  box-shadow: none;
-}
 
 .bot-dot {
   position: absolute; top: -3px; right: -3px; z-index: 2;
@@ -168,7 +158,7 @@
 .bot-dot.tone-warn  { background: var(--amber-500); }
 .bot-dot.tone-off   { background: var(--red-500); }
 .bot-dot.tone-sleep { background: var(--blue-500); opacity: 0.7; }
-.bot-dot.tone-gone, .bot-dot.tone-unknown { background: var(--text-muted); opacity: 0.55; }
+.bot-dot.tone-extra { background: var(--accent); opacity: 0.85; }
 @media (prefers-reduced-motion: no-preference) {
   .bot-dot.tone-ok { animation: botDotPulse 2s ease-in-out infinite; }
 }
@@ -190,7 +180,7 @@
 .bot-status.tone-warn  { color: var(--amber-500); }
 .bot-status.tone-off   { color: var(--red-500); }
 .bot-status.tone-sleep { color: var(--blue-500); }
-.bot-status.tone-gone, .bot-status.tone-unknown { color: var(--text-muted); }
+.bot-status.tone-extra { color: var(--accent); }
 
 .bot-copy {
   display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
@@ -202,12 +192,6 @@
 }
 .bot-copy:hover { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
 .bot-copy:active { transform: scale(0.97); }
-.bot-copy-disabled {
-  background: transparent; color: var(--text-muted);
-  border: 1px dashed var(--border-bright);
-  font-weight: 700; cursor: default;
-}
-.bot-copy-disabled:hover { background: transparent; color: var(--text-muted); border-color: var(--border-bright); }
 
 @media (max-width: 560px) {
   .bots-page { padding: 16px 14px 56px; }

@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { useLang } from '../context/LangContext';
 import { getBotsStatus } from '../services/api';
 import type { BotsStatusResponse } from '../services/api';
-import { Copy, CheckCircle2, Clock, Bot, Moon, WifiOff } from 'lucide-react';
+import { Copy, CheckCircle2, Clock, Bot, Moon, Sparkles } from 'lucide-react';
 
-// Roster fijo: siempre se muestran 20 cuentas. Las que la API reporta como
-// conectadas llevan su nombre y estado reales; las demás aparecen como
-// "Desconectado".
+// Roster fijo: siempre se muestran 20 cuentas — cuantas más agregue el
+// cliente como amigo, menos depende de una sola y menos espera si esa ya
+// agotó sus envíos del día. Las que la API reporta conectadas llevan su
+// nombre y estado reales; el resto son "extra" — se invita a agregarlas
+// igual, sin marcarlas como rotas (no tenemos datos en vivo de ellas, pero
+// eso no significa que no sirvan).
 const ROSTER_SIZE = 20;
 const ROSTER = Array.from({ length: ROSTER_SIZE }, (_, i) => `KidStore${String(i + 1).padStart(4, '0')}`);
 
@@ -18,7 +21,7 @@ const AVATAR_COLORS = [
 ];
 
 type BotAccount = BotsStatusResponse['accounts'][number];
-type Tone = 'ok' | 'warn' | 'off' | 'sleep' | 'gone' | 'unknown';
+type Tone = 'ok' | 'warn' | 'off' | 'sleep' | 'extra';
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
@@ -53,7 +56,10 @@ export default function Bots() {
 
   const es = lang === 'es';
   const apiFailed = !loading && accounts === null;
-  const connected = accounts ?? [];
+  // Nunca mostrar una cuenta sin nombre — si la API manda el campo vacío,
+  // se trata igual que una cuenta sin datos en vivo (mejor eso que una
+  // tarjeta en blanco).
+  const connected = (accounts ?? []).filter(a => !!a.display_name?.trim());
   const scheduleText = schedule
     ? `${pad(schedule.start_hour)}:00 – ${pad(schedule.end_hour)}:00 (${schedule.timezone})`
     : '';
@@ -69,8 +75,12 @@ export default function Bots() {
   ];
 
   function statusOf(account: BotAccount | null): { label: string; tone: Tone } {
-    if (apiFailed) return { label: es ? 'Estado no disponible' : 'Status unavailable', tone: 'unknown' };
-    if (!account) return { label: es ? 'Desconectado' : 'Disconnected', tone: 'gone' };
+    // Sin datos en vivo (todavía no está en el sistema de estado, o la API
+    // no respondió) — no es un error del cliente ni una cuenta "caída": se
+    // invita a agregarla igual, porque reparte los envíos entre más bots.
+    if (apiFailed || !account) {
+      return { label: es ? 'Agrégala también · reparte los envíos' : 'Add it too · spreads out deliveries', tone: 'extra' };
+    }
     if (!inSchedule) {
       return {
         label: es
@@ -139,14 +149,13 @@ export default function Bots() {
           const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
           const st = statusOf(card.account);
           const initial = (card.name || '?').trim().charAt(0).toUpperCase();
-          const canCopy = st.tone !== 'gone';
           return (
             <article className={`bot-card tone-${st.tone}`} key={card.key}>
               <div className="bot-card-top">
                 <span className={`bot-dot tone-${st.tone}`} aria-hidden="true" />
                 <div className="bot-avatar" style={{ '--bc': color } as React.CSSProperties}>
-                  {st.tone === 'gone'
-                    ? <WifiOff size={19} />
+                  {st.tone === 'extra'
+                    ? <Sparkles size={19} />
                     : st.tone === 'sleep'
                       ? <Moon size={20} />
                       : <span className="bot-avatar-letter">{initial}</span>}
@@ -159,15 +168,11 @@ export default function Bots() {
                 <span className={`bot-status tone-${st.tone}`}>{st.label}</span>
               </div>
 
-              {canCopy ? (
-                <button className="bot-copy" onClick={() => copyId(card.name)}>
-                  {copied === card.name
-                    ? <><CheckCircle2 size={15} /> {t('bots.copied')}</>
-                    : <><Copy size={15} /> {t('bots.copy')}</>}
-                </button>
-              ) : (
-                <span className="bot-copy bot-copy-disabled">{es ? 'No disponible' : 'Unavailable'}</span>
-              )}
+              <button className="bot-copy" onClick={() => copyId(card.name)}>
+                {copied === card.name
+                  ? <><CheckCircle2 size={15} /> {t('bots.copied')}</>
+                  : <><Copy size={15} /> {t('bots.copy')}</>}
+              </button>
             </article>
           );
         })}
