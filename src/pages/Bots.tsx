@@ -3,6 +3,7 @@ import { useLang } from '../context/LangContext';
 import { getBotsStatus } from '../services/api';
 import type { BotsStatusResponse } from '../services/api';
 import { Copy, CheckCircle2, Clock, Bot, Moon, Sparkles } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 // Roster fijo: siempre se muestran 20 cuentas — cuantas más agregue el
 // cliente como amigo, menos depende de una sola y menos espera si esa ya
@@ -27,6 +28,13 @@ function pad(n: number) { return String(n).padStart(2, '0'); }
 
 export default function Bots() {
   const { t, lang } = useLang();
+  useSEO({
+    title: lang === 'es' ? 'Cuentas Bot' : 'Bot Accounts',
+    description: lang === 'es'
+      ? 'Agrega a nuestras cuentas bot de Fortnite como amigo para poder recibir tus compras de KidStorePeru.'
+      : 'Add our Fortnite bot accounts as a friend to receive your KidStorePeru purchases.',
+    noindex: true,
+  });
   const [copied, setCopied] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<BotAccount[] | null>(null);
   const [loading, setLoading] = useState(true);

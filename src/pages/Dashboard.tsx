@@ -7,6 +7,7 @@ import { KCBadge, StatusBadge, PageLoader } from '../components/UI';
 import SegTabs from '../components/SegTabs';
 import type { Order } from '../types';
 import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coins, CreditCard, ChevronLeft, ChevronRight, Wallet, DollarSign } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 type DashTab = 'orders' | 'recharges';
 const DASH_TABS: DashTab[] = ['orders', 'recharges'];
@@ -17,6 +18,12 @@ export default function Dashboard() {
   const { t, lang } = useLang();
   const { tab: tabParam } = useParams<{ tab: string }>();
   const es = lang === 'es';
+  useSEO({
+    title: es ? 'Mi Panel' : 'My Dashboard',
+    description: es ? 'Revisa tus pedidos y tu historial de recargas de KidCoins.' : 'Check your orders and KidCoins recharge history.',
+    path: '/dashboard',
+    noindex: true,
+  });
   const [orders, setOrders] = useState<Order[]>([]);
   const [recharges, setRecharges] = useState<{ id: string; amount_kc: number; amount_soles: number | null; method: string; created_at: string }[]>([]);
   const [payments, setPayments] = useState<{ id: string; gateway: string; payment_type: string; product_name: string; amount_pen: number; kc_amount: number; status: string; created_at: string }[]>([]);
@@ -31,14 +38,34 @@ export default function Dashboard() {
   const [orderStats, setOrderStats] = useState({ total_orders: 0, sent_orders: 0, pending_orders: 0, total_spent_kc: 0 });
   const [rechargeStats, setRechargeStats] = useState({ total_kc_recharged: 0, total_pen_recharged: 0, pending_payments: 0 });
 
+  // Refresco periódico: antes el panel solo cargaba una vez al montar, así
+  // que una entrega o acreditación confirmada mientras el cliente seguía
+  // mirando el panel (el worker de pedidos corre cada 30s, la reconciliación
+  // de pagos cada 2 min) no se veía hasta recargar toda la página a mano.
+  // Se refresca cada 20s mientras la pestaña está visible — no tiene sentido
+  // seguir consultando si el cliente cambió de pestaña o minimizó la
+  // ventana. Los errores de un refresco en segundo plano no borran los
+  // datos ya mostrados (solo el primer load usa el loader de pantalla
+  // completa); si una petición falla, simplemente se reintenta en el
+  // siguiente ciclo.
   useEffect(() => {
-    Promise.all([
-      refresh(),
-      getMyOrders(1, 100).then(r => setOrders(r.orders)).catch(() => []),
-      getMyRecharges().then(r => { setRecharges(r.recharges); setPayments(r.payments); }).catch(() => {}),
-      getMyOrderStats().then(setOrderStats).catch(() => {}),
-      getMyRechargeStats().then(setRechargeStats).catch(() => {}),
-    ]).finally(() => setLoading(false));
+    let cancelled = false;
+    function loadAll(isFirstLoad: boolean) {
+      Promise.all([
+        refresh(),
+        getMyOrders(1, 100).then(r => { if (!cancelled) setOrders(r.orders); }).catch(() => {}),
+        getMyRecharges().then(r => { if (!cancelled) { setRecharges(r.recharges); setPayments(r.payments); } }).catch(() => {}),
+        getMyOrderStats().then(r => { if (!cancelled) setOrderStats(r); }).catch(() => {}),
+        getMyRechargeStats().then(r => { if (!cancelled) setRechargeStats(r); }).catch(() => {}),
+      ]).finally(() => { if (!cancelled && isFirstLoad) setLoading(false); });
+    }
+    loadAll(true);
+    const REFRESH_MS = 20000;
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') loadAll(false);
+    }, REFRESH_MS);
+    return () => { cancelled = true; clearInterval(interval); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading || !customer) return <PageLoader />;

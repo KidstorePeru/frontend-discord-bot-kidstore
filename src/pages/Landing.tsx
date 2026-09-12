@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { formatReferencePrice } from '../services/constants';
 import { ArrowRight, ChevronRight, ChevronDown, ShieldCheck, Zap, Clock, Star, Wallet, BadgeCheck, RotateCcw } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 function IconStar()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>; }
 function IconFire()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-4.4 0-8-3.6-8-8 0-3.5 2.3-6.5 5.5-7.6-.3 1-.2 2.1.4 3 .3.5.8.9 1.3 1.1C10.1 9.4 10 7 10.8 5c.8-2 2.4-3.5 4.2-4.5-.3 1.6.1 3.3 1.2 4.5.7.8 1.5 1.3 2.5 1.6-1 1.2-1.7 2.7-1.7 4.4 0 3.3 2 4.5 2 7C19 19.4 15.4 23 12 23z"/></svg>; }
@@ -12,10 +13,14 @@ function IconCrown() { return <svg width="13" height="13" viewBox="0 0 24 24" fi
 
 // Refleja los métodos reales de /recharge: pasarelas automáticas primero,
 // luego los manuales. Binance ya no es un método manual (ver Recharge.tsx) —
-// la cripto ahora es parte del pago automático internacional.
+// la cripto ahora es parte del pago automático internacional (dLocal Go
+// cubre tarjetas internacionales, NOWPayments cubre USDT/USDC y otras cripto).
 const PAYMENT_METHODS = [
   { name: 'MercadoPago', logo: '/mercadopago.png' },
   { name: 'PayPal',      logo: '/paypal-imagotipo.png' },
+  { name: 'Tarjetas',    logo: '/tarjetas.png' },
+  { name: 'USDT',        logo: '/usdt.png' },
+  { name: 'USDC',        logo: '/usdc.png' },
   { name: 'Yape',        logo: '/yape-imagotipo.png' },
   { name: 'Plin',        logo: '/plin-imagotipo.png' },
   { name: 'BCP',         logo: '/bcp-imagotipo.png' },
@@ -175,6 +180,13 @@ function LandingFAQ({ items }: { items: { q: string; a: string }[] }) {
 
 export default function Landing() {
   const { t, lang } = useLang();
+  useSEO({
+    title: lang === 'es' ? 'Inicio' : 'Home',
+    description: lang === 'es'
+      ? 'Compra skins, packs y V-Bucks de Fortnite con KidCoins. Entrega automática, pagos con Yape, Plin, MercadoPago, PayPal y más.'
+      : 'Buy Fortnite skins, packs and V-Bucks with KidCoins. Automatic delivery, pay with Yape, Plin, MercadoPago, PayPal and more.',
+    path: '/',
+  });
   const { customer } = useAuth();
   const { currency: refCurrency, rates: refRates } = useCurrency();
   const isLogged = !!customer;

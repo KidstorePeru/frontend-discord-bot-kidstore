@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { exchangeOAuthCode } from '../services/api';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 /** Destino del redirect que hace el backend tras un login exitoso con
  *  Google/Discord (cuenta ya existente o recien vinculada). Recibe un
@@ -16,6 +17,7 @@ export default function AuthCallback() {
   const { refresh } = useAuth();
   const { lang } = useLang();
   const es = lang === 'es';
+  useSEO({ title: es ? 'Conectando cuenta' : 'Connecting account', noindex: true });
   const [error, setError] = useState(false);
 
   useEffect(() => {

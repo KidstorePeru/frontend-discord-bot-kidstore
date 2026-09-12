@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { getPendingOAuthRegistration, completeOAuthRegistration } from '../services/api';
 import { Gamepad2, Loader2, AlertCircle, UserPlus } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 /** Destino del redirect que hace el backend cuando el login con Google/Discord
  *  corresponde a una cuenta nueva: pide el usuario Epic Games antes de crear
@@ -15,6 +16,7 @@ export default function CompleteOAuthRegistration() {
   const { setAuth } = useAuth();
   const { lang } = useLang();
   const es = lang === 'es';
+  useSEO({ title: es ? 'Completar registro' : 'Complete registration', noindex: true });
 
   const [epicUsername, setEpicUsername] = useState('');
   const [displayName, setDisplayName] = useState('');

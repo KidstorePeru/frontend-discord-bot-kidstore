@@ -11,6 +11,7 @@ import {
   AlertTriangle, Gamepad2, Mail, Clock, Moon, Sun, ToggleLeft, ToggleRight,
   CreditCard, ClipboardList, Send
 } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments' | 'complaints';
 const ADMIN_TABS: AdminTab[] = ['stats', 'customers', 'orders', 'recharge', 'bots', 'schedule', 'payments', 'complaints'];
@@ -97,6 +98,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function AdminPanel() {
+  useSEO({ title: 'Panel de administración', path: '/admin', noindex: true });
   const { isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { tab: tabParam } = useParams<{ tab: string }>();
@@ -834,10 +836,11 @@ export default function AdminPanel() {
             </div>
             <span className="adm-count">{orderTotal.toLocaleString()} pedido{orderTotal !== 1 ? 's' : ''}</span>
             <div className="adm-filter-row">
-              {['all','pending','processing','sent','failed','refunded'].map(s => (
+              {['all','pending','processing','sent','failed','refunded','review'].map(s => (
                 <button key={s} className={`adm-filter-btn ${orderFilter === s ? 'active' : ''}`} onClick={() => setOrderFilter(s)}>
                   {s === 'all' ? 'Todos' : s === 'sent' ? 'Enviados' : s === 'pending' ? 'Pendientes' :
-                   s === 'processing' ? 'Procesando' : s === 'failed' ? 'Fallidos' : s === 'refunded' ? 'Reembolsados' : s}
+                   s === 'processing' ? 'Procesando' : s === 'failed' ? 'Fallidos' : s === 'refunded' ? 'Reembolsados' :
+                   s === 'review' ? 'En revisión' : s}
                 </button>
               ))}
             </div>
@@ -845,7 +848,7 @@ export default function AdminPanel() {
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead><tr>
-                <th>Usuario Epic</th><th>Item</th><th>KC</th><th>VBucks</th><th>Estado</th><th>Fecha</th>
+                <th>Usuario Epic</th><th>Item</th><th>KC</th><th>VBucks</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
               </tr></thead>
               <tbody>
                 {displayedOrders.map(o => (
@@ -856,9 +859,29 @@ export default function AdminPanel() {
                     <td className="text-muted">{o.price_vbucks || '—'}</td>
                     <td><StatusBadge status={o.status}/></td>
                     <td className="text-muted">{new Date(o.created_at).toLocaleDateString('es-PE')}</td>
+                    <td>
+                      {o.status === 'review' && (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-ghost btn-sm" title="El admin ya verificó en Epic Games que el ítem sí llegó"
+                            onClick={async () => {
+                              if (!confirm('¿Confirmas que verificaste en Epic Games que el ítem SÍ se entregó?')) return;
+                              try { await adminFetch(`/admin/orders/${o.id}/review`, undefined, { method: 'PUT', body: JSON.stringify({ action: 'delivered' }) }); loadTab('orders'); setToast({ msg: 'Pedido marcado como entregado', type: 'success' }); } catch (e: any) { setToast({ msg: e.message, type: 'error' }); }
+                            }}>
+                            Confirmar entrega
+                          </button>
+                          <button className="btn btn-ghost btn-sm" title="El admin ya verificó en Epic Games que el ítem NO llegó"
+                            onClick={async () => {
+                              if (!confirm('¿Confirmas que verificaste en Epic Games que el ítem NO se entregó y quieres reembolsar el KC?')) return;
+                              try { await adminFetch(`/admin/orders/${o.id}/review`, undefined, { method: 'PUT', body: JSON.stringify({ action: 'refund' }) }); loadTab('orders'); setToast({ msg: 'Pedido reembolsado', type: 'success' }); } catch (e: any) { setToast({ msg: e.message, type: 'error' }); }
+                            }}>
+                            Reembolsar
+                          </button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
-                {displayedOrders.length === 0 && <tr><td colSpan={6} className="adm-empty-row">Sin resultados</td></tr>}
+                {displayedOrders.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin resultados</td></tr>}
               </tbody>
             </table>
           </div>

@@ -155,7 +155,7 @@ const translations = {
   'auth.register.email': { es: 'Email', en: 'Email' },
   'auth.register.email.ph': { es: 'tu@email.com', en: 'you@email.com' },
   'auth.register.pass': { es: 'Contraseña', en: 'Password' },
-  'auth.register.pass.ph': { es: 'Mínimo 6 caracteres', en: 'Minimum 6 characters' },
+  'auth.register.pass.ph': { es: 'Mínimo 8 caracteres', en: 'Minimum 8 characters' },
   'auth.register.btn': { es: 'Crear Cuenta', en: 'Create Account' },
   'auth.register.footer': { es: '¿Ya tienes cuenta?', en: 'Already have an account?' },
   'auth.register.footer.link': { es: 'Ingresar', en: 'Login' },
@@ -215,6 +215,7 @@ const translations = {
   'status.sent': { es: 'Enviado', en: 'Sent' },
   'status.failed': { es: 'Fallido', en: 'Failed' },
   'status.refunded': { es: 'Reembolsado', en: 'Refunded' },
+  'status.review': { es: 'En revisión', en: 'Under review' },
   'loading': { es: 'Cargando...', en: 'Loading...' },
 
   // Admin panel — tab de horario de bots

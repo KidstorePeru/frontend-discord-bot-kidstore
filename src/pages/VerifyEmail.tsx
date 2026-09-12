@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { verifyEmail } from '../services/api';
 import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -11,6 +12,7 @@ export default function VerifyEmail() {
   const { lang }       = useLang();
   const navigate       = useNavigate();
   const es             = lang === 'es';
+  useSEO({ title: es ? 'Verificar correo' : 'Verify email', noindex: true });
   const called         = useRef(false); // evita doble ejecución en React Strict Mode
 
   const [status,  setStatus]  = useState<'loading' | 'success' | 'error'>('loading');

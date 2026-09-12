@@ -15,8 +15,18 @@ interface SEOOptions {
   noindex?: boolean;
 }
 
-function setMeta(selector: string, attr: string, content: string) {
+// setMeta escribe un atributo en un <meta>/<link> (creándolo si no existe) y
+// devuelve una función que revierte EXACTAMENTE ese cambio: si el elemento
+// no existía, lo quita; si ya existía con otro valor, se lo restaura. Antes
+// el cleanup de useSEO solo restauraba document.title, así que el
+// canonical/descripción/robots que dejaba puestos una página se quedaban
+// "pegados" al navegar a cualquier ruta que no llamara a este hook (ej. la
+// portada) — la portada terminaba mostrando la descripción y el noindex de
+// la última página visitada en vez de los suyos propios.
+function setMeta(selector: string, attr: string, content: string): () => void {
   let el = document.head.querySelector<HTMLMetaElement | HTMLLinkElement>(selector);
+  const existed = !!el;
+  const prevValue = el ? el.getAttribute(attr) : null;
   if (!el) {
     const tag = selector.startsWith('link') ? 'link' : 'meta';
     el = document.createElement(tag) as HTMLMetaElement | HTMLLinkElement;
@@ -28,7 +38,15 @@ function setMeta(selector: string, attr: string, content: string) {
     }
     document.head.appendChild(el);
   }
-  el.setAttribute(attr, content);
+  const target = el;
+  target.setAttribute(attr, content);
+  return () => {
+    if (!existed) {
+      target.remove();
+    } else if (prevValue !== null) {
+      target.setAttribute(attr, prevValue);
+    }
+  };
 }
 
 // useSEO actualiza el <title>, la meta description, las etiquetas Open
@@ -37,9 +55,13 @@ function setMeta(selector: string, attr: string, content: string) {
 // las meta tags fijas de index.html, así que cada página (tienda, FAQ,
 // contacto, privacidad, etc.) se veía idéntica en la pestaña del
 // navegador y en los resultados de búsqueda/vistas previas de redes
-// sociales, sin importar cuál fuera. Se restaura el valor de index.html al
-// desmontar, para no dejar "pegado" el título de una página tras navegar
-// a una ruta que todavía no usa este hook.
+// sociales, sin importar cuál fuera.
+//
+// El cleanup restaura TODO lo que este hook tocó (título, canonical,
+// descripción, Open Graph, robots) a como estaba antes de que esta llamada
+// empezara — no solo el título — así que aunque la siguiente página no use
+// este hook (o lo use sin `noindex`/`description`), nunca hereda por
+// accidente el canonical, el noindex o la descripción de la página anterior.
 export function useSEO({ title, description, path, noindex }: SEOOptions) {
   useEffect(() => {
     const prevTitle = document.title;
@@ -47,31 +69,27 @@ export function useSEO({ title, description, path, noindex }: SEOOptions) {
     document.title = fullTitle;
 
     const url = `${SITE}${path ?? window.location.pathname}`;
-    setMeta('link[rel="canonical"]', 'href', url);
+    const restores: Array<() => void> = [];
+    restores.push(setMeta('link[rel="canonical"]', 'href', url));
 
     if (description) {
-      setMeta('meta[name="description"]', 'content', description);
-      setMeta('meta[property="og:description"]', 'content', description);
-      setMeta('meta[name="twitter:description"]', 'content', description);
+      restores.push(setMeta('meta[name="description"]', 'content', description));
+      restores.push(setMeta('meta[property="og:description"]', 'content', description));
+      restores.push(setMeta('meta[name="twitter:description"]', 'content', description));
     }
-    setMeta('meta[property="og:title"]', 'content', fullTitle);
-    setMeta('meta[property="og:url"]', 'content', url);
-    setMeta('meta[property="og:image"]', 'content', DEFAULT_IMAGE);
-    setMeta('meta[name="twitter:title"]', 'content', fullTitle);
+    restores.push(setMeta('meta[property="og:title"]', 'content', fullTitle));
+    restores.push(setMeta('meta[property="og:url"]', 'content', url));
+    restores.push(setMeta('meta[property="og:image"]', 'content', DEFAULT_IMAGE));
+    restores.push(setMeta('meta[name="twitter:title"]', 'content', fullTitle));
 
-    let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
     if (noindex) {
-      if (!robots) {
-        robots = document.createElement('meta');
-        robots.setAttribute('name', 'robots');
-        document.head.appendChild(robots);
-      }
-      robots.setAttribute('content', 'noindex, nofollow');
-    } else if (robots) {
-      robots.remove();
+      restores.push(setMeta('meta[name="robots"]', 'content', 'noindex, nofollow'));
     }
 
-    return () => { document.title = prevTitle; };
+    return () => {
+      document.title = prevTitle;
+      for (const restore of restores) restore();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, description, path, noindex]);
 }

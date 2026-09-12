@@ -5,6 +5,7 @@ import { register, resendVerification } from '../services/api';
 import { UserPlus, Loader2, Gamepad2, Mail, Lock, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import OAuthButtons from '../components/OAuthButtons';
 import AuthSwitch from '../components/AuthSwitch';
+import { useSEO } from '../hooks/useSEO';
 
 export default function Register() {
   const [epicUsername, setEpicUsername] = useState('');
@@ -17,6 +18,12 @@ export default function Register() {
   const [resendMsg, setResendMsg] = useState('');
   const { t, lang } = useLang();
   const es = lang === 'es';
+  useSEO({
+    title: es ? 'Crear cuenta' : 'Create account',
+    description: es
+      ? 'Crea tu cuenta gratis en KidStorePeru y empieza a comprar skins, emotes y picos de Fortnite con KidCoins.'
+      : 'Create your free KidStorePeru account and start buying Fortnite skins, emotes and pickaxes with KidCoins.',
+  });
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault(); setError(''); setLoading(true);
@@ -163,7 +170,7 @@ export default function Register() {
 
           <label className="field">
             <span><Lock size={11} style={{ display: 'inline', marginRight: 4 }} />{t('auth.register.pass')}</span>
-            <input type="password" placeholder={t('auth.register.pass.ph')} value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+            <input type="password" placeholder={t('auth.register.pass.ph')} value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
           </label>
 
           <button className="btn btn-primary btn-full" type="submit" disabled={loading}>

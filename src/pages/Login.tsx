@@ -6,6 +6,7 @@ import { login, verify2FA } from '../services/api';
 import { LogIn, Loader2, Mail, Lock, AlertCircle, ShieldCheck, ArrowLeft } from 'lucide-react';
 import OAuthButtons from '../components/OAuthButtons';
 import AuthSwitch from '../components/AuthSwitch';
+import { useSEO } from '../hooks/useSEO';
 
 const OAUTH_ERROR_MESSAGES: Record<string, { es: string; en: string }> = {
   invalid_state:      { es: 'La sesión de inicio expiró, intenta de nuevo.', en: 'The login session expired, please try again.' },
@@ -24,6 +25,12 @@ export default function Login() {
   const [params] = useSearchParams();
   const location = useLocation();
   const es = lang === 'es';
+  useSEO({
+    title: es ? 'Iniciar sesión' : 'Log in',
+    description: es
+      ? 'Inicia sesión en KidStorePeru para comprar skins y V-Bucks de Fortnite con tu saldo de KidCoins.'
+      : 'Log in to KidStorePeru to buy Fortnite skins and V-Bucks with your KidCoins balance.',
+  });
 
   // Paso 2 (solo cuentas admin con 2FA activado): ya se validó la
   // contraseña, falta el código de la app autenticadora (o un código de

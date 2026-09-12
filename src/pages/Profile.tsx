@@ -15,6 +15,7 @@ import {
   Phone, Clock, ChevronLeft, ChevronRight, ShieldCheck, Link2, Unlink,
   Smartphone, Trash2, X,
 } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 const BASE = (import.meta.env.VITE_API_URL as string) || '/api';
 
@@ -49,6 +50,11 @@ export default function Profile() {
   const { t, lang } = useLang();
   const { tab: tabParam } = useParams<{ tab: string }>();
   const es = lang === 'es';
+  useSEO({
+    title: es ? 'Mi cuenta' : 'My account',
+    path: '/account',
+    noindex: true,
+  });
   const [orders,  setOrders]  = useState<Order[]>([]);
   const [ordersTotal, setOrdersTotal] = useState(0);
   const [ordersPage, setOrdersPage] = useState(1);
@@ -1129,6 +1135,7 @@ const STATUS_META: Record<Order['status'], { es: string; en: string; color: stri
   sent:       { es: 'Completado',       en: 'Completed',   color: 'var(--green-500)' },
   failed:     { es: 'Reembolso en proceso', en: 'Refund in progress', color: 'var(--amber-500)' },
   refunded:   { es: 'Reembolsado',      en: 'Refunded',    color: 'var(--gray-500)' },
+  review:     { es: 'En revisión',      en: 'Under review', color: 'var(--amber-500)' },
 };
 
 function OrderDetailCard({ order, lang }: { order: Order; lang: string }) {

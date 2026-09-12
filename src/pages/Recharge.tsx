@@ -7,9 +7,10 @@ import { KC_PACKAGES, COMMISSIONS, withCommission, formatReferencePrice } from '
 import type { PaymentInfo } from '../services/constants';
 import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefreshToken } from '../services/api';
 import type { KCPackage } from '../types';
-import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X } from 'lucide-react';
+import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X, Globe } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
 import SegTabs from '../components/SegTabs';
+import { useSEO } from '../hooks/useSEO';
 
 // Pago manual solo existe para PEN (Perú) y EUR (España) — para las demás
 // divisas se usa el pago automático (dLocal Go, PayPal, Cripto).
@@ -65,6 +66,12 @@ async function fetchPaymentStatus(base: string, paymentId: string): Promise<{ st
 export default function Recharge() {
   const { customer, refresh } = useAuth();
   const { t, lang }   = useLang();
+  useSEO({
+    title: lang === 'es' ? 'Recargar KidCoins' : 'Recharge KidCoins',
+    description: lang === 'es'
+      ? 'Recarga KidCoins con Yape, Plin, MercadoPago, PayPal, dLocal Go o cripto y compra en la tienda de Fortnite.'
+      : 'Recharge KidCoins with Yape, Plin, MercadoPago, PayPal, dLocal Go or crypto and shop the Fortnite store.',
+  });
   const { currency: refCurrency, rates: refRates } = useCurrency();
   const [copied, setCopied]         = useState('');
   const [selected, setSelected]     = useState<string | null>(null);
@@ -476,8 +483,7 @@ export default function Recharge() {
                 >
                   {payLoading==='dlocalgo'
                     ? <RefreshCw size={20} className="spin" style={{color:'#6c5ce7'}}/>
-                    : <img src="/dlocalgo.png" alt="dLocal Go"
-                           onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
+                    : <span className="rc-gateway-icon-badge" style={{background:'#6c5ce71a',color:'#6c5ce7'}} aria-hidden="true"><Globe size={18}/></span>}
                   <span>{txt.payWithDL}</span>
                   <span style={{fontSize:'.7rem',color:'var(--text-muted)',marginLeft:'auto'}}>{refCurrency}</span>
                 </button>
@@ -502,7 +508,7 @@ export default function Recharge() {
                 >
                   {payLoading==='nowpayments'
                     ? <RefreshCw size={20} className="spin" style={{color:'#00c853'}}/>
-                    : <img src="/crypto.png" alt="Crypto" onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
+                    : <img src="/nowpayments.png" alt="NOWPayments" onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
                   <span>{txt.payWithCrypto}</span>
                   <span style={{fontSize:'.7rem',color:'var(--text-muted)',marginLeft:'auto'}}>BTC, ETH, USDT +150</span>
                 </button>

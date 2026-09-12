@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { getPaymentStatus, cancelPayment } from '../services/api';
 import { CheckCircle, XCircle, Loader2, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
+import { useSEO } from '../hooks/useSEO';
 
 // 'error' se reserva para cuando el backend CONFIRMÓ que el pago falló o
 // expiró — ahí sí es correcto decir "no se realizó ningún cargo".
@@ -19,6 +20,10 @@ export default function PaymentReturn() {
   const { lang } = useLang();
   const { refresh } = useAuth();
   const es = lang === 'es';
+  useSEO({
+    title: es ? 'Resultado del pago' : 'Payment result',
+    noindex: true,
+  });
 
   const paymentId = params.get('id') || '';
   const status = params.get('status') || '';

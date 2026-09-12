@@ -408,6 +408,14 @@ export interface Voucher {
   // pago / recarga
   product_name?: string;
   amount_pen?: number;
+  // Monto y divisa REALES cobrados por la pasarela (PayPal y NOWPayments
+  // cobran en USD, dLocal Go en la divisa real del cliente) — amount_pen es
+  // solo un precio de referencia calculado al crear el pago, nunca lo que
+  // realmente se cobró para esas pasarelas. Ausentes cuando el backend no
+  // tiene información suficiente para afirmar un monto/divisa (nunca se
+  // inventan en el frontend).
+  charged_amount?: number;
+  charged_currency?: string;
   kc_amount?: number;
   gateway?: string;
   external_id?: string;

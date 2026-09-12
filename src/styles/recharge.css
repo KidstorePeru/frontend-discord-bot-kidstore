@@ -1281,6 +1281,7 @@
 .rc-gateway-btn:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.1); }
 .rc-gateway-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .rc-gateway-btn img { width: 28px; height: 28px; object-fit: contain; }
+.rc-gateway-icon-badge { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
 .rc-gateway-btn .spin { animation: spin 1s linear infinite; }
 .rc-gateway-btn-main { min-width: 320px; max-width: 460px; width: 100%; padding: 18px 26px; gap: 14px; }
 .rc-gateway-btn-main img { width: 34px; height: 34px; }

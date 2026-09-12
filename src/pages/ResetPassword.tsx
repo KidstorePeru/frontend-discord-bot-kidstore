@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { forgotPassword, resetPassword } from '../services/api';
 import { KeyRound, Loader2, Eye, EyeOff, CheckCircle2, Mail, AlertCircle, ArrowLeft } from 'lucide-react';
+import { useSEO } from '../hooks/useSEO';
 
 export default function ResetPassword() {
   const [params]  = useSearchParams();
@@ -10,6 +11,10 @@ export default function ResetPassword() {
   const navigate  = useNavigate();
   const { lang }  = useLang();
   const es        = lang === 'es';
+  useSEO({
+    title: es ? 'Recuperar contraseña' : 'Reset password',
+    noindex: true,
+  });
 
   // Estado para cuando ya tenemos token (pantalla de nueva contraseña)
   const [password,  setPassword]  = useState('');
