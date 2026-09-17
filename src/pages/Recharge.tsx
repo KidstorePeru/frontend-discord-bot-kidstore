@@ -213,6 +213,14 @@ export default function Recharge() {
             settled = true;
             break;
           }
+          if (st === 'review') {
+            // El backend nunca pudo confirmar NI descartar el pago con la
+            // pasarela — no es un rechazo confirmado, así que nunca se
+            // muestra como "no hubo cargo". Sigue reconciliándose solo.
+            setPayResult('unconfirmed');
+            settled = true;
+            break;
+          }
           if (returnedAsFailure) {
             // Solo sabemos que la pasarela redirigió el popup como
             // cancelado/fallido — el backend todavía no lo confirmó. No es

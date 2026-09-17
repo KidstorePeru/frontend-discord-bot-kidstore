@@ -313,13 +313,34 @@ export async function unlinkAccount(provider: 'google' | 'discord'): Promise<Cus
 
 /* ── Recharge History ── */
 
-export async function getMyRecharges(): Promise<{
-  recharges: { id: string; amount_kc: number; amount_soles: number | null; method: string; note: string | null; approved_by: string | null; created_at: string }[];
-  payments: { id: string; gateway: string; payment_type: string; product_name: string; amount_pen: number; amount_usd: number; kc_amount: number; status: string; created_at: string }[];
-}> {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const res = await request<{ success: boolean; recharges: any[]; payments: any[] }>('/store/recharges');
-  return { recharges: res.recharges ?? [], payments: res.payments ?? [] };
+// RechargeHistoryItem: una fila del historial YA combinado, deduplicado y
+// paginado en el servidor (ver db.GetRechargeHistoryByCustomer en el
+// backend) — la unión de recargas manuales genuinas (kind:'kc') y pagos por
+// pasarela de tipo kc_recharge (kind:'pay'). Antes /store/recharges traía
+// las dos listas completas (una con tope fijo de 2000, la otra sin límite)
+// y el dashboard las combinaba/paginaba en el navegador — con más de 2000
+// intentos de pago, los más antiguos desaparecían del historial y de sus
+// propios comprobantes.
+export type RechargeHistoryItem =
+  | { kind: 'kc'; id: string; created_at: string; amount_kc: number; amount_soles: number | null; method: string }
+  | {
+      kind: 'pay'; id: string; created_at: string; gateway: string; payment_type: string;
+      product_name: string; amount_pen: number;
+      // charged_amount/charged_currency: monto y divisa REALES cobrados por
+      // la pasarela (calculados en el backend); amount_pen es solo un
+      // precio de referencia, nunca lo que PayPal/NOWPayments/dLocal Go
+      // cobraron de verdad para pasarelas que no facturan en soles.
+      charged_amount?: number; charged_currency?: string;
+      kc_amount: number; status: string;
+    };
+
+// signal: permite cancelar la petición en vuelo (ver usePaginatedHistory) —
+// cuando el cliente cambia de página, reintenta, o el componente se
+// desmonta mientras una consulta lenta sigue esperando respuesta, se aborta
+// en vez de dejarla flotando hasta que el servidor responda por su cuenta.
+export async function getMyRecharges(page = 1, limit = 20, signal?: AbortSignal): Promise<{ items: RechargeHistoryItem[]; total: number; page: number }> {
+  const res = await request<{ success: boolean; items: RechargeHistoryItem[]; total: number; page: number }>(`/store/recharges?page=${page}&limit=${limit}`, { signal });
+  return { items: res.items ?? [], total: res.total, page: res.page };
 }
 
 /* ── Shop ── */
@@ -416,6 +437,12 @@ export interface Voucher {
   // inventan en el frontend).
   charged_amount?: number;
   charged_currency?: string;
+  // true cuando el comprobante está vinculado a un pago por pasarela que ya
+  // no se pudo leer (fila borrada, error transitorio de DB) — el backend
+  // deliberadamente NO envía charged_amount/charged_currency en ese caso
+  // (nunca muestra el equivalente en PEN como si fuera la divisa realmente
+  // cobrada).
+  amount_unavailable?: boolean;
   kc_amount?: number;
   gateway?: string;
   external_id?: string;

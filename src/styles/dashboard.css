@@ -179,9 +179,14 @@
 /* Dashboard tabs — ahora usa el componente SegTabs (styles/segtabs.css) */
 .dash-tabs { margin-bottom: 24px; }
 
-/* Pagination */
+/* Pagination — compacta (primera/anterior/…/siguiente/última, ver
+   buildPageList en Dashboard.tsx): con flex-wrap, aunque el conjunto de
+   botones visibles ya está acotado (nunca más de ~9), un contenedor
+   angosto (móvil, o zoom del navegador) puede seguir sin tener espacio
+   para todos en una sola fila — antes, sin wrap, una lista de 201 páginas
+   sin acotar desbordaba directamente el ancho disponible. */
 .dash-pagination {
-  display: flex; justify-content: center; align-items: center;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
   gap: 4px; margin-top: 16px; padding: 8px 0;
 }
 .dash-pagination button {
@@ -189,11 +194,25 @@
   border: 1.5px solid var(--border); background: var(--bg-surface);
   color: var(--text-secondary); font-size: .82rem; font-weight: 700;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all .2s;
+  transition: all .2s; flex-shrink: 0;
 }
 .dash-pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .dash-pagination button.active {
   background: var(--accent); border-color: var(--accent); color: #fff;
 }
 .dash-pagination button:disabled { opacity: .3; cursor: not-allowed; }
+.dash-pagination-dots {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); font-weight: 700; user-select: none;
+}
+@media (max-width:480px) {
+  .dash-pagination { gap: 3px; }
+  .dash-pagination button, .dash-pagination-dots { width: 30px; height: 30px; font-size: .78rem; }
+}
+
+/* Empty / loading / error placeholder de una sección — mismo bloque para
+   los tres estados (icono + texto + acción opcional), solo cambia el
+   color del icono. */
+.dash-empty-error svg { color: #dc2626; }
 

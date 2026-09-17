@@ -31,6 +31,21 @@ function AdminPagination({ page, total, setPage }: { page: number; total: number
 }
 const BASE = (import.meta.env.VITE_API_URL as string) || '/api';
 
+// formatAdminCharged muestra el monto en la divisa REAL cobrada
+// (charged_amount/charged_currency, calculados en el backend) — antes el
+// panel siempre mostraba "S/ {amount_pen}" sin importar la pasarela, aunque
+// PayPal/NOWPayments cobran en USD y dLocal Go en la divisa real del cliente.
+function formatAdminCharged(p: { amount_pen?: number; charged_amount?: number; charged_currency?: string }): string {
+  if (p.charged_amount == null || !p.charged_currency) {
+    return typeof p.amount_pen === 'number' ? `S/ ${p.amount_pen.toFixed(2)} (ref.)` : '—';
+  }
+  try {
+    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: p.charged_currency }).format(p.charged_amount);
+  } catch {
+    return `${p.charged_currency} ${p.charged_amount.toFixed(2)}`;
+  }
+}
+
 async function adminFetch(path: string, _adminKey?: string, opts: RequestInit = {}) {
   const apiKey = _adminKey || sessionStorage.getItem('kc_admin_key') || '';
   const doFetch = () => {
@@ -896,9 +911,9 @@ export default function AdminPanel() {
           <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="adm-count">{paymentTotal.toLocaleString()} transacci{paymentTotal !== 1 ? 'ones' : 'ón'}</span>
             <div className="adm-filter-row">
-              {['all','pending','approved','fulfilled','expired','failed'].map(s => (
+              {['all','pending','review','approved','fulfilled','expired','failed'].map(s => (
                 <button key={s} className={`adm-filter-btn ${payFilter === s ? 'active' : ''}`} onClick={() => setPayFilter(s)}>
-                  {s === 'all' ? 'Todos' : s.charAt(0).toUpperCase() + s.slice(1)}
+                  {s === 'all' ? 'Todos' : s === 'review' ? 'En revisión' : s.charAt(0).toUpperCase() + s.slice(1)}
                 </button>
               ))}
             </div>
@@ -913,13 +928,15 @@ export default function AdminPanel() {
                   <tr key={p.id}>
                     <td><span style={{textTransform:'capitalize', fontWeight:600}}>{p.gateway}</span></td>
                     <td>{p.product_name}</td>
-                    <td><strong>S/ {Number(p.amount_pen).toFixed(2)}</strong></td>
+                    <td><strong>{formatAdminCharged(p)}</strong></td>
                     <td>
                       <span className="status-badge" style={{ '--badge-color':
                         p.status === 'approved' ? '#22c55e' : p.status === 'fulfilled' ? '#3b82f6' :
-                        p.status === 'pending' ? '#f59e0b' : p.status === 'expired' ? '#6b7280' : '#dc2626'
+                        p.status === 'pending' ? '#f59e0b' : p.status === 'review' ? '#f59e0b' :
+                        p.status === 'expired' ? '#6b7280' : '#dc2626'
                       } as React.CSSProperties}>
                         {p.status === 'approved' ? 'Aprobado' : p.status === 'pending' ? 'Pendiente' :
+                         p.status === 'review' ? 'En revisión' :
                          p.status === 'fulfilled' ? 'Entregado' : p.status === 'expired' ? 'Expirado' :
                          p.status === 'failed' ? 'Fallido' : p.status === 'activating' ? 'Activando' : p.status}
                       </span>
@@ -927,7 +944,7 @@ export default function AdminPanel() {
                     <td className="text-muted">{new Date(p.created_at).toLocaleDateString('es-PE')}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        {p.status === 'pending' && (
+                        {(p.status === 'pending' || p.status === 'review') && (
                           <>
                             <button className="adm-action-btn adm-approve" title="Aprobar"
                               onClick={async () => { try { await adminFetch(`/admin/payments/${p.id}`, undefined, { method: 'PUT', body: JSON.stringify({ status: 'approved' }) }); loadTab('payments'); setToast({ msg: 'Pago aprobado', type: 'success' }); } catch (e: any) { setToast({ msg: e.message, type: 'error' }); } }}>

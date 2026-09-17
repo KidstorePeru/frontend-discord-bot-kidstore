@@ -44,6 +44,12 @@ export default function PaymentReturn() {
           setKcAmount(tx.kc_amount as number || 0);
           const s = tx.status as string;
           if (s === 'approved' || s === 'fulfilled') { setState('success'); refresh(); return; }
+          // 'review': el backend nunca pudo confirmar NI descartar el pago
+          // con la pasarela (ver reconcileDeadLetterAfter) — a diferencia de
+          // 'failed'/'expired', esto NO es un rechazo confirmado, así que
+          // nunca se muestra como "no se realizó ningún cargo". El pago
+          // sigue reconciliándose solo por si llega una confirmación tardía.
+          if (s === 'review') { setState('unconfirmed'); return; }
           if (s === 'failed' || s === 'expired') { setState('error'); return; }
           // La pasarela ya nos redirigió acá diciendo que el pago se canceló o
           // falló (status=failure en la URL) — el backend puede tardar hasta 30
