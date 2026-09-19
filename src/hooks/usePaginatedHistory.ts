@@ -31,6 +31,13 @@ export type FetchPage<T> = (page: number, limit: number, signal: AbortSignal) =>
 //      efecto (no solo en el useRef inicial) para seguir funcionando bajo
 //      React.StrictMode, que monta/desmonta/vuelve a montar cada componente
 //      una vez en desarrollo.
+//   6. Si la página actual queda fuera de rango (se eliminó una operación y
+//      el total de páginas bajó — p. ej. estar en la página 2 de 11
+//      resultados y que uno se borre, dejando solo 10, una sola página) el
+//      hook navega solo a la última página válida y carga sus datos, en vez
+//      de quedarse mostrando una página vacía indefinidamente. Puede
+//      dispararlo tanto un cambio de página explícito como un refresco en
+//      segundo plano — cualquiera puede descubrir que el total bajó.
 export function usePaginatedHistory<T>(fetchPage: FetchPage<T>, limit: number, refreshMs = 20000) {
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<T[]>([]);
@@ -63,12 +70,26 @@ export function usePaginatedHistory<T>(fetchPage: FetchPage<T>, limit: number, r
       controller = new AbortController();
       const reqId = ++reqIdRef.current;
       if (isForeground) { setLoading(true); setError(false); }
+      // correctingPage: se activa si esta respuesta descubre que `page` ya
+      // no existe — el finally de más abajo NO debe apagar el loading en
+      // ese caso, porque setPage(maxPage) dispara de inmediato un nuevo
+      // ciclo del efecto (con isForeground=true) para cargar la página
+      // corregida; apagarlo acá solo produciría un parpadeo del estado
+      // "vacío" entre una carga y la otra.
+      let correctingPage = false;
 
       fetchPageRef.current(page, limit, controller.signal)
         .then(r => {
           if (!mountedRef.current || reqId !== reqIdRef.current) return; // desmontado, o ya hay una consulta más nueva
-          setItems(r.items);
           setTotal(r.total);
+          const maxPage = Math.max(1, Math.ceil(r.total / limit));
+          if (page > maxPage) {
+            correctingPage = true;
+            setError(false);
+            setPage(maxPage);
+            return; // no pisar items con la respuesta de una página que ya no existe
+          }
+          setItems(r.items);
           setError(false);
         })
         .catch(() => {
@@ -81,7 +102,7 @@ export function usePaginatedHistory<T>(fetchPage: FetchPage<T>, limit: number, r
         .finally(() => {
           pending = false;
           if (!mountedRef.current || reqId !== reqIdRef.current) return;
-          if (isForeground) setLoading(false);
+          if (isForeground && !correctingPage) setLoading(false);
         });
     }
 
