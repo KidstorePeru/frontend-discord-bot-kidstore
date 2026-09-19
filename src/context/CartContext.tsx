@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 
 export interface CartItem {
@@ -46,19 +46,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartOpen, setCartOpen] = useState(false);
   const [cartLoaded, setCartLoaded] = useState(false);
 
+  // cartRef siempre tiene el contenido REAL del carrito, escrito de forma
+  // síncrona por cada función de este archivo — nunca se lee dentro de un
+  // updater de setState (`setCart(prev => ...)`). Antes, addToCart y
+  // validateAgainstShop decidían su valor de retorno con una variable (`isNew`,
+  // `removed`) que solo quedaba asignada cuando React ejecutaba ese updater,
+  // algo que NO pasa de forma síncrona ni garantizada en el mismo tick: bajo
+  // StrictMode (que invoca los updaters dos veces para detectar efectos
+  // impuros), o con dos clics muy seguidos antes de que React repinte, la
+  // función podía devolver 'already_in_cart' para un ítem que en realidad
+  // se acababa de agregar (o viceversa). Con cartRef, la decisión de si un
+  // ítem ya está en el carrito se toma leyendo el estado real en el momento
+  // exacto de la llamada, sin depender de cuándo React decida re-renderizar.
+  const cartRef = useRef<CartItem[]>([]);
+
   // Cargar carrito cuando el cliente está disponible
   useEffect(() => {
     if (!customer?.id) {
+      cartRef.current = [];
       setCart([]);
       setCartLoaded(false);
       return;
     }
+    let loaded: CartItem[] = [];
     try {
       const raw = localStorage.getItem(cartKey(customer.id));
-      setCart(raw ? (JSON.parse(raw) as CartItem[]) : []);
+      loaded = raw ? (JSON.parse(raw) as CartItem[]) : [];
     } catch {
-      setCart([]);
+      loaded = [];
     }
+    cartRef.current = loaded;
+    setCart(loaded);
     setCartLoaded(true);
   }, [customer?.id]);
 
@@ -72,32 +90,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = useCallback((item: CartItem): 'added' | 'already_in_cart' | 'not_logged_in' => {
     if (!customer) return 'not_logged_in';
-    let isNew = false;
-    setCart(prev => {
-      if (prev.find(i => i.offerId === item.offerId)) return prev;
-      isNew = true;
-      return [...prev, item];
-    });
-    if (!isNew) return 'already_in_cart';
+    if (cartRef.current.some(i => i.offerId === item.offerId)) {
+      return 'already_in_cart';
+    }
+    cartRef.current = [...cartRef.current, item];
+    setCart(cartRef.current);
     return 'added';
   }, [customer]);
 
   const removeFromCart = useCallback((offerId: string) => {
-    setCart(prev => prev.filter(i => i.offerId !== offerId));
+    cartRef.current = cartRef.current.filter(i => i.offerId !== offerId);
+    setCart(cartRef.current);
   }, []);
 
   const clearCart = useCallback(() => {
+    cartRef.current = [];
     setCart([]);
   }, []);
 
-  // Valida el carrito contra los items actuales de la tienda
+  // Valida el carrito contra los items actuales de la tienda — mismo patrón
+  // que addToCart: el número de eliminados se calcula síncronamente contra
+  // cartRef, nunca dentro del updater de setCart.
   const validateAgainstShop = useCallback((shopOfferIds: Set<string>): number => {
-    let removed = 0;
-    setCart(prev => {
-      const valid = prev.filter(i => shopOfferIds.has(i.offerId));
-      removed = prev.length - valid.length;
-      return valid;
-    });
+    const valid = cartRef.current.filter(i => shopOfferIds.has(i.offerId));
+    const removed = cartRef.current.length - valid.length;
+    if (removed > 0) {
+      cartRef.current = valid;
+      setCart(valid);
+    }
     return removed;
   }, []);
 

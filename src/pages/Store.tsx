@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { getShop } from '../services/api';
@@ -6,11 +6,13 @@ import { vbucksToKC } from '../services/constants';
 import { PageLoader, Toast } from '../components/UI';
 import { Search, RefreshCw, ShoppingCart, X, Clock, CheckCircle, ShoppingBag, Info } from 'lucide-react';
 import { useLang } from '../context/LangContext';
+import type { TranslationKey } from '../services/i18n';
 import { useSEO } from '../hooks/useSEO';
+import { useModalFocusTrap } from '../hooks/useModalFocusTrap';
 
 interface ShopItem {
   offerId: string; name: string;
-  featuredImg: string; albumArt: string; renderImg: string;
+  featuredImg: string; albumArt: string; renderImg: string; renderImgs: string[];
   rarityText: string; finalPrice: number; regularPrice: number; price_kc: number;
   span: number; sectionName: string; sectionRank: number;
   colors: { color1: string; color2: string; color3: string; textBg: string };
@@ -38,17 +40,49 @@ function parse(data: any): { items: ShopItem[]; total: number; shopDate?: string
     : undefined;
   const items: ShopItem[] = [];
   for (const e of entries) {
-    const brItems = e.brItems || []; const tracks = e.tracks || [];
-    const allCos = [...brItems, ...(e.instruments||[]), ...(e.cars||[]), ...(e.legoKits||[]), ...(e.beans||[])];
+    // Sin `layout`, Epic no le da estante/sección propia en la tienda real
+    // — son piezas sueltas de un lote (una rueda, una carrocería, una
+    // variante de color) que la API expone como entrada aparte pero que
+    // NO son un producto comprable por separado; si un cliente las pide
+    // sueltas no se le puede enviar nada. Antes caían todas en una
+    // sección "Otros" que no debería existir.
+    if (!e.layout) continue;
+    const brItems = e.brItems || []; const tracks = e.tracks || []; const cars = e.cars || [];
+    const allCos = [...brItems, ...(e.instruments||[]), ...cars, ...(e.legoKits||[]), ...(e.beans||[])];
     const it = allCos[0] || tracks[0];
     const isTrack = tracks.length > 0 && allCos.length === 0;
     const isBundle = !!e.bundle;
     const span = e.tileSize==='Size_2_x_1'?2:e.tileSize==='Size_3_x_1'?3:e.tileSize==='Size_4_x_1'?4:1;
-    const renderImg = (e.newDisplayAsset?.renderImages||[])[0]?.image||'';
+    // La tienda oficial no muestra un único render fijo para los lotes — va
+    // alternando, con un difuminado suave, entre varias imágenes del mismo
+    // ítem (los "renderimage_0/1/2..." que ya trae la API, uno por pose o
+    // combinación de personajes). Antes solo se usaba la primera y el resto
+    // se descartaba, así que la carta nunca se movía.
+    //
+    // productTag distingue el render normal del propio ítem de promos
+    // cruzadas de OTRO modo de juego que la API mete en el mismo array:
+    // "Product.Juno" son las figuritas estilo LEGO Fortnite, "Product.
+    // Sparks" es Fortnite Festival, "Product.Delmar" es Rocket Racing.
+    // Cuál es "el propio" varía según el ítem — la mayoría de autos traen
+    // "Product.BR" igual que un personaje, pero no todos (hay excepciones
+    // reales, verificado con la API) — así que en vez de adivinar por
+    // categoría, se usa la etiqueta del PRIMER render de este ítem como
+    // "la buena" y se descarta cualquier otra etiqueta distinta que
+    // aparezca después en el mismo array (eso es siempre una promo cruzada
+    // de otro modo, nunca una pose alternativa del mismo ítem).
+    const rawRenders = (e.newDisplayAsset?.renderImages||[]) as any[];
+    const nativeTag = rawRenders.find(r => r?.productTag)?.productTag;
+    const renderImgs: string[] = rawRenders
+      .filter(r => !r?.productTag || r.productTag === nativeTag)
+      .map(r => r?.image).filter((u): u is string => !!u);
+    const renderImg = renderImgs[0] || '';
     items.push({
       offerId: e.offerId||'', name: isBundle ? e.bundle.name : (it?.name||it?.title||'Item'),
-      featuredImg: it?.images?.featured||it?.images?.icon||it?.images?.smallIcon||'',
-      albumArt: isTrack ? (tracks[0]?.albumArt||'') : '', renderImg,
+      // Los autos traen sus imágenes en `large`/`small`, no en `featured`/
+      // `icon`/`smallIcon` (esos son de los cosméticos normales) — sin
+      // este fallback la carta quedaba sin imagen.
+      featuredImg: it?.images?.featured||it?.images?.icon||it?.images?.smallIcon||it?.images?.large||it?.images?.small||'',
+      albumArt: isTrack ? (tracks[0]?.albumArt||'') : '', renderImg, renderImgs,
       rarityText: it?.rarity?.displayValue||(isTrack?'Pista':''),
       finalPrice: e.finalPrice||0, regularPrice: e.regularPrice||e.finalPrice||0,
       price_kc: vbucksToKC(e.finalPrice||0), span,
@@ -107,8 +141,104 @@ function countdownLabel(c: CountdownParts, es: boolean): string {
   return parts.join(' ');
 }
 
+// ShopCountdown — el reloj de "la tienda cambia en..." vive en SU PROPIO
+// componente a propósito, en vez de leer useCountdown directo en
+// StorePage: useCountdown actualiza su estado cada 1 segundo, y si ese
+// estado vive en StorePage, cada tick del reloj volvía a crear las ~300
+// cartas del catálogo entero (todo lo que cuelga de ese render), aunque
+// ninguna carta haya cambiado. Aislado acá, el tick de cada segundo solo
+// re-renderiza este relojito chico.
+function ShopCountdown({ target, onDone, es, t }: { target?: string; onDone: () => void; es: boolean; t: (key: TranslationKey) => string }) {
+  const cd = useCountdown(target);
+  // Cuando la cuenta regresiva llega a cero, la tienda oficial ya rotó —
+  // recarga sola para traer el nuevo catálogo.
+  useEffect(() => {
+    if (!cd?.done) return;
+    const id = setTimeout(onDone, 5000);
+    return () => clearTimeout(id);
+  }, [cd?.done]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!cd) return null;
+  return (
+    <div
+      className={`sh-countdown ${cd.done ? 'is-done' : ''}`}
+      role="timer"
+      aria-label={`${t('store.rotates')} ${countdownLabel(cd, es)}`}
+    >
+      <span className="sh-cd-label"><Clock size={12} /> {t('store.rotates')}</span>
+      {cd.done ? (
+        <div className="sh-cd-clock sh-cd-done">{es ? 'Actualizando…' : 'Refreshing…'}</div>
+      ) : (
+        <div className="sh-cd-clock" aria-hidden="true">
+          {cd.d > 0 && (
+            <>
+              <span className="sh-cd-seg"><b>{cd.d}</b><i>{es ? 'días' : 'days'}</i></span>
+              <span className="sh-cd-sep">:</span>
+            </>
+          )}
+          <span className="sh-cd-seg"><b>{pad2(cd.h)}</b><i>{es ? 'horas' : 'hrs'}</i></span>
+          <span className="sh-cd-sep">:</span>
+          <span className="sh-cd-seg"><b>{pad2(cd.m)}</b><i>min</i></span>
+          <span className="sh-cd-sep">:</span>
+          <span className="sh-cd-seg sh-cd-sec"><b>{pad2(cd.s)}</b><i>seg</i></span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function VIcon({ s=16 }: { s?: number }) {
   return <svg width={s} height={s} viewBox="0 0 24 24" style={{flexShrink:0}}><circle cx="12" cy="12" r="11" fill="#59c2ea" stroke="#2ba0cb" strokeWidth="1.5"/><text x="12" y="16.5" textAnchor="middle" fontSize="13" fontWeight="900" fontFamily="sans-serif" fill="#fff">V</text></svg>;
+}
+
+// CardRenderFrames — cuando un lote trae más de una imagen de render (Epic
+// las manda como "renderimage_0/1/2…", una por pose o combinación de
+// personajes), las va alternando con un difuminado (crossfade), igual al
+// cambio de diseño de la tienda oficial. Con una sola imagen no hace nada
+// especial (ni temporizador ni animación) — se comporta exactamente como
+// antes.
+//
+// Se usa a propósito un crossfade de OPACIDAD simple — nada de recortar
+// geometría (mask-position, clip-path). Se probaron ambas formas antes:
+// las dos, con muchas cartas animando a la vez en un uso real y prolongado,
+// terminaban con la transición "trabada" a mitad de camino (la imagen se
+// quedaba parcialmente cortada para siempre) y con la anterior asomando
+// por debajo — porque dependían de que una animación de geometría
+// completara sus pasos intermedios exactamente. Opacidad no tiene ese
+// problema: aunque el navegador se salte pasos intermedios bajo carga,
+// SIEMPRE termina en 0 o 1 (nunca "a medias" de forma visible), así que no
+// hay forma de que quede una imagen cortada ni una superposición
+// permanente. El barrido diagonal de la tienda oficial se aproxima aparte,
+// con un brillo puramente decorativo (.sc-rf-sweep en el CSS) que no
+// recorta ni oculta ninguna imagen real, así que aunque ese brillo falle
+// el peor caso es cosmético, nunca una foto rota.
+//
+// Las imágenes quedan SIEMPRE montadas (nunca se desmontan/remontan) — si
+// se desmontaban en cada ciclo (como en una versión anterior), el
+// navegador tenía que volver a pedir/decodificar la imagen cada vez que le
+// tocaba turno.
+function CardRenderFrames({ images, alt }: { images: string[]; alt: string }) {
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    setCurrent(0);
+    if (images.length <= 1) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const id = setInterval(() => setCurrent(c => (c + 1) % images.length), 3800);
+    return () => clearInterval(id);
+  }, [images]);
+  return (
+    <>
+      {images.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt={i === 0 ? alt : ''}
+          loading="lazy"
+          className={`sc-rf ${i === current ? 'sc-rf-cur' : ''}`}
+        />
+      ))}
+      {images.length > 1 && <div key={current} className="sc-rf-sweep" />}
+    </>
+  );
 }
 
 // ==================== STORE PAGE ====================
@@ -124,7 +254,6 @@ export default function StorePage() {
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const { storeLang: lang, setStoreLang: setLang, t } = useLang();
   const [navOpen, setNavOpen] = useState(false);
-  const cd = useCountdown(shopDate);
 
   useSEO({
     title: lang === 'es' ? 'Tienda de Fortnite' : 'Fortnite Store',
@@ -164,15 +293,17 @@ export default function StorePage() {
     return () => window.removeEventListener('show-login-modal', handler);
   }, []);
 
-  useEffect(() => { load(); }, [lang]);
+  // Accesibilidad del modal de inicio de sesión (ver useModalFocusTrap):
+  // mueve el foco adentro al abrirse, lo mantiene encerrado, cierra con
+  // Escape, y devuelve el foco al control que lo abrió al cerrarse — sea el
+  // botón "Agregar al carrito" que disparó 'not_logged_in', o lo que
+  // estuviera enfocado cuando algún otro lugar del sitio disparó el evento
+  // global 'show-login-modal'.
+  const loginModalRef = useRef<HTMLDivElement>(null);
+  const loginModalCloseBtnRef = useRef<HTMLButtonElement>(null);
+  useModalFocusTrap(showLoginModal, loginModalRef, loginModalCloseBtnRef, () => setShowLoginModal(false));
 
-  // Cuando la cuenta regresiva llega a cero, la tienda oficial ya rotó —
-  // recarga sola para traer el nuevo catálogo.
-  useEffect(() => {
-    if (!cd?.done) return;
-    const id = setTimeout(() => load(), 5000);
-    return () => clearTimeout(id);
-  }, [cd?.done]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [lang]);
 
   async function load() {
     setLoading(true);
@@ -222,7 +353,21 @@ export default function StorePage() {
     const c2 = hex2(item.colors.color2);
     return {
       bg: { background: `linear-gradient(180deg, ${c1} 0%, ${c2} 100%)` },
-      showRender: item.isBigBundle && !!item.renderImg,
+      // Siempre que exista, se prefiere el render grande (newDisplayAsset)
+      // sobre el ícono chico (featuredImg) — es literalmente mejor arte en
+      // los dos sentidos que importan acá: más grande/de cuerpo completo
+      // (el ícono está pensado para verse chico en un inventario, no para
+      // ser la imagen principal de una carta) y, para los lotes, es la
+      // imagen del LOTE completo en vez del ícono de UN solo sub-ítem
+      // suelto (antes "Lote TSUM TSUM" mostraba solo la mochila, el primer
+      // sub-ítem, en vez de los 3 muñecos juntos que trae su propio
+      // render). Antes esto se limitaba a lotes grandes o ítems con varias
+      // poses para alternar — un ítem suelto con un solo render (como
+      // "Bubi" o "Cry For Me") quedaba afuera y quedaba con el ícono chico
+      // sin necesidad. En más de un caso real el ícono chico además
+      // resultó ser un PNG prácticamente en blanco del lado de la API
+      // (ver "Sora"), dejando la carta vacía aunque el render sí es válido.
+      showRender: !!item.renderImg,
     };
   }
 
@@ -231,13 +376,25 @@ export default function StorePage() {
     const inCart = cart.some(i => i.offerId === item.offerId);
     return (
       <div
-        className={`sc sp${item.span} ${item.isBigBundle ? 'sc-bun' : ''} ${inCart ? 'sc-in-cart' : ''}`}
+        className={`sc sp${item.span} ${item.isBigBundle ? 'sc-bun' : ''} ${item.isBundle ? 'sc-item-bundle' : ''} ${inCart ? 'sc-in-cart' : ''}`}
         key={item.offerId + idx}
+        // Permite ajustar el zoom/posición de UN ítem puntual por su
+        // nombre (ver ".sc[data-item-name=...]" en store.css) — algunos
+        // renders de Epic traen relleno transparente distinto debajo del
+        // personaje, así que no hay un solo valor de zoom que le quede
+        // bien a todos por igual.
+        data-item-name={item.name}
         style={bg}
       >
         {item.banner && <span className="sc-ban">{item.banner.backendValue === 'New' ? '¡NUEVO!' : item.banner.value}</span>}
         {inCart && <span className="sc-added-badge"><CheckCircle size={10} /> {es ? 'En carrito' : 'In cart'}</span>}
-        {showRender && <div className="sc-render"><img src={item.renderImg} alt={item.name} loading="lazy" /></div>}
+        {showRender && (
+          <div className="sc-render">
+            {item.renderImgs.length > 1
+              ? <CardRenderFrames images={item.renderImgs} alt={item.name} />
+              : <img src={item.renderImg} alt={item.name} loading="lazy" />}
+          </div>
+        )}
         {!showRender && !item.albumArt && item.featuredImg && <div className="sc-render"><img src={item.featuredImg} alt={item.name} loading="lazy" /></div>}
         {!showRender && !item.albumArt && !item.featuredImg && item.renderImg && <div className="sc-render"><img src={item.renderImg} alt={item.name} loading="lazy" /></div>}
         <div className="sc-info">
@@ -292,32 +449,7 @@ export default function StorePage() {
             <p className="sh-date">{today.charAt(0).toUpperCase() + today.slice(1)}</p>
           </div>
 
-          {cd && (
-            <div
-              className={`sh-countdown ${cd.done ? 'is-done' : ''}`}
-              role="timer"
-              aria-label={`${t('store.rotates')} ${countdownLabel(cd, es)}`}
-            >
-              <span className="sh-cd-label"><Clock size={12} /> {t('store.rotates')}</span>
-              {cd.done ? (
-                <div className="sh-cd-clock sh-cd-done">{es ? 'Actualizando…' : 'Refreshing…'}</div>
-              ) : (
-                <div className="sh-cd-clock" aria-hidden="true">
-                  {cd.d > 0 && (
-                    <>
-                      <span className="sh-cd-seg"><b>{cd.d}</b><i>{es ? 'días' : 'days'}</i></span>
-                      <span className="sh-cd-sep">:</span>
-                    </>
-                  )}
-                  <span className="sh-cd-seg"><b>{pad2(cd.h)}</b><i>{es ? 'horas' : 'hrs'}</i></span>
-                  <span className="sh-cd-sep">:</span>
-                  <span className="sh-cd-seg"><b>{pad2(cd.m)}</b><i>min</i></span>
-                  <span className="sh-cd-sep">:</span>
-                  <span className="sh-cd-seg sh-cd-sec"><b>{pad2(cd.s)}</b><i>seg</i></span>
-                </div>
-              )}
-            </div>
-          )}
+          <ShopCountdown target={shopDate} onDone={load} es={es} t={t} />
         </div>
 
         <div className="sh-toolbar">
@@ -405,15 +537,28 @@ export default function StorePage() {
       {/* ── Login Required Modal ── */}
       {showLoginModal && (
         <div className="login-modal-overlay" onClick={() => setShowLoginModal(false)}>
-          <div className="login-modal" onClick={e => e.stopPropagation()}>
-            <button className="login-modal-close" onClick={() => setShowLoginModal(false)}>
+          <div
+            className="login-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="login-modal-title"
+            aria-describedby="login-modal-desc"
+            ref={loginModalRef}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="login-modal-close"
+              onClick={() => setShowLoginModal(false)}
+              aria-label={es ? 'Cerrar' : 'Close'}
+              ref={loginModalCloseBtnRef}
+            >
               <X size={18}/>
             </button>
             <div className="login-modal-icon">
               <ShoppingBag size={32}/>
             </div>
-            <h3>{es ? '¡Inicia sesión para comprar!' : 'Log in to purchase!'}</h3>
-            <p>{es
+            <h3 id="login-modal-title">{es ? '¡Inicia sesión para comprar!' : 'Log in to purchase!'}</h3>
+            <p id="login-modal-desc">{es
               ? 'Necesitas una cuenta para comprar productos. Inicia sesión o crea una cuenta gratis.'
               : 'You need an account to purchase products. Log in or create a free account.'
             }</p>

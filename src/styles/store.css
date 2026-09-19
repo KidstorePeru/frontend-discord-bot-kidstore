@@ -534,12 +534,16 @@
   content: ''; width: 4px; height: 1.05em; border-radius: 3px; flex-shrink: 0;
   background: linear-gradient(180deg, var(--accent), var(--accent-2));
 }
-.sg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+/* La definición real de ".sg" (columnas, gap, dense) está más abajo, en el
+   bloque "Fix grid tienda" — ahí está marcado por qué es la ÚNICA que debe
+   tocar estas propiedades (todo esto con !important gana igual). Acá solo
+   quedan los ".spN" base — los pisa igual esa misma sección de abajo. */
 .sp1 { grid-column: span 1; } .sp2 { grid-column: span 2; } .sp3 { grid-column: span 3; } .sp4 { grid-column: span 4; }
-@media (max-width: 1000px) { .sg { grid-template-columns: repeat(3, 1fr); } .sp4 { grid-column: span 3; } }
-@media (max-width: 640px)  { .shop { padding: 10px 8px 44px; } .sg { grid-template-columns: repeat(2, 1fr); } .sp3,.sp4 { grid-column: span 2; } }
+/* Todo lo de la imagen (ver ".sc-render img" más abajo) queda contenido
+   DENTRO de la carta — "overflow: hidden" recorta los 4 lados por igual,
+   nada se asoma para ninguna fila vecina. */
 .sc { position: relative; border-radius: 13px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; min-height: 330px; transition: transform 0.32s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.32s; background-color: #1a1a30; }
-.sc:hover { transform: translateY(-6px); box-shadow: 0 18px 42px rgba(108,92,231,0.28), 0 8px 20px rgba(0,0,0,0.35); }
+.sc:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(108,92,231,0.28), 0 8px 20px rgba(0,0,0,0.35); }
 /* Borde con gradiente que aparece en hover */
 .sc::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; z-index: 4; pointer-events: none;
@@ -552,8 +556,173 @@
 .sc-bun { min-height: 400px; }
 .sc-ban  { position: absolute; top: 9px; left: 9px; padding: 3px 10px; border-radius: 4px; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; background: #ffe600; color: #000; z-index: 3; }
 .sc-render { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; }
-.sc-render img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 2px 12px rgba(0,0,0,0.3)); transition: transform 0.5s cubic-bezier(0.2,0.7,0.3,1); }
-.sc:hover .sc-render img { transform: scale(1.07); }
+/* "object-fit: contain" con "width:100%; height:100%" a secas — deja que
+   el navegador elija solo qué lado manda (ancho o alto) según la forma
+   real de la carta, así la imagen SIEMPRE se ve completa, sin cortar
+   nunca nada, sea la carta angosta (sp1) o ancha (sp2/sp3/sp4 — el ancho
+   de columna varía mucho según cuántas ocupe el ítem, pero el alto de la
+   carta es fijo).
+   Se probó forzar "altura = ancho propio" (aspect-ratio: 1/1) para que
+   el personaje se vea más grande y parejo entre cartas — pero eso rompía
+   justo los ítems de 2+ columnas (ej. "Sora", sp2): ahí la carta es más
+   ANCHA que alta, y forzar altura=ancho hacía que la imagen quedara más
+   alta que la propia carta, cortándole la cabeza por arriba con el
+   `overflow: hidden` de ".sc". "contain" simple no tiene ese problema
+   porque siempre respeta el lado que sea más restrictivo. */
+/* El "translateY()" acá (además del scale) es lo que sube/baja la imagen
+   cuando "object-position" no alcanza — pasa lo mismo que con los Lote
+   anchos: un cosmético SUELTO que ocupa 2+ columnas (sp2/sp3 — ej.
+   "Fernet", "Lil Wayne", "Weezy", "Snoop Dogg", "Mega Man X") también
+   tiene una carta más ancha que alta, así que el render cuadrado termina
+   limitado por la ALTURA (llena el alto de punta a punta, sin espacio
+   sobrante) y "object-position" no tiene margen vertical para mover
+   nada — en esos casos hay que usar "translateY" sí o sí. En un ítem
+   sp1 (angosto) normalmente SÍ sobra espacio y "object-position" alcanza,
+   pero "translateY" funciona igual en cualquier caso. Negativo sube,
+   positivo baja. */
+.sc-render img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 2px 12px rgba(0,0,0,0.3)); transform: scale(1.1) translateY(0px); transform-origin: center bottom; transition: transform 0.5s cubic-bezier(0.2,0.7,0.3,1); }
+.sc:hover .sc-render img { transform: scale(1.12) translateY(0px); }
+/* Los "Lote" tienen SU PROPIO zoom/posición separado de los cosméticos
+   sueltos (regla de arriba) — y a su vez, separado SEGÚN CUÁNTO OCUPEN:
+   ".sc-item-bundle.sp4" es para los que ocupan las 4 columnas (banners
+   grandes, ej. "Lote Ironmouse") y ".sc-item-bundle.sp2" para los de 2
+   columnas (ej. "Megara"). Cada grupo tiene su propia sección acá abajo,
+   totalmente independiente — cambiar uno no afecta a los cosméticos
+   sueltos ni al otro grupo de Lote.
+   El "translateY()" en el transform (además del scale) es el que sube o
+   baja la imagen — "object-position" solo mueve la imagen si SOBRA
+   espacio en esa dirección (en un Lote de fila completa, por ejemplo, la
+   carta es tan ancha que el render cuadrado siempre termina limitado por
+   la ALTURA, ya llena el alto de punta a punta sin espacio sobrante, y
+   ahí "object-position" no tiene nada para mover). "translateY" sí mueve
+   la imagen siempre, tenga o no espacio de sobra: valores NEGATIVOS
+   suben la imagen, POSITIVOS la bajan (ej. "-20px" la sube 20px, "15px"
+   la baja 15px). */
+.sc-item-bundle.sp4 .sc-render img { object-position: center bottom; transform: scale(1) translateY(0px); transform-origin: center bottom; }
+.sc-item-bundle.sp4:hover .sc-render img { transform: scale(1.03) translateY(0px); }
+/* Lote de 2 columnas (sp2) — mismo mecanismo que arriba, independiente. */
+.sc-item-bundle.sp2 .sc-render img { object-position: center bottom; transform: scale(1) translateY(20px); transform-origin: center bottom; }
+.sc-item-bundle.sp2:hover .sc-render img { transform: scale(1.03) translateY(20px); }
+/* .sc-rf — cuando un lote trae varias imágenes de render (ver
+   CardRenderFrames en Store.tsx), se van alternando con un crossfade de
+   opacidad, igual al cambio de diseño de la tienda oficial. Con una sola
+   imagen (el caso de siempre) esto ni se usa. Las imágenes de un ítem
+   quedan SIEMPRE montadas en el DOM (nunca se destruyen entre ciclos).
+   Se usa opacidad a propósito y NO geometría (mask-position, clip-path —
+   ambas se probaron antes): con muchas cartas animando a la vez en uso
+   real y prolongado, la geometría se quedaba "trabada" a mitad de camino
+   (imagen cortada para siempre, o la anterior asomando por debajo).
+   Opacidad no tiene ese problema — siempre termina en 0 o 1, nunca deja
+   una imagen a medias de forma visible. */
+/* Selector "reforzado" (.sc-render img.sc-rf, no solo .sc-rf) a propósito:
+   necesita más especificidad que la regla ".sc-render img" de arriba, que
+   también define su propio `transition` — el shorthand `transition` no se
+   combina entre reglas, así que si esta regla perdía la cascada, se perdía
+   la transición entera (quedaba solo la del hover) y el cambio de imagen
+   pasaba instantáneo, sin animación. */
+.sc-render img.sc-rf {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; object-position: center bottom;
+  filter: drop-shadow(0 2px 12px rgba(0,0,0,0.3));
+  opacity: 0;
+  z-index: 0;
+  transform: scale(1.10) translateY(0px);
+  transform-origin: center bottom;
+  transition: opacity 1.1s ease, transform 0.5s cubic-bezier(0.2,0.7,0.3,1);
+}
+.sc-render img.sc-rf-cur {
+  opacity: 1;
+  z-index: 1;
+}
+.sc:hover .sc-render img.sc-rf { transform: scale(1.12) translateY(0px); }
+/* Mismo criterio que en ".sc-render img" de arriba: zoom/posición propios
+   para los "Lote" con varias poses, separados por cuánto ocupan (sp4 vs
+   sp2) y sin afectar a los cosméticos sueltos que también usan ".sc-rf"
+   (ver CardRenderFrames). El "translateY()" es lo que sube/baja la
+   imagen — mismo motivo que arriba: en un Lote ancho "object-position"
+   no tiene espacio sobrante para mover nada. Negativo sube, positivo
+   baja. */
+.sc-item-bundle.sp4 .sc-render img.sc-rf { object-position: center bottom; transform: scale(1.50) translateY(150px); transform-origin: center bottom; }
+.sc-item-bundle.sp4:hover .sc-render img.sc-rf { transform: scale(1.53) translateY(150px); }
+/* Lote de 2 columnas (sp2) — mismo mecanismo que arriba, independiente. */
+.sc-item-bundle.sp2 .sc-render img.sc-rf { object-position: center bottom; transform: scale(1) translateY(0px); transform-origin: center bottom; }
+.sc-item-bundle.sp2:hover .sc-render img.sc-rf { transform: scale(1.03) translateY(0px); }
+@media (prefers-reduced-motion: reduce) {
+  .sc-render img.sc-rf { transition: none; }
+}
+/* ── Ajustes por ítem puntual ──
+   Epic no compone todos los renders igual — algunos traen relleno
+   transparente por debajo del personaje (emotes/bailes sobre todo), así
+   que aunque "object-position: bottom" ancle la imagen abajo, el
+   personaje queda "flotando" con hueco vacío debajo, mientras que otros
+   ítems sin ese relleno sí llegan bien al borde. Un solo valor de zoom/
+   posición para TODOS no puede arreglar eso — cada ítem de acá abajo
+   tiene su propio ajuste, dirigido por nombre (ver "data-item-name" en
+   Store.tsx) sin tocar a ningún otro ítem.
+   Para agregar uno nuevo: copiá un bloque, cambiá el nombre (tiene que
+   ser EXACTO, como aparece en la carta) y ajustá scale/translateY hasta
+   que se vea bien (translateY positivo baja el personaje, negativo lo
+   sube). REGLA IMPORTANTE para que no quede un salto raro al pasar el
+   mouse: el "translateY" de la línea ":hover" tiene que ser SIEMPRE EL
+   MISMO NÚMERO que el de la línea normal de arriba — la única diferencia
+   entre las dos líneas debería ser el "scale" (un poquito más grande en
+   hover, ej. +0.02 o +0.03). Si el translateY cambia entre una línea y
+   la otra, la imagen "salta" de golpe en vez de solo agrandarse un poco. */
+.sc[data-item-name="Navecita gumi"] .sc-render img { transform: scale(1.35) translateY(55px); }
+.sc[data-item-name="Navecita gumi"]:hover .sc-render img { transform: scale(1.38) translateY(55px); }
+.sc[data-item-name="6 Foot 7 Foot"] .sc-render img { transform: scale(1) translateY(-20px); }
+.sc[data-item-name="6 Foot 7 Foot"]:hover .sc-render img { transform: scale(1.03) translateY(-20px); }
+.sc[data-item-name="¡Victoria!"] .sc-render img { transform: scale(1) translateY(-20px); }
+.sc[data-item-name="¡Victoria!"]:hover .sc-render img { transform: scale(1.03) translateY(-20px); }
+.sc[data-item-name="Cañonazo de Mega Buster"] .sc-render img { transform: scale(1.1) translateY(0px); }
+.sc[data-item-name="Cañonazo de Mega Buster"]:hover .sc-render img { transform: scale(1.12) translateY(0px); }
+.sc[data-item-name="Snoop Dogg"] .sc-render img { transform: scale(1.3) translateY(70px); }
+.sc[data-item-name="Snoop Dogg"]:hover .sc-render img { transform: scale(1.32) translateY(70px); }
+.sc[data-item-name="Hiroshi Jackson"] .sc-render img { transform: scale(1.10) translateY(30px); }
+.sc[data-item-name="Hiroshi Jackson"]:hover .sc-render img { transform: scale(1.12) translateY(30px); }
+.sc[data-item-name="Fernet"] .sc-render img { transform: scale(1.35) translateY(80px); }
+.sc[data-item-name="Fernet"]:hover .sc-render img { transform: scale(1.38) translateY(80px); }
+.sc[data-item-name="Lil Wayne"] .sc-render img { transform: scale(1.35) translateY(85px); }
+.sc[data-item-name="Lil Wayne"]:hover .sc-render img { transform: scale(1.38) translateY(85px); }
+.sc[data-item-name="Weezy"] .sc-render img { transform: scale(1.35) translateY(85px); }
+.sc[data-item-name="Weezy"]:hover .sc-render img { transform: scale(1.38) translateY(85px); }
+.sc[data-item-name="Aisha"] .sc-render img { transform: scale(1) translateY(10px); }
+.sc[data-item-name="Aisha"]:hover .sc-render img { transform: scale(1.03) translateY(10px); }
+.sc[data-item-name="Sora"] .sc-render img { transform: scale(1) translateY(10px); }
+.sc[data-item-name="Sora"]:hover .sc-render img { transform: scale(1.03) translateY(10px); }
+.sc[data-item-name="Nave Gumi de KINGDOM HEARTS"] .sc-render img { transform: scale(1) translateY(0px); }
+.sc[data-item-name="Nave Gumi de KINGDOM HEARTS"]:hover .sc-render img { transform: scale(1.03) translateY(0px); }
+.sc[data-item-name="Megara"] .sc-render img { transform: scale(1) translateY(10px); }
+.sc[data-item-name="Megara"]:hover .sc-render img { transform: scale(1.03) translateY(10px); }
+.sc[data-item-name="Hércules"] .sc-render img { transform: scale(1) translateY(10px); }
+.sc[data-item-name="Hércules"]:hover .sc-render img { transform: scale(1.03) translateY(10px); }
+.sc[data-item-name="Pasos de Snoop"] .sc-render img { transform: scale(1) translateY(-50px); }
+.sc[data-item-name="Pasos de Snoop"]:hover .sc-render img { transform: scale(1.03) translateY(-50px); }
+
+/* .sc-rf-sweep — brillo diagonal puramente decorativo (esquina superior
+   izquierda a inferior derecha, como la tienda oficial) que se dibuja
+   ENCIMA del crossfade de arriba durante la transición. Es una capa
+   aparte, nunca recorta ni oculta las imágenes reales — si este brillo
+   fallara por cualquier motivo, lo peor que pasa es que no se ve el
+   destello, nunca una foto rota o cortada. Se remonta con key={current} en
+   Store.tsx para que la animación arranque de cero en cada ciclo (a
+   diferencia de una transición, una animación por @keyframes sí arranca
+   de forma confiable justo al insertarse un elemento nuevo). */
+.sc-rf-sweep { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+.sc-rf-sweep::after {
+  content: '';
+  position: absolute; top: -40%; left: -60%; width: 55%; height: 220%;
+  background: linear-gradient(135deg, transparent, rgba(255,255,255,0.32) 45%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.32) 55%, transparent);
+  transform: translate(-40%, -40%);
+  animation: scSweep 1.1s cubic-bezier(0.45,0,0.2,1) forwards;
+}
+@keyframes scSweep {
+  from { transform: translate(-40%, -40%); }
+  to   { transform: translate(170%, 170%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-rf-sweep { display: none; }
+}
 .sc-info { position: relative; z-index: 2; margin-top: auto; padding: 48px 13px 11px; background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.15) 25%, rgba(0,0,0,0.65) 100%); display: flex; flex-direction: column; gap: 1px; color: #fff; }
 .sc-rar  { display: inline-block; width: fit-content; padding: 2px 7px; border-radius: 3px; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.5px; background: rgba(255,255,255,0.15); }
 .sc-name { font-size: 0.97rem; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
@@ -580,6 +749,24 @@
 .sc-cart-added { background: var(--green-500); color: #fff; border-color: transparent; animation: scCartPop 0.4s cubic-bezier(0.34,1.6,0.5,1); }
 @keyframes scCartPop { 0% { transform: scale(0.7); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
 
+/* Lote grande (span 4, ocupa toda la fila): al ser tan ancho el texto
+   chico de una carta normal se ve perdido — se escala como el banner real
+   de la tienda oficial. Los lotes CHICOS (span 1-3, ej. "Megara", que solo
+   ocupa 2 de 4 espacios) NO llevan este tratamiento — se ven como
+   cualquier otro ítem de su mismo ancho, por eso todo acá va con .sp4. */
+.sc-bun.sp4 .sc-info { padding: 90px 26px 24px; gap: 6px; }
+.sc-bun.sp4 .sc-rar { font-size: 0.72rem; padding: 4px 11px; }
+.sc-bun.sp4 .sc-name { font-size: clamp(1.3rem, 2.6vw, 1.8rem); white-space: normal; }
+.sc-bun.sp4 .sc-lote { font-size: 0.7rem; padding: 4px 11px; margin-top: 5px; }
+.sc-bun.sp4 .sc-bot { margin-top: 8px; }
+.sc-bun.sp4 .sc-vb { font-size: 1.05rem; }
+.sc-bun.sp4 .sc-old { font-size: 0.86rem; }
+.sc-bun.sp4 .sc-kc { font-size: 0.98rem; }
+.sc-bun.sp4 .sc-cart { width: 42px; height: 42px; }
+@media (max-width: 760px) {
+  .sc-bun.sp4 .sc-info { padding: 60px 18px 18px; }
+}
+
 /* Method icon image */
 .method-icon-img { height: 28px; width: auto; object-fit: contain; flex-shrink: 0; border-radius: 6px; }
 
@@ -595,7 +782,8 @@
 .sg {
   display: grid !important;
   grid-template-columns: repeat(4, 1fr) !important;
-  gap: 10px !important;
+  row-gap: 14px !important;
+  column-gap: 14px !important;
   align-items: start !important;
   grid-auto-flow: dense !important; /* rellena huecos automáticamente */
 }
@@ -618,9 +806,39 @@
 .sc.sp3:not(.sp4) {
   min-height: 330px !important;
 }
-.sc.sp2.sc-bun:not(.sp4),
-.sc.sp3.sc-bun:not(.sp4) {
-  min-height: 330px !important;
+
+/* ── Lote grande (span 4 — así lo define el propio Epic, ver "span" en
+   Store.tsx): banner ancho y alto como en la tienda oficial. Los lotes
+   MÁS CHICOS (span 1-3, ej. "Megara" o "Lote Dientes de gato", que Epic
+   marca como 2 de 4 espacios) NO entran acá — se quedan con el ancho que
+   les da su propia clase .sp1/.sp2/.sp3 de arriba y la misma altura que
+   cualquier ítem vecino (regla ".sc.sp2/.sp3" de arriba). Antes esta
+   regla forzaba TODO lote a ocupar la fila entera sin importar su span
+   real, y lotes chicos terminaban ocupando 4 espacios cuando Epic solo
+   les daba 2. ── */
+.sc.sc-bun.sp4 {
+  aspect-ratio: 21 / 9;
+  min-height: 320px !important;
+  max-height: 520px;
+}
+@media (max-width: 760px) {
+  .sc.sc-bun.sp4 { aspect-ratio: 4 / 5; max-height: 620px; }
+  /* En este ancho, la carta pasa de MUY ancha (21/9, desktop) a MUY alta
+     (4/5) — el mismo scale(1.50) + translateY(150px) que en la carta ancha
+     empuja al personaje bien abajo (bien, ahí sobra ancho) se vuelve
+     excesivo acá: en la carta alta ya sobra ALTO de sobra, así que ese
+     mismo empuje manda al personaje detrás del panel de texto/precio
+     (que tiene su propio fondo y va POR ENCIMA del render) y las piernas
+     terminan asomando sueltas más abajo, sin conexión visual con el resto
+     del cuerpo. Con un empuje/zoom bastante más chicos el personaje entra
+     completo por encima del panel de texto, sin que el `object-position:
+     bottom` de la regla base (que sí tiene margen de sobra en una carta
+     alta) tenga que competir con nada. Afecta solo a los Lote con varias
+     poses (.sc-rf, ver CardRenderFrames en Store.tsx — ej. "Lote
+     Ironmouse", que tiene dos) — el Lote de una sola imagen ya usa
+     translateY(0px) y no lo necesita. */
+  .sc-item-bundle.sp4 .sc-render img.sc-rf { transform: scale(1.05) translateY(10px); }
+  .sc-item-bundle.sp4:hover .sc-render img.sc-rf { transform: scale(1.08) translateY(10px); }
 }
 
 /* Item fantasma para completar filas incompletas */
