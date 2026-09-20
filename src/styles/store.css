@@ -698,6 +698,8 @@
 .sc[data-item-name="Hércules"]:hover .sc-render img { transform: scale(1.03) translateY(10px); }
 .sc[data-item-name="Pasos de Snoop"] .sc-render img { transform: scale(1) translateY(-50px); }
 .sc[data-item-name="Pasos de Snoop"]:hover .sc-render img { transform: scale(1.03) translateY(-50px); }
+.sc[data-item-name="Lucyna Kushinada"] .sc-render img { transform: scale(1) translateY(10px); }
+.sc[data-item-name="Lucyna Kushinada"]:hover .sc-render img { transform: scale(1.03) translateY(10px); }
 
 /* .sc-rf-sweep — brillo diagonal puramente decorativo (esquina superior
    izquierda a inferior derecha, como la tienda oficial) que se dibuja
