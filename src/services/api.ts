@@ -25,6 +25,15 @@ function getLang(): string {
   return localStorage.getItem('kc_lang') || 'es';
 }
 
+// ApiError — el status HTTP real de una respuesta no-ok, adjunto a todo
+// error que lance request() (además del .code que ya traían algunas rutas).
+// Sin esto, un llamador no tenía forma confiable de distinguir, por
+// ejemplo, un 429 (límite de intentos) de un 500 (error de servidor) sin
+// parsear el texto del mensaje — específicamente necesario para
+// ResetPassword.tsx, que antes mostraba "enlace enviado" ante CUALQUIER
+// error, incluida una caída de red o el propio backend caído.
+export type ApiError = Error & { status?: number; code?: string };
+
 export async function tryRefreshToken(): Promise<boolean> {
   const refreshToken = localStorage.getItem('kc_refresh_token');
   if (!refreshToken) return false;
@@ -87,25 +96,32 @@ async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
         });
         const retryBody = await retryRes.json().catch(() => ({}));
         if (!retryRes.ok) {
-          throw new Error(retryBody.error || retryBody.message || `Error ${retryRes.status}`);
+          const err = new Error(retryBody.error || retryBody.message || `Error ${retryRes.status}`) as ApiError;
+          err.status = retryRes.status;
+          throw err;
         }
         return retryBody as T;
       }
-      const err = new Error(body.error || 'Sesión expirada') as Error & { code?: string };
+      const err = new Error(body.error || 'Sesión expirada') as ApiError;
       err.code = 'TOKEN_EXPIRED';
+      err.status = res.status;
       throw err;
     }
     if (res.status === 401) {
-      const err = new Error(body.error || 'No autorizado') as Error & { code?: string };
+      const err = new Error(body.error || 'No autorizado') as ApiError;
       err.code = 'UNAUTHORIZED';
+      err.status = res.status;
       throw err;
     }
     if (body?.code === 'EMAIL_NOT_VERIFIED' || res.status === 403) {
-      const err = new Error(body.error || 'Email no verificado') as Error & { code?: string };
+      const err = new Error(body.error || 'Email no verificado') as ApiError;
       err.code = body.code || 'EMAIL_NOT_VERIFIED';
+      err.status = res.status;
       throw err;
     }
-    throw new Error(body.error || body.message || `Error ${res.status}`);
+    const err = new Error(body.error || body.message || `Error ${res.status}`) as ApiError;
+    err.status = res.status;
+    throw err;
   }
   return body as T;
 }

@@ -114,7 +114,19 @@
   font-size: 0.62rem; font-weight: 800; background: var(--green-500); color: #fff;
 }
 .sc-in-cart { outline: 3px solid var(--green-500); outline-offset: -3px; }
-.sc-cart-added { background: rgba(34,197,94,0.2) !important; color: var(--green-500) !important; }
+/* El botón de carrito de la card, una vez agregado — !important en
+   background/color a propósito: sin eso, ".sc-cart:hover:not(:disabled)"
+   (store.css, más específico: una clase + dos pseudo-clases) le ganaría al
+   pasar el mouse por encima y el tinte verde de "ya agregado" desaparecería
+   justo al hacer hover. scCartPop (la animación del "pop") y el keyframe
+   quedan en store.css, junto a ".sc-cart" — acá solo el color/fondo, que
+   antes también se declaraban (contradictoriamente) ahí. */
+.sc-cart-added {
+  background: rgba(34,197,94,0.2) !important;
+  color: var(--green-500) !important;
+  border-color: transparent;
+  animation: scCartPop 0.4s cubic-bezier(0.34,1.6,0.5,1);
+}
 
 /* ════════════════════════════════════════
    MODAL DE CONFIRMACIÓN

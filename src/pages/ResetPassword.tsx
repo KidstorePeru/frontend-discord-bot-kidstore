@@ -1,9 +1,44 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
-import { forgotPassword, resetPassword } from '../services/api';
+import { forgotPassword, resetPassword, type ApiError } from '../services/api';
 import { KeyRound, Loader2, Eye, EyeOff, CheckCircle2, Mail, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
+
+// classifyForgotPasswordError decide qué mensaje mostrar cuando la
+// solicitud de "olvidé mi contraseña" falla DE VERDAD. El backend ya
+// responde 200 con el mismo mensaje genérico tanto si el correo existe
+// como si no (ver HandlerForgotPassword en auth.go), así que cualquier
+// error que llega hasta acá es un fallo real — sin conexión, el backend
+// caído, o el límite de intentos por IP — nunca una señal de que el
+// correo no existe. Antes, el catch de handleRequestReset mostraba
+// "¡Enlace enviado!" ante CUALQUIER error (a propósito, pensando que así
+// protegía la privacidad), pero eso mentía sobre el resultado real cuando
+// la petición ni siquiera había llegado al backend. Exportada para poder
+// probarla sin renderizar la página.
+export function classifyForgotPasswordError(err: unknown, es: boolean): string {
+  const status = (err as ApiError | undefined)?.status;
+  if (status === undefined) {
+    // fetch() nunca llegó a tener una respuesta HTTP — sin conexión, CORS,
+    // DNS, el servidor completamente caído, etc.
+    return es
+      ? 'No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.'
+      : "We couldn't connect. Check your connection and try again.";
+  }
+  if (status === 429) {
+    return es
+      ? 'Hiciste demasiados intentos. Espera un momento antes de volver a intentar.'
+      : "You've made too many attempts. Wait a moment before trying again.";
+  }
+  if (status >= 500) {
+    return es
+      ? 'Ocurrió un error en el servidor. Intenta de nuevo en unos minutos.'
+      : 'A server error occurred. Please try again in a few minutes.';
+  }
+  return es
+    ? 'No pudimos procesar tu solicitud. Intenta de nuevo.'
+    : "We couldn't process your request. Please try again.";
+}
 
 export default function ResetPassword() {
   const [params]  = useSearchParams();
@@ -84,9 +119,12 @@ export default function ResetPassword() {
       try {
         await forgotPassword(reqEmail.trim(), lang);
         setReqSent(true);
-      } catch {
-        // Siempre mostramos éxito para no revelar si el email existe
-        setReqSent(true);
+      } catch (err) {
+        // Nunca afirmamos que el enlace se envió cuando la solicitud falló
+        // de verdad — ver classifyForgotPasswordError. La privacidad sobre
+        // si el correo existe ya la garantiza el backend (mismo 200 y
+        // mismo mensaje genérico en los dos casos), no este catch.
+        setReqError(classifyForgotPasswordError(err, es));
       } finally { setReqLoading(false); }
     }
 
