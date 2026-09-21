@@ -207,6 +207,9 @@
    FORTNITE STORE
    ═══════════════════════════════════════════════════ */
 .shop { max-width: 1280px; margin: 0 auto; padding: 20px 24px 60px; }
+@media (max-width: 480px) {
+  .shop { padding: 14px 12px 52px; }
+}
 /* ══════════════════════════════════════════════════
    STORE HERO — v2: panel compacto y cohesivo
    ══════════════════════════════════════════════════ */
@@ -466,9 +469,35 @@
 
 .fnav-btn { position: fixed; right: 22px; top: calc(var(--nav-height) + 14px); z-index: 100; padding: 9px 20px; border-radius: var(--radius-full); background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.8px; box-shadow: var(--shadow-glow); transition: transform 0.15s; }
 .fnav-btn:hover { transform: scale(1.04); }
-/* En móvil el botón flota abajo-derecha para no chocar con el hero */
+/* En móvil, abajo-CENTRADO en vez de abajo-derecha — a la derecha quedaba
+   flotando justo encima del precio/botón de carrito de cualquier carta de
+   la columna derecha (el carrito de cada carta también vive en esa
+   esquina, ver ".sc-cart"), tapándolo por completo. Centrado no compite
+   con ninguna columna. "env(safe-area-inset-bottom)" separa el botón de
+   la barra de gestos/home-indicator de iOS y de la barra del navegador en
+   Android, que si no se lo tapan igual. */
 @media (max-width: 760px) {
-  .fnav-btn { top: auto; bottom: 20px; right: 16px; padding: 11px 18px; }
+  .fnav-btn {
+    top: auto; right: auto; left: 50%;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.3), var(--shadow-glow);
+  }
+  .fnav-btn:hover { transform: translateX(-50%) scale(1.04); }
+  /* Ver el comentario en Store.tsx (navBtnHidden): se oculta durante el
+     scroll activo, cuando de cualquier forma no se puede estar tocando
+     nada, así nunca queda tapando el precio/carrito de una carta en el
+     momento en que el usuario sí podría tocarlo. */
+  .fnav-btn.is-scroll-hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+    pointer-events: none;
+  }
+  .fnav-btn { transition: transform 0.15s, opacity 0.2s; }
+}
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+  .fnav-btn.is-scroll-hidden { transition: none; }
 }
 .fnav-ov  { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 190; }
 .fnav     { position: fixed; right: -310px; top: 0; width: 290px; height: 100vh; background: var(--bg-surface); border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 200; transition: right 0.3s ease; display: flex; flex-direction: column; overflow-y: auto; }
@@ -544,7 +573,13 @@
    Todo lo de la imagen (ver ".sc-render img" más abajo) queda contenido
    DENTRO de la carta — "overflow: hidden" recorta los 4 lados por igual,
    nada se asoma para ninguna fila vecina. */
-.sc { position: relative; border-radius: 13px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; min-height: 330px; transition: transform 0.32s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.32s; background-color: #1a1a30; }
+/* Alto de carta por aspect-ratio, no por min-height fijo — ver el bloque
+   grande de comentario en "Fix grid tienda" (más abajo) para el porqué:
+   en corto, 330px fijos daban una carta casi 2:1 alto:ancho en celular
+   angosto (~157px de ancho a 2 columnas), con la imagen chica y pegada
+   abajo. 0.7 (7:10) reproduce la proporción actual de escritorio
+   (medida: 230×330px ≈ 0.696) pero ahora escala sola con el ancho real. */
+.sc { position: relative; border-radius: 13px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; aspect-ratio: 7 / 10; min-height: 168px; transition: transform 0.32s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.32s; background-color: #1a1a30; }
 .sc:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(108,92,231,0.28), 0 8px 20px rgba(0,0,0,0.35); }
 /* Borde con gradiente que aparece en hover */
 .sc::after {
@@ -557,10 +592,10 @@
 .sc:hover::after { opacity: 1; }
 /* No queda ninguna regla ".sc-bun" base (altura, etc.) a propósito: la
    clase ".sc-bun" solo se aplica junto con ".sp2"/".sp3"/".sp4" (ver
-   isBigBundle en Store.tsx, que exige span >= 2), y esos tres casos YA
-   tienen su propia altura, más específica y con !important, más abajo
-   (".sc.sc-bun.sp4" y ".sc.sp2:not(.sp4), .sc.sp3:not(.sp4)") — una
-   ".sc-bun { min-height: ... }" acá arriba nunca llegaba a pintar nada. */
+   isBigBundle en Store.tsx, que exige span >= 2), y esos casos YA tienen
+   su propio aspect-ratio más abajo (".sc.sp2"/".sc.sp3" para los Lote
+   chicos, ".sc.sc-bun.sp4" para el banner de fila completa) — una
+   ".sc-bun { aspect-ratio: ... }" acá arriba nunca llegaba a pintar nada. */
 .sc-ban  { position: absolute; top: 9px; left: 9px; padding: 3px 10px; border-radius: 4px; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; background: #ffe600; color: #000; z-index: 3; }
 .sc-render { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; }
 /* Viñeta suave detrás del render — MUCHOS ítems (accesorios, props, dorsos)
@@ -770,6 +805,32 @@
 .sc-cart:hover:not(:disabled) { background: rgba(255,255,255,0.24); color: #fff; }
 .sc-cart:active:not(:disabled) { transform: scale(0.82); }
 .sc-cart:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── Carta angosta (2 columnas en celular, ver breakpoint del grid) ──
+   Con la carta ahora más baja (aspect-ratio en vez de min-height fijo), el
+   panel de texto (antes pensado para una carta de 330px de alto siempre)
+   ocupaba una porción demasiado grande de una carta de, por ejemplo,
+   170px — dejando poco lugar para la imagen. Achica proporcionalmente el
+   padding/tipografía del panel para que la imagen recupere espacio.
+   El separador "|" entre V-Bucks y KC se oculta y el precio pasa a una
+   columna (V-Bucks arriba, KC abajo) — así nunca queda un "|" solo en su
+   propia línea por un salto de línea imprevisto del flex-wrap, y los dos
+   precios se leen igual de claro uno debajo del otro. El botón de carrito
+   se mantiene con buen tamaño para tocar (32px, cerca del mínimo
+   recomendado). */
+@media (max-width: 480px) {
+  .sc-info { padding: 26px 10px 9px; gap: 0; }
+  .sc-rar { font-size: 0.5rem; padding: 1.5px 6px; }
+  .sc-name { font-size: 0.82rem; }
+  .sc-lote { font-size: 0.52rem; padding: 1.5px 6px; margin-top: 2px; }
+  .sc-bot { margin-top: 4px; }
+  .sc-pr { flex-direction: column; align-items: flex-start; gap: 1px; }
+  .sc-sep { display: none; }
+  .sc-vb { font-size: 0.78rem; }
+  .sc-old { font-size: 0.62rem; }
+  .sc-kc { font-size: 0.72rem; }
+  .sc-cart { width: 32px; height: 32px; }
+}
 /* .sc-cart-added (color/fondo) vive en cart.css, junto a .sc-added-badge y
    .sc-in-cart — sus otras dos mitades del mismo estado "ya está en el
    carrito". Acá solo queda el keyframe que esa regla usa (scCartPop no se
@@ -793,9 +854,9 @@
 .sc-bun.sp4 .sc-old { font-size: 0.86rem; }
 .sc-bun.sp4 .sc-kc { font-size: 0.98rem; }
 .sc-bun.sp4 .sc-cart { width: 42px; height: 42px; }
-@media (max-width: 760px) {
-  .sc-bun.sp4 .sc-info { padding: 60px 18px 18px; }
-}
+/* Los ajustes de padding en anchos angostos viven junto al aspect-ratio
+   correspondiente, más abajo en "Fix grid tienda" — mismos breakpoints
+   (1000px/640px), para que cambien siempre juntos. */
 
 /* ── Fix grid tienda ──
    Antes había una TERCERA regla .sg más abajo en este archivo (después de
@@ -828,10 +889,32 @@
   .sc.sp3, .sc.sp4 { grid-column: span 2 !important; }
 }
 
-/* ── Lotes sp2 y sp3: misma altura que items sp1 de su fila ── */
-.sc.sp2:not(.sp4),
-.sc.sp3:not(.sp4) {
-  min-height: 330px !important;
+/* ── sp2/sp3: misma altura que un ítem sp1 de su fila, en CUALQUIER ancho,
+   sea o no ".sc-bun" (un Lote chico de 2-3 espacios, ej. "Megara", se ve
+   igual que cualquier otro ítem vecino — solo el Lote sp4 de fila completa
+   tiene su propio tratamiento tipo banner más abajo) ── las columnas del
+   grid son siempre del mismo ancho entre sí (".sg" usa "repeat(N, 1fr)"),
+   así que un ítem que ocupa M columnas es M veces más ancho que uno de 1
+   columna — para llegar a la MISMA altura, su aspect-ratio es M veces más
+   ancho que el de ".sc" (7/10), nunca un valor aparte inventado a mano.
+   sp3 (y sp4 no-bundle) ocupan menos columnas a medida que el grid se
+   angosta (ver arriba), así que su multiplicador baja en los MISMOS
+   anchos en los que el grid cambia de columnas — nunca en un punto
+   intermedio propio que se desalinee (antes esto pasaba a 760px mientras
+   el grid cambiaba a 1000px/640px: a 768px, por ejemplo, un Lote de fila
+   completa quedaba con la proporción de escritorio "4 columnas" mientras
+   el grid ya lo achicaba a 3, dando una carta desproporcionada). */
+.sc.sp2 { aspect-ratio: 14 / 10; }
+.sc.sp3 { aspect-ratio: 21 / 10; }
+.sc.sp4:not(.sc-bun) { aspect-ratio: 28 / 10; }
+@media (max-width: 1000px) {
+  /* sp4 pasa a ocupar 3 columnas (regla de arriba) — mismo multiplicador que sp3. */
+  .sc.sp4:not(.sc-bun) { aspect-ratio: 21 / 10; }
+}
+@media (max-width: 640px) {
+  /* sp3 y sp4 pasan a ocupar 2 columnas (regla de arriba) — mismo multiplicador que sp2. */
+  .sc.sp3:not(.sc-bun),
+  .sc.sp4:not(.sc-bun) { aspect-ratio: 14 / 10; }
 }
 
 /* ── Lote grande (span 4 — así lo define el propio Epic, ver "span" en
@@ -842,22 +925,33 @@
    cualquier ítem vecino (regla ".sc.sp2/.sp3" de arriba). Antes esta
    regla forzaba TODO lote a ocupar la fila entera sin importar su span
    real, y lotes chicos terminaban ocupando 4 espacios cuando Epic solo
-   les daba 2. ── */
+   les daba 2.
+   Los TRES anchos de acá abajo (>1000px, 640-1000px, ≤640px) están
+   alineados EXACTAMENTE con los breakpoints del grid mismo (arriba) — a
+   propósito, para que el aspect-ratio de la carta y la cantidad de
+   columnas que realmente ocupa cambien siempre juntos, nunca en anchos
+   distintos entre sí. ── */
 .sc.sc-bun.sp4 {
   aspect-ratio: 21 / 9;
   min-height: 320px !important;
-  max-height: 520px;
 }
-@media (max-width: 760px) {
-  .sc.sc-bun.sp4 { aspect-ratio: 4 / 5; max-height: 620px; }
-  /* En este ancho, la carta pasa de MUY ancha (21/9, desktop) a MUY alta
-     (4/5) — el mismo scale(1.50) + translateY(150px) que en la carta ancha
-     empuja al personaje bien abajo (bien, ahí sobra ancho) se vuelve
-     excesivo acá: en la carta alta ya sobra ALTO de sobra, así que ese
-     mismo empuje manda al personaje detrás del panel de texto/precio
-     (que tiene su propio fondo y va POR ENCIMA del render) y las piernas
-     terminan asomando sueltas más abajo, sin conexión visual con el resto
-     del cuerpo. Con un empuje/zoom bastante más chicos el personaje entra
+@media (max-width: 1000px) {
+  /* Intermedio: ya ocupa 3 columnas, no 4 — un poco menos ancho/plano que
+     en escritorio, todavía lejos de la proporción vertical de celular. */
+  .sc.sc-bun.sp4 { aspect-ratio: 16 / 9; }
+  .sc-bun.sp4 .sc-info { padding: 70px 22px 20px; }
+}
+@media (max-width: 640px) {
+  .sc.sc-bun.sp4 { aspect-ratio: 4 / 5; }
+  .sc-bun.sp4 .sc-info { padding: 60px 18px 18px; }
+  /* En este ancho, la carta pasa de ancha (16/9) a MUY alta (4/5) — el
+     mismo scale(1.50) + translateY(150px) que en la carta ancha empuja al
+     personaje bien abajo (bien, ahí sobra ancho) se vuelve excesivo acá:
+     en la carta alta ya sobra ALTO de sobra, así que ese mismo empuje
+     manda al personaje detrás del panel de texto/precio (que tiene su
+     propio fondo y va POR ENCIMA del render) y las piernas terminan
+     asomando sueltas más abajo, sin conexión visual con el resto del
+     cuerpo. Con un empuje/zoom bastante más chicos el personaje entra
      completo por encima del panel de texto, sin que el `object-position:
      bottom` de la regla base (que sí tiene margen de sobra en una carta
      alta) tenga que competir con nada. Afecta solo a los Lote con varias

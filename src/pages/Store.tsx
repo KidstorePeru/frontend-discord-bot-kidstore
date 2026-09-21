@@ -293,6 +293,28 @@ export default function StorePage() {
     return () => window.removeEventListener('show-login-modal', handler);
   }, []);
 
+  // El botón flotante "Navegación" (móvil: abajo-centrado, ver .fnav-btn en
+  // store.css) puede terminar de todas formas sobre el precio/carrito de
+  // la carta que quede al fondo del viewport en el momento en que el
+  // usuario deja de hacer scroll — la fila de precio ocupa TODO el ancho
+  // de la carta (V-Bucks a la izquierda, carrito a la derecha), así que no
+  // hay ninguna posición horizontal fija que lo evite siempre. Se oculta
+  // mientras se hace scroll activo (cuando de cualquier forma no se puede
+  // estar tocando nada) y reaparece recién 400ms después de que el scroll
+  // se detiene — nunca queda tapando el botón de carrito mientras el
+  // usuario podría estar por tocarlo.
+  const [navBtnHidden, setNavBtnHidden] = useState(false);
+  useEffect(() => {
+    let hideTimer: ReturnType<typeof setTimeout>;
+    function onScroll() {
+      setNavBtnHidden(true);
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => setNavBtnHidden(false), 400);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(hideTimer); };
+  }, []);
+
   // Accesibilidad del modal de inicio de sesión (ver useModalFocusTrap):
   // mueve el foco adentro al abrirse, lo mantiene encerrado, cierra con
   // Escape, y devuelve el foco al control que lo abrió al cerrarse — sea el
@@ -484,7 +506,7 @@ export default function StorePage() {
         </div>
       </div>
 
-      <button className="fnav-btn" onClick={() => setNavOpen(!navOpen)}>
+      <button className={`fnav-btn ${navBtnHidden ? 'is-scroll-hidden' : ''}`} onClick={() => setNavOpen(!navOpen)}>
         {navOpen ? <X size={16} /> : t('store.nav')}
       </button>
       {navOpen && <div className="fnav-ov" onClick={() => setNavOpen(false)} />}
