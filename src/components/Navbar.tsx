@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCart } from '../context/CartContext';
 import CurrencySelector from './CurrencySelector';
-import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart, Shield } from 'lucide-react';
+import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart, Shield, LayoutGrid } from 'lucide-react';
 import { useState } from 'react';
 import { useCountUp } from '../hooks/useCountUp';
 
@@ -64,6 +64,27 @@ export default function Navbar() {
           <button className="theme-toggle" onClick={toggleTheme} aria-label="Cambiar tema">
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+
+          {/* Categorías de la tienda — solo en /store y solo en móvil (≤760px,
+              ver navbar.css): reemplaza el botón flotante ".fnav-btn" que
+              vivía sobre la cuadrícula de productos. La barra del navbar es
+              "sticky" y el contenido de la página SIEMPRE fluye por debajo
+              de ella (nunca al revés), así que un disparador acá adentro
+              nunca puede terminar tapando el precio/carrito de una tarjeta,
+              sin importar en qué scroll se detenga el usuario — a
+              diferencia de un botón flotante sobre la propia lista, que
+              comparte pantalla con cualquier tarjeta que pase por ese
+              punto. Store.tsx escucha este evento para abrir el mismo panel
+              de categorías (".fnav") que antes abría ese botón. */}
+          {location.pathname === '/store' && (
+            <button
+              className="navbar-store-nav-btn"
+              onClick={() => window.dispatchEvent(new Event('toggle-store-categories'))}
+              aria-label={t('store.nav')}
+            >
+              <LayoutGrid size={18} />
+            </button>
+          )}
 
           {/* Carrito — visible solo si el cliente tiene items */}
           {customer && cartCount > 0 && (

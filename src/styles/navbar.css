@@ -133,3 +133,24 @@
   animation: cartBadgeBump 0.45s cubic-bezier(0.34,1.7,0.5,1);
 }
 @keyframes cartBadgeBump { 0% { transform: scale(0.5); } 55% { transform: scale(1.35); } 100% { transform: scale(1); } }
+
+/* ── Navbar: disparador de categorías de la tienda (solo /store, solo
+   móvil — ver el comentario junto a este botón en Navbar.tsx y a
+   ".fnav-btn" en store.css para el porqué). Mismas medidas que
+   ".navbar-cart-btn" para no desalinear la fila de controles. */
+.navbar-store-nav-btn {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  border: 1.5px solid rgba(108,92,231,0.25);
+  cursor: pointer; transition: all 0.2s;
+}
+.navbar-store-nav-btn:hover {
+  background: var(--accent); color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+@media (max-width: 760px) {
+  .navbar-store-nav-btn { display: flex; }
+}
