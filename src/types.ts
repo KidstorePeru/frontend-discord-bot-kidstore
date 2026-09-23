@@ -1,7 +1,7 @@
 /* ── Domain Models ── */
 
 export interface Customer {
-  id: number;
+  id: string;
   epic_username: string;
   email: string;
   kc_balance: number;
@@ -13,6 +13,7 @@ export interface Customer {
   discord_username?: string;
   next_email_change_at?: string;
   is_admin?: boolean;
+  is_verified: boolean;
   created_at: string;
 }
 
@@ -31,8 +32,8 @@ export interface Order {
 }
 
 export interface KCRecharge {
-  id: number;
-  customer_id: number;
+  id: string;
+  customer_id: string;
   amount_kc: number;
   amount_soles: number;
   method: string;

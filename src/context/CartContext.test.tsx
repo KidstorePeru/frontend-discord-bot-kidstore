@@ -14,13 +14,14 @@ import type { Customer } from '../types';
 // carrito como se esperaba.
 
 const mockCustomer: Customer = {
-  id: 1,
+  id: '1',
   epic_username: 'tester',
   email: 'tester@example.com',
   kc_balance: 0,
   has_password: true,
   google_linked: false,
   discord_linked: false,
+  is_verified: true,
   created_at: new Date().toISOString(),
 };
 
