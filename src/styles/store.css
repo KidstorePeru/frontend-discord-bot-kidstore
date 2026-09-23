@@ -467,26 +467,19 @@
   .sh-lb { flex: 1; justify-content: center; }
 }
 
-.fnav-btn { position: fixed; right: 22px; top: calc(var(--nav-height) + 14px); z-index: 100; padding: 9px 20px; border-radius: var(--radius-full); background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.8px; box-shadow: var(--shadow-glow); transition: transform 0.15s; }
-.fnav-btn:hover { transform: scale(1.04); }
-/* En móvil NO existe ningún punto fijo sobre la cuadrícula de productos
-   que esté garantizado libre de controles: se probaron abajo-derecha
-   (tapaba el carrito de la columna derecha) y abajo-centrado con
-   ocultamiento por scroll (en cuanto el scroll se detiene — que es
-   justo cuando el usuario puede tocar algo — el botón reaparece sobre
-   lo que sea que haya quedado debajo, ej. el carrito de "Devoraalmas";
-   ningún desplazamiento distinto arregla esto de raíz, porque la lista
-   sigue pasando bajo ese mismo punto de pantalla sin importar dónde se
-   lo ponga). El único lugar con espacio REAL y permanentemente
-   reservado — nunca compartido con la cuadrícula, en NINGÚN scroll — es
-   la barra superior (".navbar", sticky, ver navbar.css): el contenido
-   de la página siempre fluye por debajo de ella, jamás por encima. En
-   este ancho el disparador de categorías se muda ahí (ver el botón
-   condicional en Navbar.tsx, visible solo en /store) y este botón
-   flotante se oculta. */
-@media (max-width: 760px) {
-  .fnav-btn { display: none; }
-}
+/* No queda ningún botón flotante propio de la tienda para abrir
+   categorías (antes ".fnav-btn", fixed sobre la cuadrícula) — a CUALQUIER
+   ancho, un punto fijo sobre una lista que sigue desplazándose por debajo
+   termina compartiendo pantalla con la tarjeta que sea que haya quedado
+   ahí (se reprodujo tapando el carrito de "Devoraalmas" en celular Y el de
+   "Sora" en tablet a 768px, cuando ese botón todavía reaparecía ahí arriba
+   a la derecha por encima de los 760px). El único lugar con espacio REAL
+   y permanentemente reservado — nunca compartido con la cuadrícula, en
+   NINGÚN ancho ni scroll — es la barra superior (".navbar", sticky, ver
+   navbar.css): el contenido de la página siempre fluye por debajo de
+   ella, jamás por encima. El disparador de categorías vive SOLO ahí
+   ahora (".navbar-store-nav-btn" en Navbar.tsx/navbar.css, visible en
+   /store a cualquier ancho). */
 .fnav-ov  { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 190; }
 .fnav     { position: fixed; right: -310px; top: 0; width: 290px; height: 100vh; background: var(--bg-surface); border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); z-index: 200; transition: right 0.3s ease; display: flex; flex-direction: column; overflow-y: auto; }
 .fnav.open { right: 0; }
@@ -565,9 +558,14 @@
    grande de comentario en "Fix grid tienda" (más abajo) para el porqué:
    en corto, 330px fijos daban una carta casi 2:1 alto:ancho en celular
    angosto (~157px de ancho a 2 columnas), con la imagen chica y pegada
-   abajo. 0.7 (7:10) reproduce la proporción actual de escritorio
-   (medida: 230×330px ≈ 0.696) pero ahora escala sola con el ancho real. */
-.sc { position: relative; border-radius: 13px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; aspect-ratio: 7 / 10; min-height: 168px; transition: transform 0.32s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.32s; background-color: #1a1a30; }
+   abajo. Se partió de 0.7 (7:10, la proporción de escritorio de
+   entonces) y luego se acortó a pedido a 0.875 (7:8) — un 20% menos de
+   alto para el mismo ancho, recortando el espacio vacío que sobraba
+   arriba del personaje en la mayoría de ítems (fondo degradado sin
+   nada encima). El multiplicador de los Lote (sp2/sp3/sp4, más abajo)
+   usa el mismo denominador 8 a propósito, para que TODOS los tipos de
+   carta se acorten en la misma proporción de una sola vez. */
+.sc { position: relative; border-radius: 13px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; aspect-ratio: 7 / 8; min-height: 134px; transition: transform 0.32s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.32s; background-color: #1a1a30; }
 .sc:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(108,92,231,0.28), 0 8px 20px rgba(0,0,0,0.35); }
 /* Borde con gradiente que aparece en hover */
 .sc::after {
@@ -625,7 +623,7 @@
    sp1 (angosto) normalmente SÍ sobra espacio y "object-position" alcanza,
    pero "translateY" funciona igual en cualquier caso. Negativo sube,
    positivo baja. */
-.sc-render img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 2px 12px rgba(0,0,0,0.3)); transform: scale(1.1) translateY(0px); transform-origin: center bottom; transition: transform 0.5s cubic-bezier(0.2,0.7,0.3,1); }
+.sc-render img { width: 100%; height: 100%; object-fit: contain; object-position: center center; filter: drop-shadow(0 2px 12px rgba(0,0,0,0.3)); transform: scale(1.1) translateY(0px); transform-origin: center bottom; transition: transform 0.5s cubic-bezier(0.2,0.7,0.3,1); }
 .sc:hover .sc-render img { transform: scale(1.12) translateY(0px); }
 /* Los "Lote" tienen SU PROPIO zoom/posición separado de los cosméticos
    sueltos (regla de arriba) — y a su vez, separado SEGÚN CUÁNTO OCUPEN:
@@ -884,7 +882,8 @@
    grid son siempre del mismo ancho entre sí (".sg" usa "repeat(N, 1fr)"),
    así que un ítem que ocupa M columnas es M veces más ancho que uno de 1
    columna — para llegar a la MISMA altura, su aspect-ratio es M veces más
-   ancho que el de ".sc" (7/10), nunca un valor aparte inventado a mano.
+   ancho que el de ".sc" (7/8 — ver ese comentario para el porqué de este
+   denominador), nunca un valor aparte inventado a mano.
    sp3 (y sp4 no-bundle) ocupan menos columnas a medida que el grid se
    angosta (ver arriba), así que su multiplicador baja en los MISMOS
    anchos en los que el grid cambia de columnas — nunca en un punto
@@ -892,12 +891,12 @@
    el grid cambiaba a 1000px/640px: a 768px, por ejemplo, un Lote de fila
    completa quedaba con la proporción de escritorio "4 columnas" mientras
    el grid ya lo achicaba a 3, dando una carta desproporcionada). */
-.sc.sp2 { aspect-ratio: 14 / 10; }
-.sc.sp3 { aspect-ratio: 21 / 10; }
-.sc.sp4:not(.sc-bun) { aspect-ratio: 28 / 10; }
+.sc.sp2 { aspect-ratio: 14 / 8; }
+.sc.sp3 { aspect-ratio: 21 / 8; }
+.sc.sp4:not(.sc-bun) { aspect-ratio: 28 / 8; }
 @media (max-width: 1000px) {
   /* sp4 pasa a ocupar 3 columnas (regla de arriba) — mismo multiplicador que sp3. */
-  .sc.sp4:not(.sc-bun) { aspect-ratio: 21 / 10; }
+  .sc.sp4:not(.sc-bun) { aspect-ratio: 21 / 8; }
 }
 @media (max-width: 640px) {
   /* sp3 y sp4 pasan a ocupar 2 columnas (regla de arriba) — mismo
@@ -914,7 +913,7 @@
      botón del carrito fuera de pantalla. sp4 sigue excluido porque
      ".sc-bun.sp4" tiene su propio tratamiento banner más abajo. */
   .sc.sp3,
-  .sc.sp4:not(.sc-bun) { aspect-ratio: 14 / 10; }
+  .sc.sp4:not(.sc-bun) { aspect-ratio: 14 / 8; }
 }
 
 /* ── Lote grande (span 4 — así lo define el propio Epic, ver "span" en

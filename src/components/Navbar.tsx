@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useCart } from '../context/CartContext';
 import CurrencySelector from './CurrencySelector';
 import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart, Shield, LayoutGrid } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCountUp } from '../hooks/useCountUp';
 
 export default function Navbar() {
@@ -16,6 +16,34 @@ export default function Navbar() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const balance = useCountUp(customer?.kc_balance ?? 0);
+
+  // Store.tsx (StorePage) monta la tienda en la ruta "/store" — pero React
+  // Router no distingue "/store" de "/store/" al hacer MATCH (ambas
+  // renderizan StorePage), mientras que "location.pathname" sí puede traer
+  // la barra final tal cual quedó en la URL (un link externo, un share, o
+  // el usuario escribiéndola a mano). Comparar con "===" contra un único
+  // string literal rompía el acceso a categorías en esa variante, aunque
+  // la tienda SÍ estaba montada. Se normaliza sacando cualquier barra
+  // final (salvo la raíz "/") antes de comparar, en vez de sumar un
+  // segundo string hardcodeado — cubre cualquier cantidad de barras
+  // finales, no solo la de un caso puntual.
+  const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
+  const isStorePage = normalizedPath === '/store';
+
+  // Espejo de "navOpen" (estado real, dueño: Store.tsx) para poder anunciar
+  // "aria-expanded" en el disparador de acá — Navbar y Store son
+  // componentes hermanos sin estado compartido, así que Store.tsx
+  // retransmite cada cambio por el mismo canal de eventos que ya usa para
+  // recibir la orden de abrir/cerrar (ver 'toggle-store-categories' más
+  // abajo y el useEffect correspondiente en Store.tsx).
+  const [storeNavOpen, setStoreNavOpen] = useState(false);
+  useEffect(() => {
+    function handler(e: Event) {
+      setStoreNavOpen((e as CustomEvent<boolean>).detail);
+    }
+    window.addEventListener('store-categories-state', handler);
+    return () => window.removeEventListener('store-categories-state', handler);
+  }, []);
 
   const links = customer
     ? [
@@ -31,7 +59,7 @@ export default function Navbar() {
         { to: '/login', label: t('nav.login'), icon: <Coins size={17} /> },
       ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => normalizedPath === path;
 
   return (
     <nav className="navbar">
@@ -65,22 +93,25 @@ export default function Navbar() {
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
-          {/* Categorías de la tienda — solo en /store y solo en móvil (≤760px,
-              ver navbar.css): reemplaza el botón flotante ".fnav-btn" que
-              vivía sobre la cuadrícula de productos. La barra del navbar es
-              "sticky" y el contenido de la página SIEMPRE fluye por debajo
-              de ella (nunca al revés), así que un disparador acá adentro
-              nunca puede terminar tapando el precio/carrito de una tarjeta,
-              sin importar en qué scroll se detenga el usuario — a
-              diferencia de un botón flotante sobre la propia lista, que
-              comparte pantalla con cualquier tarjeta que pase por ese
-              punto. Store.tsx escucha este evento para abrir el mismo panel
-              de categorías (".fnav") que antes abría ese botón. */}
-          {location.pathname === '/store' && (
+          {/* Categorías de la tienda — solo en /store, a CUALQUIER ancho:
+              reemplaza el botón flotante ".fnav-btn" que vivía sobre la
+              cuadrícula de productos (tapaba controles tanto en celular
+              como en tablet/escritorio). La barra del navbar es "sticky" y
+              el contenido de la página SIEMPRE fluye por debajo de ella
+              (nunca al revés), así que un disparador acá adentro nunca
+              puede terminar tapando el precio/carrito de una tarjeta, sin
+              importar en qué scroll se detenga el usuario ni el ancho de
+              pantalla. Store.tsx escucha 'toggle-store-categories' para
+              abrir/cerrar el panel (".fnav") y retransmite su estado real
+              por 'store-categories-state' para que "aria-expanded" acá
+              nunca quede desincronizado del panel que en verdad controla. */}
+          {isStorePage && (
             <button
               className="navbar-store-nav-btn"
               onClick={() => window.dispatchEvent(new Event('toggle-store-categories'))}
               aria-label={t('store.nav')}
+              aria-expanded={storeNavOpen}
+              aria-controls="store-categories-panel"
             >
               <LayoutGrid size={18} />
             </button>

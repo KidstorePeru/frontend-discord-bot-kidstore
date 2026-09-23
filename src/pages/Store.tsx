@@ -293,15 +293,55 @@ export default function StorePage() {
     return () => window.removeEventListener('show-login-modal', handler);
   }, []);
 
-  // Disparado por el botón de categorías del navbar en móvil (ver
-  // Navbar.tsx y ".navbar-store-nav-btn" en navbar.css) — abre el mismo
-  // panel ".fnav" que antes abría el botón flotante ".fnav-btn" sobre la
-  // cuadrícula de productos.
+  // Disparado por el botón de categorías del navbar (ver Navbar.tsx y
+  // ".navbar-store-nav-btn" en navbar.css, visible en /store a cualquier
+  // ancho) — abre/cierra el panel ".fnav". Cada cambio de "navOpen" se
+  // retransmite por 'store-categories-state' para que el "aria-expanded"
+  // del botón en Navbar.tsx (un componente hermano, sin estado
+  // compartido) nunca quede desincronizado del estado real del panel.
   useEffect(() => {
     const handler = () => setNavOpen((v) => !v);
     window.addEventListener('toggle-store-categories', handler);
     return () => window.removeEventListener('toggle-store-categories', handler);
   }, []);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('store-categories-state', { detail: navOpen }));
+  }, [navOpen]);
+
+  // Accesibilidad del panel de categorías (ver useModalFocusTrap): mueve el
+  // foco al botón de cerrar al abrirse, lo mantiene encerrado, cierra con
+  // Escape, y devuelve el foco al botón del navbar que lo abrió al
+  // cerrarse. Mismo mecanismo que el modal de inicio de sesión, abajo.
+  const fnavRef = useRef<HTMLElement>(null);
+  const fnavCloseBtnRef = useRef<HTMLButtonElement>(null);
+  // "inert" (bloquea foco Y lo esconde de lectores de pantalla en un solo
+  // atributo nativo) todavía no está tipado en la versión de @types/react
+  // de este proyecto (llegó recién con React 19) — se asigna a mano sobre
+  // el nodo DOM real en vez de forzar el tipo en el JSX con un "as any".
+  // Depende también de "loading": la página entera hace
+  // "if (loading) return <PageLoader/>" MÁS ABAJO (el "aside" ni siquiera
+  // está montado todavía mientras carga el catálogo), así que en el
+  // primer render "fnavRef.current" es null — sin "loading" en las
+  // dependencias, este efecto nunca se repetía una vez que el panel SÍ
+  // llegaba a montarse (navOpen seguía en 'false', sin cambiar, así que
+  // React no tenía motivo para volver a correrlo), dejando el panel
+  // recién cargado SIN "inert" hasta el primer toggle manual.
+  //
+  // IMPORTANTE: este efecto tiene que ir ANTES que "useModalFocusTrap" de
+  // acá abajo (React corre los efectos de un componente en el orden en que
+  // se declaran) — ese hook intenta mover el foco al botón de cerrar en
+  // CUANTO "navOpen" pasa a true, y un navegador real se NIEGA en
+  // silencio a enfocar cualquier elemento dentro de un contenedor todavía
+  // "inert" (sin lanzar error ni avisar). Si este efecto corriera después,
+  // el intento de foco caía sobre un panel que un instante antes seguía
+  // inert, y el foco se quedaba pegado en el botón del navbar que abrió el
+  // panel — bug real, reproducido con un click real (no sintético) en el
+  // navegador.
+  useEffect(() => {
+    const el = fnavRef.current as (HTMLElement & { inert: boolean }) | null;
+    if (el) el.inert = !navOpen;
+  }, [navOpen, loading]);
+  useModalFocusTrap(navOpen, fnavRef, fnavCloseBtnRef, () => setNavOpen(false));
 
   // Accesibilidad del modal de inicio de sesión (ver useModalFocusTrap):
   // mueve el foco adentro al abrirse, lo mantiene encerrado, cierra con
@@ -494,14 +534,35 @@ export default function StorePage() {
         </div>
       </div>
 
-      <button className="fnav-btn" onClick={() => setNavOpen(!navOpen)}>
-        {navOpen ? <X size={16} /> : t('store.nav')}
-      </button>
       {navOpen && <div className="fnav-ov" onClick={() => setNavOpen(false)} />}
-      <aside className={`fnav ${navOpen ? 'open' : ''}`}>
+      {/* El panel se queda SIEMPRE montado (nunca "{navOpen && <aside>}")
+          para conservar la transición de deslizamiento ("right" animado en
+          store.css) — pero el "inert" que se asigna más arriba (ver el
+          useEffect junto a "fnavRef") cuando está cerrado saca de golpe
+          TODOS sus controles del orden de tabulación y de la
+          accesibilidad de lectores de pantalla (equivalente nativo a
+          poner tabIndex={-1} y aria-hidden en cada botón hijo a mano, sin
+          tener que mantener esa lista aparte). role="dialog" +
+          aria-modal="true" porque tiene su propio overlay (".fnav-ov")
+          que bloquea el contenido de fondo, igual que el modal de inicio
+          de sesión más abajo. */}
+      <aside
+        id="store-categories-panel"
+        className={`fnav ${navOpen ? 'open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="store-categories-title"
+        ref={fnavRef}
+      >
         <div className="fnav-h">
-          <span>{t('store.nav.title')}</span>
-          <button onClick={() => setNavOpen(false)}><X size={16} /></button>
+          <span id="store-categories-title">{t('store.nav.title')}</span>
+          <button
+            onClick={() => setNavOpen(false)}
+            aria-label={es ? 'Cerrar' : 'Close'}
+            ref={fnavCloseBtnRef}
+          >
+            <X size={16} />
+          </button>
         </div>
         <div className="fnav-list">
           {secNames.map(n => (
