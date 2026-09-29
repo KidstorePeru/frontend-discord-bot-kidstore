@@ -2,7 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { getPendingOAuthRegistration, completeOAuthRegistration } from '../services/api';
+import { getPendingOAuthRegistration, completeOAuthRegistration, beginNewSession } from '../services/api';
 import { Gamepad2, Loader2, AlertCircle, UserPlus } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 
@@ -39,7 +39,7 @@ export default function CompleteOAuthRegistration() {
     setError(''); setSubmitting(true);
     try {
       const res = await completeOAuthRegistration(token, epicUsername.trim());
-      if (res.refresh_token) localStorage.setItem('kc_refresh_token', res.refresh_token);
+      if (res.refresh_token) { beginNewSession(); localStorage.setItem('kc_refresh_token', res.refresh_token); }
       setAuth(res.token, res.customer);
       navigate('/dashboard');
     } catch (err: unknown) {

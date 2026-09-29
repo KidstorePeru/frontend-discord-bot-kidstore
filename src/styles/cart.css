@@ -107,27 +107,6 @@
 .cart-actions .btn-ghost { white-space: nowrap; }
 .cart-actions .btn-primary { flex: 1; justify-content: center; }
 
-/* Badge "en carrito" en las cards */
-.sc-added-badge {
-  position: absolute; top: 10px; left: 10px;
-  padding: 3px 10px; border-radius: 4px; z-index: 4;
-  font-size: 0.62rem; font-weight: 800; background: var(--green-500); color: #fff;
-}
-.sc-in-cart { outline: 3px solid var(--green-500); outline-offset: -3px; }
-/* El botón de carrito de la card, una vez agregado — !important en
-   background/color a propósito: sin eso, ".sc-cart:hover:not(:disabled)"
-   (store.css, más específico: una clase + dos pseudo-clases) le ganaría al
-   pasar el mouse por encima y el tinte verde de "ya agregado" desaparecería
-   justo al hacer hover. scCartPop (la animación del "pop") y el keyframe
-   quedan en store.css, junto a ".sc-cart" — acá solo el color/fondo, que
-   antes también se declaraban (contradictoriamente) ahí. */
-.sc-cart-added {
-  background: rgba(34,197,94,0.2) !important;
-  color: var(--green-500) !important;
-  border-color: transparent;
-  animation: scCartPop 0.4s cubic-bezier(0.34,1.6,0.5,1);
-}
-
 /* ════════════════════════════════════════
    MODAL DE CONFIRMACIÓN
    ════════════════════════════════════════ */
@@ -193,3 +172,91 @@
 }
 .confirm-modal-footer .btn-ghost { white-space: nowrap; }
 .confirm-modal-footer .btn-primary { flex: 1; justify-content: center; }
+
+/* ═══════════════════════════════════════════════════
+   PAYMENT MODAL (compartido con la pantalla de recarga KC)
+   ═══════════════════════════════════════════════════ */
+.pc-modal-ov {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.pc-modal {
+  background: var(--bg-surface); border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border); width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 640px) {
+  .pc-modal { max-width: 100%; margin: 0 8px; }
+}
+
+/* ═══════════════════════════════════════════════════
+   LOGIN REQUIRED MODAL
+   ═══════════════════════════════════════════════════ */
+.login-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  /* @keyframes fadeIn es la definición compartida de base.css (mismo
+     from/to) — antes se repetía acá también; con las dos cargadas, la que
+     se aplicaba en la práctica era esta (por orden de carga), pero
+     duplicar el mismo keyframe en dos archivos es justo el tipo de cosa
+     que se desincroniza sola si algún día se ajusta una sin la otra. */
+  animation: fadeIn .2s ease-out;
+}
+
+.login-modal {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px 28px;
+  width: 380px; max-width: 90vw;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  animation: scaleIn .25s ease-out;
+}
+@keyframes scaleIn { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: scale(1); } }
+
+.login-modal-close {
+  position: absolute; top: 14px; right: 14px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  color: var(--text-muted); width: 32px; height: 32px;
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.login-modal-close:hover { color: var(--text-primary); background: var(--bg-base); }
+
+.login-modal-icon {
+  width: 64px; height: 64px; margin: 0 auto 16px;
+  background: linear-gradient(135deg, var(--accent-soft), rgba(124,58,237,.15));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+}
+
+.login-modal h3 {
+  font-size: 1.15rem; font-weight: 800;
+  color: var(--text-primary); margin: 0 0 8px;
+}
+
+.login-modal p {
+  font-size: .85rem; line-height: 1.6;
+  color: var(--text-secondary); margin: 0 0 24px;
+}
+
+.login-modal-buttons {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.login-modal-buttons .btn {
+  justify-content: center; font-size: .88rem; padding: 12px;
+}
+.login-modal-buttons .btn-ghost {
+  color: var(--text-secondary); border: 1.5px solid var(--border);
+}
+.login-modal-buttons .btn-ghost:hover {
+  border-color: var(--accent); color: var(--accent);
+}

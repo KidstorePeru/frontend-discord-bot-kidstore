@@ -36,7 +36,21 @@
 
     <!-- Fonts: autohospedadas en /public/fonts (ver base.css) — sin dependencia
          de Google Fonts, así no hay una petición cross-origin sin
-         integridad de subrecursos (SRI) en cada carga de página. -->
+         integridad de subrecursos (SRI) en cada carga de página.
+         Única excepción: Roboto Flex, solo para la tienda de Fortnite (ver
+         components/fortnite-shop/fortnite-shop.css) — variable, con los
+         ejes opsz/wdth/wght/XTRA/YTLC que imitan Heading Now (la fuente de
+         fortnite.com, de licencia solo personal), más GRAD y XOPQ, que dan
+         el peso extra de los títulos (Heading Now es más gruesa que el peso
+         máximo de Roboto Flex). El .woff2 solo se descarga en páginas que
+         usan la fuente (la tienda). Ver vite.config.ts y public/serve.json
+         para el CSP que la permite. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght,GRAD,XOPQ,XTRA,YTLC@8..144,25..151,100..1000,-200..150,27..175,323..603,416..570&display=swap"
+    />
   </head>
   <body>
     <div id="root"></div>

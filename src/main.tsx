@@ -9,7 +9,7 @@ import './styles/landing.css';
 import './styles/auth.css';
 import './styles/dashboard.css';
 import './styles/profile.css';
-import './styles/store.css';
+import './styles/bots.css';
 import './styles/recharge.css';
 import './styles/admin.css';
 import './styles/cart.css';

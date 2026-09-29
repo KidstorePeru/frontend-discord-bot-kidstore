@@ -1,0 +1,1626 @@
+/* ══════════════════════════════════════════════════════════════════
+   Tienda de objetos de Fortnite — réplica de fortnite.com/item-shop
+   Todo va con el prefijo fns- y bajo .fnshop para no tocar el resto de la web.
+   ══════════════════════════════════════════════════════════════════ */
+
+.fnshop {
+  --fn-blue: #0774bb;
+  --fn-blue-mid: #052f6f;
+  --fn-blue-deep: #040a3f;
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-xs: 0.875rem;   /* 14px */
+  --text-sm: 1rem;       /* 16px */
+  --text-md: 1.1875rem;  /* 19px */
+  --text-lg: 1.5rem;     /* 24px */
+  --text-xl: 1.6875rem;  /* 27px */
+  --text-2xl: 2.6875rem; /* 43px */
+
+  /* Una sola familia, como la oficial, con tres ajustes de sus ejes: bold (títulos, etiquetas y
+     botones) · medium (nombres, precios y menús) · regular (textos secundarios).
+     Roboto Flex (ver index.html — Google Fonts, licencia OFL) ajustada para verse como Heading
+     Now (la fuente de fortnite.com, de licencia solo personal), comparándolas a la misma altura
+     de mayúsculas: mismo ancho de línea (wdth + XTRA), mismo grosor (wght) y minúsculas igual de
+     altas (YTLC 570 → x-height ≈ 80 % de la mayúscula). font-size-adjust iguala la altura de las
+     mayúsculas (0,743 em en Heading Now; Roboto Flex es ~4 % más baja).
+     Si se compra la licencia web de Heading Now (Zetafonts, variable recta): reemplazar
+     --font-heading por su @font-face y usar
+     --fv-bold: "wdth" 825, "wght" 700; --fv-medium: "wdth" 668, "wght" 500;
+     --fv-regular: "wdth" 668, "wght" 400. */
+  --font-heading: 'Roboto Flex', 'Arial Black', system-ui, sans-serif;
+  --font-display: var(--font-heading);
+  --font-ui: var(--font-heading);
+  --font-body: var(--font-heading);
+  /* Valores MEDIDOS (no a ojo) contra Heading Now en sus ejes oficiales:
+       1) grosor de los trazos: contornos de los glifos (astas verticales y horizontales);
+       2) anchos: texto real renderizado en el navegador (con kerning) a los tamaños
+          en que la tienda usa cada rol — títulos 56/43/24 px, etiquetas 14 px,
+          contador 19 px, nombres y precios 16–24 px, secundarios 14 px.
+     opsz va FIJO: Heading Now es el mismo dibujo a todos los tamaños, y con opsz
+     automático Roboto Flex se estrechaba en las etiquetas pequeñas (hasta −19 %).
+     Diferencia media de ancho con Heading Now (antes → ahora):
+       bold    14,1 % → 1,8 %   (+ GRAD y XOPQ: más grosor que el peso máximo)
+       medium   2,1 % → 1,7 %   (y el trazo pasó de −13 % a −2 %)
+       regular  3,7 % → 0,8 % */
+  --fv-bold: "wdth" 105, "wght" 1000, "GRAD" 150, "XOPQ" 135, "XTRA" 603, "YTLC" 570, "opsz" 16;
+  --fv-medium: "wdth" 151, "wght" 696, "XTRA" 450, "YTLC" 570, "opsz" 16;
+  --fv-regular: "wdth" 151, "wght" 534, "XTRA" 451, "YTLC" 565, "opsz" 12;
+  /* La cursiva oficial es la misma letra inclinada 12,2°. Chrome no sintetiza "oblique 12deg"
+     (solo a partir de ~14°), así que se inclina con skewX y font-style se deja en normal
+     para que ningún navegador la incline dos veces. */
+  --display-slant: normal;
+  --slant: -12.2deg;
+
+  --max-shop: 1550px;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Alto de lo que queda fijo arriba en el sitio (el navbar — KidStorePeru no
+     tiene una barra de pestañas aparte, así que es un único valor, sin
+     variantes por ancho). */
+  --fns-sticky-top: var(--nav-height, 64px);
+
+  position: relative;
+  color: #fff;
+  font-size-adjust: cap-height 0.743; /* altura de mayúscula de Heading Now (medida: 0,7434 em) */
+  background-color: var(--fn-blue-mid);
+  font-family: var(--font-ui);
+  font-variation-settings: var(--fv-regular);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip; /* clip (no hidden) para no romper los elementos sticky */
+  color-scheme: dark;
+}
+
+/* Reseteo acotado (con :where para no ganar especificidad a las clases de abajo) */
+:where(.fnshop) *,
+:where(.fnshop) *::before,
+:where(.fnshop) *::after {
+  box-sizing: border-box;
+}
+:where(.fnshop) :where(h1, h2, h3, p, dl, dd) {
+  margin: 0;
+}
+:where(.fnshop) button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+:where(.fnshop) :is(input, textarea, select) {
+  font-family: var(--font-ui);
+  font-variation-settings: var(--fv-regular);
+}
+:where(.fnshop) img {
+  display: block;
+  max-width: none;
+}
+:where(.fnshop) ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+:where(.fnshop) :focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+:where(.fnshop) a {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fnshop *,
+  .fnshop *::before,
+  .fnshop *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+.fns-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fns-icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: #fff;
+  transition: background-color 0.15s var(--ease);
+}
+.fns-icon-button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Botón claro de la oficial ("Ver todo") */
+.fns-pill-button {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: var(--text-sm);
+  line-height: 1;
+  text-transform: uppercase;
+  color: #151718;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  outline: 3px solid transparent;
+  outline-offset: 6px;
+  transition: outline-offset 0.15s var(--ease), outline-color 0.15s var(--ease), background-color 0.15s;
+}
+.fns-pill-button:hover {
+  background: #fff;
+  outline-color: rgba(255, 255, 255, 0.4);
+  outline-offset: 3px;
+}
+
+.fns-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 50vh;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+.fns-state h3 {
+  font-size: var(--text-lg);
+}
+@keyframes fns-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fns-notice {
+  font-family: var(--font-body);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  font-size: var(--text-xs);
+}
+.fns-notice span {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* ══════════════════════════════════════════════════════
+   Fondo: degradado radial + textura de la sección activa.
+   Es sticky (no fixed) para que quede dentro de la tienda y no tape
+   el hero ni el footer de la página.
+   ══════════════════════════════════════════════════════ */
+.fns-backgrounds {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  height: 100vh;
+  margin-bottom: -100vh;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(at 0 50%, var(--fn-blue) 0%, var(--fn-blue-mid) 75%, var(--fn-blue-deep) 100%);
+}
+.fns-backgrounds__layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.fns-backgrounds__layer.is-active {
+  opacity: 1;
+}
+.fns-backgrounds__layer img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: bottom;
+}
+
+/* ══════════════════════════════════════════════════════
+   Estructura: contenedor máx. 1550 px → [menú 48 px][contenido]
+   ══════════════════════════════════════════════════════ */
+.fns-shop {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-shop);
+  margin: 0 auto;
+  width: 100%;
+}
+.fns-frame {
+  position: relative;
+  display: flex;
+  padding: 16px 12px;
+}
+.fns-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 1760px;
+}
+@media (min-width: 48rem) {
+  .fns-content {
+    margin-inline: 12px;
+  }
+}
+@media (min-width: 64rem) {
+  .fns-shop {
+    padding: 40px 32px;
+  }
+  .fns-frame {
+    padding-block: 0;
+  }
+  .fns-content {
+    margin-inline-start: 32px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Encabezado: chip "en vivo" → título → fecha y lotes → panel de control
+   (contador + buscador + idioma + actualizar), sobre el fondo de la tienda.
+   ══════════════════════════════════════════════════════ */
+.fns-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0 44px;
+  text-align: center;
+}
+.fns-header__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px 7px 13px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  font-size: 13px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+}
+/* Punto "en vivo": la tienda se actualiza sola con cada rotación. */
+.fns-header__live {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3ef0a0;
+  animation: fns-live 2s ease-out infinite;
+}
+@keyframes fns-live {
+  0% { box-shadow: 0 0 0 0 rgba(62, 240, 160, 0.6); }
+  70% { box-shadow: 0 0 0 9px rgba(62, 240, 160, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(62, 240, 160, 0); }
+}
+.fns-header__title {
+  font-size: clamp(2.125rem, 5.4vw, 4.25rem);
+  line-height: 0.92;
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 6px 32px rgba(0, 0, 0, 0.35);
+}
+.fns-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+}
+.fns-header__info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 13px;
+  line-height: 1.3;
+  transition: background-color 0.15s, color 0.15s;
+}
+.fns-header__info:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.fns-header__info.is-open {
+  background: #fff;
+  color: #111;
+}
+.fns-header__note {
+  max-width: 640px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  text-align: start;
+}
+
+/* Panel de control: una sola pieza de vidrio con el contador y las herramientas. */
+.fns-deck {
+  width: 100%;
+  max-width: 880px;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 22px;
+  background: rgba(4, 10, 63, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+@media (min-width: 48rem) {
+  .fns-deck {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 10px 10px 18px;
+  }
+}
+
+/* Contador: casillas de ancho fijo con los colores de la oficial (morado → azul). */
+/* Etiqueta en una línea arriba y las casillas debajo. */
+.fns-countdown {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.fns-countdown__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+.fns-countdown__label svg {
+  flex: none;
+}
+.fns-countdown__clock,
+.fns-countdown__part {
+  display: flex;
+  align-items: flex-start;
+}
+.fns-countdown__seg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 54px;
+  padding: 7px 8px 6px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, rgba(94, 29, 153, 0.75), rgba(0, 119, 232, 0.6));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+.fns-countdown__seg b {
+  font-size: 26px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.fns-countdown__seg i {
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.fns-countdown__sep {
+  padding: 6px 3px 0;
+  font-size: 22px;
+  line-height: 1;
+  opacity: 0.5;
+}
+.fns-countdown.is-urgent .fns-countdown__seg {
+  background: linear-gradient(160deg, rgba(190, 30, 45, 0.85), rgba(120, 12, 40, 0.75));
+}
+.fns-countdown__done {
+  font-size: var(--text-md);
+}
+
+/* Herramientas: buscador, idioma y actualizar */
+.fns-tools {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+@media (min-width: 48rem) {
+  .fns-tools {
+    flex-wrap: nowrap;
+    padding-inline-start: 16px;
+    border-inline-start: 1px solid rgba(255, 255, 255, 0.14);
+  }
+}
+.fns-search {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.75);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.fns-search:focus-within {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.5);
+}
+.fns-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: #fff;
+  font-size: 15px;
+}
+.fns-search input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+.fns-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.fns-search .fns-icon-button {
+  width: 30px;
+  height: 30px;
+}
+.fns-lang {
+  display: flex;
+  flex-shrink: 0;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.fns-lang button {
+  padding: 8px 13px;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.75);
+}
+.fns-lang button.is-active {
+  background: #fff;
+  color: #111;
+}
+.fns-refresh {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.fns-refresh.is-spinning svg {
+  animation: fns-spin 0.9s linear infinite;
+}
+/* Celular: el buscador ocupa la fila entera; idioma y actualizar debajo, a los lados. */
+@media (max-width: 29.99rem) {
+  .fns-header__eyebrow {
+    max-width: 100%;
+    font-size: 11px;
+  }
+  .fns-search {
+    flex-basis: 100%;
+  }
+  .fns-tools {
+    justify-content: space-between;
+  }
+  .fns-countdown__seg {
+    min-width: 48px;
+  }
+  .fns-countdown__seg b {
+    font-size: 22px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Secciones y grupos
+   ══════════════════════════════════════════════════════ */
+.fns-section {
+  padding-top: 8px;
+  padding-bottom: 48px;
+  margin-bottom: 8px;
+  /* barra fija del sitio + barra de secciones móvil */
+  scroll-margin-top: calc(var(--fns-sticky-top) + 56px);
+}
+/* Mismo tamaño e interlineado que la oficial (el alto de la sección no cambia). */
+.fns-section__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-style: var(--display-slant);
+  text-transform: uppercase;
+  font-size: var(--text-lg);
+  line-height: 1;
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
+}
+.fns-section__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fns-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.fns-group__grid {
+  width: 100%;
+  display: grid;
+  grid-auto-flow: dense;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 30rem) {
+  .fns-section {
+    padding-bottom: 0;
+  }
+  .fns-section__groups {
+    padding-bottom: 40px;
+  }
+}
+@media (min-width: 40rem) {
+  .fns-group__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 48rem) {
+  .fns-group__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (min-width: 64rem) {
+  .fns-section {
+    padding-bottom: 60px;
+    scroll-margin-top: calc(var(--fns-sticky-top) + 8px);
+  }
+  .fns-section__title {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Menú lateral (≥1024 px)
+   ══════════════════════════════════════════════════════ */
+.fns-rail {
+  display: none;
+  width: 48px;
+  flex-shrink: 0;
+}
+/* La caja sticky ocupa el alto visible debajo de la barra fija del sitio y centra el menú
+   dentro: así nunca se sale por encima de la tienda (sobre el hero). */
+.fns-rail__sticky {
+  position: sticky;
+  top: var(--fns-sticky-top);
+  z-index: 20;
+  height: calc(100vh - var(--fns-sticky-top));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.fns-rail__inner {
+  position: relative;
+}
+.fns-rail__filter {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 8px;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.8);
+  color: #111;
+  transition: background-color 0.15s;
+}
+.fns-rail__filter:hover,
+.fns-rail__filter.is-open {
+  background: #fff;
+}
+.fns-rail__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #f7ff19;
+  color: #111;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 20px;
+  font-weight: 700;
+  font-variation-settings: var(--fv-bold);
+}
+.fns-rail__hover {
+  position: relative;
+}
+.fns-rail__dots {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-height: 50vh;
+  overflow: hidden;
+  padding: 12px 0;
+  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  transition: opacity 0.15s;
+  mask-image: linear-gradient(transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+}
+.fns-rail__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin: 8px 20px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.5;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.fns-rail__dot.is-active {
+  opacity: 1;
+  transform: scale(1.25);
+}
+.fns-rail__panel {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 290px;
+  max-height: 50vh;
+  display: flex;
+  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  visibility: hidden;
+  clip-path: inset(0 calc(100% - 48px) 0 0 round var(--radius-lg));
+  transition: clip-path 0.2s var(--ease), opacity 0.15s, visibility 0s linear 0.2s;
+}
+.fns-rail__panel ul {
+  width: 100%;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+}
+.fns-rail__panel button {
+  width: 100%;
+  text-align: start;
+  padding: 8px 12px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  line-height: 1.2;
+  transition: background-color 0.15s;
+}
+.fns-rail__panel button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.fns-rail__panel button.is-active {
+  background: #fff;
+  color: #111;
+}
+.fns-rail__hover:hover .fns-rail__panel,
+.fns-rail__hover:focus-within .fns-rail__panel {
+  opacity: 1;
+  visibility: visible;
+  clip-path: inset(0 0 0 0 round var(--radius-lg));
+  transition: clip-path 0.2s var(--ease), opacity 0.1s, visibility 0s;
+}
+.fns-rail__hover:hover .fns-rail__dots,
+.fns-rail__hover:focus-within .fns-rail__dots {
+  opacity: 0;
+}
+@media (min-width: 64rem) {
+  .fns-rail {
+    display: block;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Menú de secciones móvil (<1024 px): barra fija con desplegable
+   ══════════════════════════════════════════════════════ */
+.fns-mnav {
+  position: sticky;
+  top: var(--fns-sticky-top);
+  z-index: 30;
+  margin: 0 -12px 12px;
+}
+.fns-mnav__bar {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+}
+.fns-mnav__filter {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 4px 0 8px;
+  border-radius: var(--radius-xs);
+  background: rgba(255, 255, 255, 0.8);
+  color: #111;
+}
+.fns-mnav__toggle {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+}
+.fns-mnav__toggle span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.fns-mnav__list {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fns-mnav__list button {
+  width: 100%;
+  text-align: start;
+  padding: 10px 12px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+.fns-mnav__list button.is-active {
+  background: rgba(255, 255, 255, 0.85);
+  color: #111;
+}
+@media (min-width: 48rem) {
+  .fns-mnav {
+    margin-inline: -24px;
+  }
+}
+@media (min-width: 64rem) {
+  .fns-mnav {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Panel de filtros
+   ══════════════════════════════════════════════════════ */
+.fns-filters {
+  position: fixed;
+  z-index: 60;
+  top: calc(var(--fns-sticky-top) + 56px);
+  left: 12px;
+  right: 12px;
+  max-height: calc(100vh - var(--fns-sticky-top) - 72px);
+  overflow-y: auto;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: rgba(10, 12, 20, 0.9);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  animation: fns-pop-in 0.15s var(--ease);
+}
+.fns-filters__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-style: var(--display-slant);
+  text-transform: uppercase;
+  font-size: var(--text-lg);
+  letter-spacing: 0.01em;
+}
+.fns-filters__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fns-filters__chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  transition: background-color 0.15s;
+}
+.fns-filters__chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.fns-filters__chip input {
+  width: 18px;
+  height: 18px;
+  accent-color: #f7ff19;
+}
+.fns-filters__chip small {
+  margin-inline-start: auto;
+  opacity: 0.6;
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+.fns-filters__chip.is-on {
+  background: rgba(255, 255, 255, 0.14);
+}
+.fns-filters__clear {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.85);
+  color: #111;
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+@media (min-width: 64rem) {
+  .fns-filters {
+    top: calc(50% + var(--fns-sticky-top) / 2);
+    right: auto;
+    left: max(108px, calc((100vw - var(--max-shop)) / 2 + 108px));
+    transform: translateY(-50%);
+    width: 300px;
+    max-height: calc(100vh - var(--fns-sticky-top) - 40px);
+    animation: none;
+  }
+}
+@keyframes fns-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Celdas de la cuadrícula (2 / 3 / 4 columnas según ancho)
+   ══════════════════════════════════════════════════════ */
+.fns-cell {
+  position: relative;
+  min-width: 0;
+  padding: 6px;
+  grid-column: span 1;
+}
+.fns-cell--2,
+.fns-cell--3,
+.fns-cell--4 {
+  grid-column: span 2;
+}
+@media (min-width: 40rem) {
+  .fns-cell--3,
+  .fns-cell--4 {
+    grid-column: span 3;
+  }
+}
+@media (min-width: 48rem) {
+  .fns-cell--4 {
+    grid-column: span 4;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Tarjeta — proporciones exactas de la oficial
+   ══════════════════════════════════════════════════════ */
+.fns-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 0.627;
+}
+.fns-card--2,
+.fns-card--3,
+.fns-card--4 {
+  aspect-ratio: 1 / 0.76;
+}
+@media (min-width: 48rem) {
+  .fns-card--3,
+  .fns-card--4 {
+    aspect-ratio: 1 / 0.516;
+  }
+}
+@media (min-width: 64rem) {
+  .fns-card--4 {
+    aspect-ratio: 1 / 0.38625;
+  }
+}
+
+/* Recuadro de color: 85 % inferior; la imagen sobresale por encima. */
+.fns-card__bg {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 85%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.3);
+  background-image: var(--card-bg);
+  outline: 3px solid transparent;
+  outline-offset: 10px;
+  transition: outline-offset 0.15s var(--ease), outline-color 0.15s var(--ease);
+}
+@media (hover: hover) {
+  .fns-card:hover .fns-card__bg {
+    outline-offset: 4px;
+    outline-color: rgba(255, 255, 255, 0.4);
+  }
+}
+/* Ítem ya en el carrito: contorno verde, igual criterio visual que el resto del sitio. */
+.fns-card--in-cart .fns-card__bg {
+  outline-offset: -3px;
+  outline-width: 3px;
+  outline-color: #22c55e;
+}
+
+/* Insignia "ya en el carrito" */
+.fns-card__incart {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: #22c55e;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════
+   Imagen (presets de posición de la oficial)
+   ══════════════════════════════════════════════════════ */
+.fns-media {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  pointer-events: none;
+  /* Difumina el borde superior cuando la imagen sobresale del recuadro */
+  mask-image: linear-gradient(transparent 0%, #000 2%);
+}
+.fns-media__mask {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  /* Funde la parte baja de la imagen con el texto */
+  mask-image: linear-gradient(#000 0%, #000 80%, transparent 95%);
+  transition: transform 0.15s var(--ease);
+}
+@media (hover: hover) {
+  .fns-card:hover .fns-media__mask {
+    transform: scale(1.03);
+  }
+}
+.fns-media__layer {
+  position: absolute;
+  inset: 0;
+}
+.fns-media__img {
+  position: absolute;
+  left: 50%;
+  top: var(--img-top, 50%);
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  transform: translate(-50%, -50%) scale(var(--img-scale, 1));
+  object-fit: var(--img-fit, contain);
+  user-select: none;
+}
+
+/* Atuendo solo, 1 col */
+.fns-media--default {
+  --img-fit: cover;
+  --img-scale: 1.6;
+  --img-top: 80%;
+}
+/* Lote / atuendo con accesorios */
+.fns-media--bundle {
+  --img-fit: cover;
+  --img-scale: 1;
+  --img-top: 55%;
+}
+.fns-card--wide .fns-media--bundle {
+  --img-fit: contain;
+  --img-scale: 1.4;
+  --img-top: 75%;
+}
+@media (min-width: 48rem) {
+  .fns-card--3 .fns-media--bundle,
+  .fns-card--4 .fns-media--bundle {
+    --img-scale: 1.75;
+    --img-top: 78%;
+  }
+}
+@media (min-width: 64rem) {
+  .fns-card--4 .fns-media--bundle {
+    --img-scale: 2.28;
+    --img-top: 108%;
+  }
+}
+/* Atuendo solo en tarjeta ancha */
+.fns-media--outfit-wide {
+  --img-fit: contain;
+  --img-scale: 1.6;
+  --img-top: 78.5%;
+}
+
+/* Objetos en lienzo cuadrado centrado */
+.fns-media--standard .fns-media__layer,
+.fns-media--half .fns-media__layer,
+.fns-media--kicks .fns-media__layer,
+.fns-media--tool .fns-media__layer {
+  left: 50%;
+  right: auto;
+  height: 100%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+}
+.fns-media--standard .fns-media__img,
+.fns-media--half .fns-media__img,
+.fns-media--kicks .fns-media__img,
+.fns-media--tool .fns-media__img {
+  object-position: top;
+}
+/* Gestos, envoltorios, compañeros, ruedas…: dentro del recuadro (85 %) */
+.fns-media--standard,
+.fns-media--half,
+.fns-media--kicks,
+.fns-media--full {
+  height: 85%;
+}
+.fns-media--standard {
+  --img-scale: 0.7;
+  --img-top: 38%;
+}
+/* Mochilas retro y planeadores */
+.fns-media--half {
+  --img-scale: 0.78;
+  --img-top: 42%;
+}
+.fns-media--kicks {
+  --img-scale: 0.8;
+  --img-top: 42%;
+}
+/* Picos e instrumentos: lienzo del alto completo, sobresalen por arriba */
+.fns-media--tool {
+  --img-scale: 0.75;
+  --img-top: 37%;
+}
+/* Vehículos 2+ col: la imagen cubre el recuadro alineada a la derecha */
+.fns-media--full {
+  --img-fit: cover;
+}
+.fns-media--full .fns-media__img {
+  object-position: right center;
+}
+
+/* Pistas de improvisación: portada cuadrada con sombra que se inclina al pasar el ratón */
+.fns-media--square {
+  mask-image: none;
+}
+.fns-media--square .fns-media__mask {
+  top: 40px;
+  bottom: auto;
+  height: 100%;
+  filter: drop-shadow(0 0 3px #000);
+  transition: transform 0.2s var(--ease), top 0.2s var(--ease);
+}
+.fns-media--square .fns-media__img {
+  top: 27.5%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  outline: 2px solid rgba(255, 255, 255, 0.16);
+  outline-offset: -2px;
+  transform: translate(-50%, -50%) scale(0.875);
+}
+@media (hover: hover) and (min-width: 48rem) {
+  .fns-card:hover .fns-media--square .fns-media__mask {
+    top: 16px;
+    transform: rotate(-2deg);
+  }
+}
+
+/* Transición "wipe" diagonal entre imágenes: la nueva entra desde la esquina superior
+   izquierda y la anterior sale con la máscara complementaria. */
+@property --wipe {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: -25%;
+}
+.fns-media__layer--in {
+  mask-image: linear-gradient(to bottom right, #000 var(--wipe), transparent calc(var(--wipe) + 25%));
+  animation: fns-wipe 0.6s linear forwards;
+}
+.fns-media__layer--out {
+  mask-image: linear-gradient(to bottom right, transparent var(--wipe), #000 calc(var(--wipe) + 25%));
+  animation: fns-wipe 0.6s linear forwards;
+}
+@keyframes fns-wipe {
+  from {
+    --wipe: -25%;
+  }
+  to {
+    --wipe: 100%;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Texto de la tarjeta
+   ══════════════════════════════════════════════════════ */
+.fns-card__content {
+  position: relative;
+  z-index: 2;
+  align-self: flex-end;
+  width: 100%;
+  height: 85%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  overflow: hidden;
+  pointer-events: none;
+}
+.fns-card__info {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px 8px;
+  transition: padding 0.15s var(--ease);
+}
+/* Degradado con el color de texto de la oferta, de abajo hacia arriba */
+.fns-card__info::before {
+  content: '';
+  position: absolute;
+  inset: -12px 0 0;
+  z-index: -1;
+  background: linear-gradient(0deg, var(--card-text) 0%, transparent 100%);
+}
+@media (min-width: 40rem) {
+  .fns-card__info {
+    gap: 4px;
+  }
+}
+@media (min-width: 64rem) {
+  .fns-card__info {
+    padding: 0 16px 16px;
+  }
+}
+
+.fns-card__pill {
+  display: flex;
+  width: max-content;
+  max-width: 100%;
+  margin-inline-start: -3px;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  background: #fff;
+  color: #000;
+  transform: skewX(-12deg);
+}
+.fns-card__pill span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+@media (min-width: 48rem) {
+  .fns-card__pill span {
+    font-size: var(--text-xs);
+  }
+}
+
+.fns-card__subtitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-ui);
+  font-weight: 450;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+.fns-card__title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  line-height: 24px;
+}
+.fns-card--wide .fns-card__title {
+  -webkit-line-clamp: 2;
+}
+.fns-card--square .fns-card__title {
+  font-size: var(--text-md);
+  -webkit-line-clamp: 1;
+}
+@media (min-width: 48rem) {
+  .fns-card__subtitle {
+    font-size: var(--text-sm);
+  }
+  .fns-card--wide .fns-card__title {
+    font-size: var(--text-md);
+  }
+}
+@media (min-width: 64rem) {
+  .fns-card__title {
+    font-size: var(--text-md);
+    -webkit-line-clamp: 2;
+  }
+  .fns-card--wide .fns-card__title,
+  .fns-card--square .fns-card__title {
+    font-size: var(--text-lg);
+    line-height: 28px;
+  }
+  .fns-card--square .fns-card__title {
+    -webkit-line-clamp: 1;
+    line-height: 30px;
+  }
+}
+
+/* Precio */
+.fns-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 2px;
+  line-height: 1;
+}
+.fns-price__current,
+.fns-price__original {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.fns-price__icon {
+  width: 22px;
+  height: 22px;
+  margin-inline-end: 2px;
+  flex-shrink: 0;
+}
+.fns-price__original {
+  position: relative;
+  margin-inline-start: 10px;
+  padding: 0 4px;
+  opacity: 0.95;
+  text-decoration: none;
+}
+.fns-price__original::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 3px;
+  background: #fff;
+  opacity: 0.8;
+  transform: translate(-50%, -50%) rotate(-7deg);
+}
+/* Equivalente en la moneda del cliente, a la derecha del precio en monedas V */
+.fns-price__local {
+  margin-inline-start: 10px;
+  padding-inline-start: 10px;
+  border-inline-start: 1px solid rgba(255, 255, 255, 0.35);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  opacity: 0.92;
+}
+@media (min-width: 48rem) {
+  .fns-price__current,
+  .fns-price__original {
+    font-size: var(--text-md);
+  }
+  .fns-price__icon {
+    width: 24px;
+    height: 24px;
+  }
+  .fns-price__local {
+    font-size: var(--text-sm);
+  }
+}
+
+/* Botón de carrito de la tarjeta (compra directa): a la derecha del precio. El
+   contenido de la tarjeta no recibe el ratón (pointer-events: none, para que el
+   hover llegue a la tarjeta), así que el botón lo reactiva. */
+.fns-card__buy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.fns-card__buy .fns-price {
+  flex: 1;
+  min-width: 0;
+}
+.fns-card__cart {
+  pointer-events: auto;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s var(--ease), background-color 0.15s, color 0.15s;
+}
+.fns-card__cart:hover {
+  background: #fff;
+  transform: translateY(-1px) scale(1.06);
+}
+.fns-card__cart:active {
+  transform: scale(0.92);
+}
+.fns-card__cart.is-in-cart {
+  background: #22c55e;
+  color: #fff;
+}
+@media (min-width: 64rem) {
+  .fns-card__cart {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.fns-card__features {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 8px;
+  color: #000;
+  background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.55) 25%, #fff 50%, rgba(255, 255, 255, 0.55) 75%, #fff 100%);
+  background-size: 200% 100%;
+  text-align: center;
+  transition: max-height 0.2s var(--ease), padding 0.2s var(--ease);
+}
+.fns-card__features span {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-style: normal;
+  font-size: var(--text-xs);
+  line-height: 19px;
+  text-transform: uppercase;
+}
+@media (hover: hover) {
+  .fns-card:hover .fns-card__features {
+    max-height: 50px;
+    padding: 4px 8px;
+    animation: fns-shimmer 2.5s linear infinite;
+  }
+  .fns-card:hover .fns-card__info:has(~ .fns-card__features) {
+    padding-bottom: 8px;
+  }
+}
+@keyframes fns-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Tiempo restante en la tarjeta
+   ══════════════════════════════════════════════════════ */
+.fns-card__leave {
+  position: absolute;
+  top: calc(15% + 10px);
+  right: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.fns-card__leave.is-urgent {
+  background: rgba(190, 30, 45, 0.7);
+  border-color: rgba(255, 170, 170, 0.45);
+}
+@media (max-width: 39.99rem) {
+  .fns-card__leave {
+    top: calc(15% + 7px);
+    right: 7px;
+    padding: 3px 7px 3px 6px;
+    font-size: 10px;
+  }
+  .fns-card__leave svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   Tipografía — mismos roles que fortnite.com/item-shop (pesos en --fv-*)
+   ══════════════════════════════════════════════════════ */
+/* Títulos: bold inclinado */
+.fns-header__title,
+.fns-section__title,
+.fns-filters__head {
+  font-family: var(--font-heading);
+  font-variation-settings: var(--fv-bold);
+  font-weight: 700;
+  font-style: var(--display-slant);
+  letter-spacing: normal;
+}
+/* Etiquetas en mayúsculas: bold (inclinadas cuando son tags) */
+.fns-card__pill span,
+.fns-card__features span,
+.fns-card__leave,
+.fns-header__eyebrow,
+.fns-countdown__label,
+.fns-countdown__seg b {
+  font-variation-settings: var(--fv-bold);
+  font-weight: 700;
+  letter-spacing: normal;
+}
+.fns-card__features span,
+.fns-card__leave {
+  font-style: var(--display-slant);
+}
+/* Botones: bold */
+.fns-lang button,
+.fns-pill-button,
+.fns-filters__clear,
+.fns-state h3 {
+  font-variation-settings: var(--fv-bold);
+  font-weight: 700;
+}
+/* Nombres, precios, menús: medium */
+.fns-header__meta,
+.fns-countdown__seg i,
+.fns-countdown__done,
+.fns-card__title,
+.fns-price__current,
+.fns-price__original,
+.fns-price__local,
+.fns-rail__panel button,
+.fns-mnav__toggle,
+.fns-mnav__list button,
+.fns-filters__chip,
+.fns-state {
+  font-variation-settings: var(--fv-medium);
+  font-weight: 500;
+}
+/* El menú de secciones de la oficial va a 16 px */
+.fns-rail__panel button,
+.fns-mnav__list button {
+  font-size: var(--text-sm);
+}
+/* Textos secundarios: regular */
+.fns-card__subtitle,
+.fns-header__note,
+.fns-search input,
+.fns-notice {
+  font-variation-settings: var(--fv-regular);
+  font-weight: 400;
+}
+
+/* Inclinación de 12,2° (títulos y etiquetas). El origen abajo mantiene la línea base en su sitio. */
+/* Títulos (pueden ocupar varias líneas): se inclina cada palabra, ver Slanted.tsx */
+.fns-w {
+  display: inline-block;
+  transform: skewX(var(--slant));
+  transform-origin: 0 100%;
+}
+/* Etiquetas de una sola línea: se inclina el bloque */
+.fns-card__features span {
+  transform: skewX(var(--slant));
+  transform-origin: 50% 100%;
+}
+.fns-card__leave span,
+.fns-countdown__label > span,
+.fns-filters__head > span {
+  display: inline-block;
+  transform: skewX(var(--slant));
+}

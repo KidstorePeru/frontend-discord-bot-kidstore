@@ -1,6 +1,11 @@
-import type { AuthResponse, Customer, Order, ShopResponse } from '../types';
+import type { AuthResponse, Customer, Order } from '../types';
 
-const BASE = import.meta.env.VITE_API_URL || '/api';
+// Exportado para components/fortnite-shop/hooks.ts (useShopData): esa
+// consulta necesita su propio control fino sobre cache/reintentos (ver el
+// proxy con caché en el backend, GET /store/shop) en vez de pasar por
+// request(), así que arma su URL con el mismo BASE que usa el resto de la
+// app en vez de duplicar la lógica de VITE_API_URL.
+export const BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Renovación "single-flight": si varias peticiones descubren el token
 // vencido casi al mismo tiempo (muy común — un dashboard que dispara
@@ -14,7 +19,36 @@ const BASE = import.meta.env.VITE_API_URL || '/api';
 // Exportado para que otros lugares que hacen fetch directo (panel admin,
 // seguimiento de pago) puedan compartir la misma renovación en vez de
 // tener cada uno su propia lógica de refresh (o ninguna).
-let refreshPromise: Promise<boolean> | null = null;
+let refreshInFlight: { epoch: number; promise: Promise<RefreshOutcome> } | null = null;
+
+// Época de sesión: un contador en memoria que avanza cada vez que EMPIEZA una
+// sesión distinta (cerrar sesión, iniciar sesión, cambiar de cuenta). NO avanza
+// al rotar tokens de la misma sesión. Toda petición autenticada y toda renovación
+// capturan la época al iniciar; si al volver la época cambió, su respuesta
+// pertenece a una sesión anterior y se DESCARTA — no restaura usuarios, no guarda
+// tokens y no borra los de la sesión nueva.
+let authEpoch = 0;
+export function getAuthEpoch(): number { return authEpoch; }
+export function beginNewSession(): void { authEpoch++; }
+
+// Códigos de error propios de este mecanismo.
+export const SESSION_CHANGED = 'SESSION_CHANGED';
+export const SESSION_REFRESH_UNAVAILABLE = 'SESSION_REFRESH_UNAVAILABLE';
+
+export function isSessionChangedError(err: unknown): boolean {
+  return (err as ApiError | undefined)?.code === SESSION_CHANGED;
+}
+// Fallo TEMPORAL de renovación (red caída, 5xx, 429): la sesión puede seguir
+// siendo válida, así que NO se cierra ni se borran los tokens; se puede reintentar.
+export function isTransientSessionError(err: unknown): boolean {
+  return (err as ApiError | undefined)?.code === SESSION_REFRESH_UNAVAILABLE;
+}
+
+function sessionChangedError(): ApiError {
+  const err = new Error('La sesión cambió mientras se procesaba la solicitud') as ApiError;
+  err.code = SESSION_CHANGED;
+  return err;
+}
 
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('kc_token');
@@ -34,13 +68,22 @@ function getLang(): string {
 // error, incluida una caída de red o el propio backend caído.
 export type ApiError = Error & { status?: number; code?: string };
 
-export async function tryRefreshToken(): Promise<boolean> {
+// Resultado de intentar renovar la sesión:
+//   ok        → tokens nuevos guardados.
+//   invalid   → el servidor rechazó el refresh token (4xx): sesión realmente inválida; se borran los tokens.
+//   transient → red caída, 5xx, 408/429 o respuesta ilegible: NO se toca nada, se puede reintentar.
+//   stale     → mientras tanto se cerró sesión o cambió de cuenta: se descarta el resultado.
+export type RefreshOutcome = 'ok' | 'invalid' | 'transient' | 'stale';
+
+export async function refreshSession(): Promise<RefreshOutcome> {
   const refreshToken = localStorage.getItem('kc_refresh_token');
-  if (!refreshToken) return false;
+  if (!refreshToken) return 'invalid';
 
-  if (refreshPromise) return refreshPromise;
+  const epoch = authEpoch;
+  if (refreshInFlight && refreshInFlight.epoch === epoch) return refreshInFlight.promise;
 
-  refreshPromise = (async () => {
+  const entry = { epoch, promise: undefined as unknown as Promise<RefreshOutcome> };
+  entry.promise = (async () => {
     try {
       const res = await fetch(`${BASE}/store/refresh-token`, {
         method: 'POST',
@@ -48,25 +91,41 @@ export async function tryRefreshToken(): Promise<boolean> {
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
       const body = await res.json().catch(() => ({}));
-      if (res.ok && body.token) {
+      // Respuesta atrasada de una sesión anterior: no guarda ni borra nada.
+      if (epoch !== authEpoch) return 'stale';
+      if (res.ok && body.token && body.refresh_token) {
         localStorage.setItem('kc_token', body.token);
         localStorage.setItem('kc_refresh_token', body.refresh_token);
-        return true;
+        return 'ok';
       }
-      // Refresh failed — clear tokens
-      localStorage.removeItem('kc_token');
-      localStorage.removeItem('kc_refresh_token');
-      return false;
+      const rejected = res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429;
+      if (rejected) {
+        localStorage.removeItem('kc_token');
+        localStorage.removeItem('kc_refresh_token');
+        return 'invalid';
+      }
+      return 'transient';
     } catch {
-      return false;
+      return epoch !== authEpoch ? 'stale' : 'transient';
     } finally {
-      refreshPromise = null;
+      if (refreshInFlight === entry) refreshInFlight = null;
     }
   })();
-  return refreshPromise;
+  refreshInFlight = entry;
+  return entry.promise;
+}
+
+// Compatibilidad: true solo si se renovó (los llamadores que solo necesitan
+// saber si hay token nuevo, como el panel admin y la recarga).
+export async function tryRefreshToken(): Promise<boolean> {
+  return (await refreshSession()) === 'ok';
 }
 
 async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
+  // Solo las peticiones que viajan CON sesión son sensibles a un cambio de
+  // sesión; las públicas (catálogo, tasas) no.
+  const epoch = authEpoch;
+  const sessionBound = !!localStorage.getItem('kc_token');
   const res = await fetch(`${BASE}${url}`, {
     ...opts,
     headers: {
@@ -78,12 +137,20 @@ async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
   });
 
   const body = await res.json().catch(() => ({}));
+  if (sessionBound && epoch !== authEpoch) throw sessionChangedError();
 
   if (!res.ok) {
     // Auto-refresh on TOKEN_EXPIRED
     if (body?.code === 'TOKEN_EXPIRED' || (res.status === 401 && localStorage.getItem('kc_refresh_token'))) {
-      const refreshed = await tryRefreshToken();
-      if (refreshed) {
+      const outcome = await refreshSession();
+      if (outcome === 'stale' || (sessionBound && epoch !== authEpoch)) throw sessionChangedError();
+      if (outcome === 'transient') {
+        const err = new Error('No se pudo renovar la sesión por ahora. Reintenta en unos segundos.') as ApiError;
+        err.code = SESSION_REFRESH_UNAVAILABLE;
+        err.status = 503;
+        throw err;
+      }
+      if (outcome === 'ok') {
         // Retry the original request with new token
         const retryRes = await fetch(`${BASE}${url}`, {
           ...opts,
@@ -95,6 +162,7 @@ async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
           },
         });
         const retryBody = await retryRes.json().catch(() => ({}));
+        if (sessionBound && epoch !== authEpoch) throw sessionChangedError();
         if (!retryRes.ok) {
           const err = new Error(retryBody.error || retryBody.message || `Error ${retryRes.status}`) as ApiError;
           err.status = retryRes.status;
@@ -151,6 +219,7 @@ export async function login(email: string, password: string): Promise<LoginResul
     return { requires2FA: true, tempToken: res.temp_token };
   }
   if (res.refresh_token) {
+    beginNewSession(); // empieza una sesión nueva: descarta respuestas de la anterior
     localStorage.setItem('kc_refresh_token', res.refresh_token);
   }
   return { requires2FA: false, token: res.token!, customer: res.customer! };
@@ -184,6 +253,7 @@ export async function verify2FA(tempToken: string, code: string): Promise<AuthRe
     body: JSON.stringify({ temp_token: tempToken, code }),
   });
   if (res.refresh_token) {
+    beginNewSession(); // empieza una sesión nueva: descarta respuestas de la anterior
     localStorage.setItem('kc_refresh_token', res.refresh_token);
   }
   return { token: res.token, customer: res.customer };
@@ -357,12 +427,6 @@ export type RechargeHistoryItem =
 export async function getMyRecharges(page = 1, limit = 20, signal?: AbortSignal): Promise<{ items: RechargeHistoryItem[]; total: number; page: number }> {
   const res = await request<{ success: boolean; items: RechargeHistoryItem[]; total: number; page: number }>(`/store/recharges?page=${page}&limit=${limit}`, { signal });
   return { items: res.items ?? [], total: res.total, page: res.page };
-}
-
-/* ── Shop ── */
-
-export async function getShop(lang: 'es-419' | 'en' = 'es-419'): Promise<ShopResponse> {
-  return request<ShopResponse>(`/store/shop?lang=${lang}`);
 }
 
 /* ── Payment Info ── */

@@ -14,12 +14,16 @@ const csp = [
   "script-src 'self'",
   // 'unsafe-inline' en style-src es necesario: la app usa style={{...}} en
   // JSX de forma extensiva. No hay <script> inline en ningún lado, así que
-  // script-src se queda estricto.
-  "style-src 'self' 'unsafe-inline'",
+  // script-src se queda estricto. fonts.googleapis.com: solo sirve la hoja
+  // @font-face de Roboto Flex (la tienda de Fortnite, ver
+  // components/fortnite-shop) — el resto del sitio sigue con fuentes
+  // autoalojadas en /fonts, sin depender de Google.
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Las imágenes de ítems vienen de la API de Fortnite (dominio variable de
   // Epic/CDN), por eso se permite https: en general en vez de listar hosts.
   "img-src 'self' https: data:",
-  "font-src 'self'",
+  // fonts.gstatic.com: los .woff2 de Roboto Flex que sirve la hoja de arriba.
+  "font-src 'self' https://fonts.gstatic.com",
   `connect-src 'self' ${BACKEND_ORIGIN} https://ipapi.co`,
   // El Landing embebe reseñas reales de Facebook (Page Plugin oficial) en
   // un <iframe> — es el único iframe de la app.

@@ -78,6 +78,27 @@ export function vbucksToKC(vbucks: number): number {
   return Math.ceil(vbucks * 1);
 }
 
+// PEN_PER_KC: 1 KC = 1 V-Buck (ver vbucksToKC) y KC siempre cuesta lo mismo en
+// soles sin importar el paquete (S/ 1.30 cada 100 KC) — se deriva del paquete
+// "starter" en vez de repetir el número suelto, para que solo haya un lugar
+// que cambiar si el precio de KC cambia algún día.
+export const PEN_PER_KC = KC_PACKAGES[0].price_pen / KC_PACKAGES[0].kc;
+
+/** Cuánto vale 1 KC/V-Buck en la divisa pedida (null si no hay tipo de cambio
+ *  para esa divisa — ver convertFromPEN). Lo usa la tienda de Fortnite para
+ *  mostrar, junto al precio en V-Bucks, el equivalente en la moneda del
+ *  cliente (nunca lo que se cobra de verdad: eso siempre es en KC). */
+export function kcToLocalRate(currencyCode: string, rates: ExchangeRates = FALLBACK_RATES): number {
+  return convertFromPEN(PEN_PER_KC, currencyCode, rates) ?? PEN_PER_KC;
+}
+
+/** Símbolo de una divisa (ej. "S/", "$", "€") sin ningún monto — se obtiene
+ *  formateando 0 y quitando los dígitos/separadores, en vez de mantener un
+ *  mapa de símbolos aparte que se puede desactualizar. */
+export function currencySymbol(currencyCode: string, locale = 'es-PE'): string {
+  return formatCurrency(0, currencyCode, locale).replace(/[\d.,\s]/g, '').trim() || currencyCode;
+}
+
 // ─────────────────────────────────────────────────────────────
 // DATOS DE PAGO — se obtienen del backend via GET /store/payment-info
 // ─────────────────────────────────────────────────────────────

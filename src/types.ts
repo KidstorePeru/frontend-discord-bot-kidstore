@@ -48,53 +48,6 @@ export interface AuthResponse {
   customer: Customer;
 }
 
-export interface ShopEntry {
-  mainId: string;
-  offerId: string;
-  displayName: string;
-  displayDescription: string;
-  displayType: string;
-  mainType: string;
-  rarity: {
-    id: string;
-    text: string;
-  };
-  images: {
-    icon: string;
-    featured?: string;
-    background?: string;
-    full_background?: string;
-  };
-  price: {
-    regularPrice: number;
-    finalPrice: number;
-  };
-  added: {
-    date: string;
-  };
-  banner?: {
-    value: string;
-    text: string;
-  };
-  series?: string;
-  section?: {
-    id: string;
-    name: string;
-  };
-  /* Precio en KC calculado en frontend */
-  price_kc?: number;
-}
-
-export interface ShopResponse {
-  status: number;
-  data: {
-    featured?: { entries: ShopEntry[] };
-    daily?: { entries: ShopEntry[] };
-    entries?: ShopEntry[];
-    [key: string]: unknown;
-  };
-}
-
 /* ── KC Packages ── */
 
 export interface KCPackage {

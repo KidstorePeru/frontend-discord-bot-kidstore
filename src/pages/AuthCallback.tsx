@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { exchangeOAuthCode } from '../services/api';
+import { exchangeOAuthCode, beginNewSession } from '../services/api';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 
@@ -33,6 +33,7 @@ export default function AuthCallback() {
         navigate('/login', { replace: true, state: { tempToken: result.tempToken } });
         return;
       }
+      beginNewSession();
       localStorage.setItem('kc_token', result.token);
       if (result.refreshToken) localStorage.setItem('kc_refresh_token', result.refreshToken);
       return refresh().then(() => navigate('/dashboard', { replace: true }));
