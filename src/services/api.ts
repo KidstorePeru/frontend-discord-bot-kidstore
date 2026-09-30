@@ -701,6 +701,13 @@ export interface AdminComplaint {
   admin_response?: string;
   responded_at?: string;
   created_at: string;
+  /** Idioma en que se presentó: la respuesta por correo va en ese idioma. */
+  lang?: 'es' | 'en';
+  /** Vencimiento del plazo legal (15 días hábiles), AAAA-MM-DD en hora de Perú. */
+  deadline?: string;
+  deadline_label?: string;
+  /** Días hábiles que quedan: 0 = vence hoy; negativo = vencido. */
+  business_days_left?: number;
 }
 
 export async function adminGetComplaints(adminKey: string) {

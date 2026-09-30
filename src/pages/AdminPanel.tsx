@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { complaintDeadlineInfo } from '../services/complaintDeadline';
 import { useNavigate, useParams, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { tryRefreshToken } from '../services/api';
@@ -430,6 +431,11 @@ export default function AdminPanel() {
   const filteredPayments = payments;
   const paymentTotalPages = Math.max(1, Math.ceil(paymentTotal / ADMIN_PER_PAGE));
   const filteredComplaints = complaintFilter === 'all' ? complaints : complaints.filter((c: any) => c.status === complaintFilter);
+  // Reclamos sin responder con el plazo legal vencido o por vencer (≤ 3 días hábiles).
+  const urgentComplaints = complaints.filter((c: any) => {
+    const info = complaintDeadlineInfo(c);
+    return info !== null && info.tone !== 'ok';
+  });
   const filteredRCustomers = rCustomers.filter(c =>
     c.epic_username.toLowerCase().includes(rSearch.toLowerCase()) ||
     (c.email ?? '').toLowerCase().includes(rSearch.toLowerCase())
@@ -976,6 +982,11 @@ export default function AdminPanel() {
       {tab === 'complaints' && !loading && (
         <div className="admin-table-section">
           <p className="admin-tab-sub">Libro de Reclamaciones Virtual — requisito legal (Ley N° 29571, modificada por la Ley N° 31435). Debes responder cada reclamo en un plazo máximo de 15 días hábiles improrrogables desde su presentación.</p>
+          {urgentComplaints.length > 0 && (
+            <div role="alert" style={{ margin: '0 0 12px', padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontWeight: 600, fontSize: '0.85rem' }}>
+              {urgentComplaints.length === 1 ? '1 reclamo sin responder está' : `${urgentComplaints.length} reclamos sin responder están`} vencido{urgentComplaints.length === 1 ? '' : 's'} o por vencer (3 días hábiles o menos). Respóndelos cuanto antes.
+            </div>
+          )}
           <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="adm-count">{filteredComplaints.length} reclamo{filteredComplaints.length !== 1 ? 's' : ''}</span>
             <div className="adm-filter-row">
@@ -989,7 +1000,7 @@ export default function AdminPanel() {
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead><tr>
-                <th>Código</th><th>Tipo</th><th>Consumidor</th><th>Email</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
+                <th>Código</th><th>Tipo</th><th>Consumidor</th><th>Email</th><th>Estado</th><th>Fecha</th><th>Plazo</th><th>Acciones</th>
               </tr></thead>
               <tbody>
                 {filteredComplaints.slice((complaintPage-1)*ADMIN_PER_PAGE, complaintPage*ADMIN_PER_PAGE).map((c: any) => (
@@ -1007,6 +1018,18 @@ export default function AdminPanel() {
                     </td>
                     <td className="text-muted">{new Date(c.created_at).toLocaleDateString('es-PE')}</td>
                     <td>
+                      {(() => {
+                        const info = complaintDeadlineInfo(c);
+                        if (!info) return <span className="text-muted">—</span>;
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }} title="Plazo legal: 15 días hábiles desde la presentación">
+                            <span className="status-badge" style={{ '--badge-color': info.color } as React.CSSProperties}>{info.text}</span>
+                            <span className="text-muted" style={{ fontSize: '0.72rem' }}>{info.detail}</span>
+                          </div>
+                        );
+                      })()}
+                    </td>
+                    <td>
                       <div style={{ display: 'flex', gap: 4 }}>
                         <button className="adm-action-btn" title="Ver detalle / Responder"
                           onClick={() => { setRespondTarget(c); setRespondText(c.admin_response || ''); }}>
@@ -1021,7 +1044,7 @@ export default function AdminPanel() {
                     </td>
                   </tr>
                 ))}
-                {filteredComplaints.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin reclamos</td></tr>}
+                {filteredComplaints.length === 0 && <tr><td colSpan={8} className="adm-empty-row">Sin reclamos</td></tr>}
               </tbody>
             </table>
           </div>
@@ -1041,6 +1064,11 @@ export default function AdminPanel() {
               <div className="confirm-modal-body">
                 <table className="admin-table" style={{ marginBottom: 16 }}>
                   <tbody>
+                    {(() => {
+                      const info = complaintDeadlineInfo(respondTarget);
+                      return info ? <tr><td>Plazo</td><td><strong style={{ color: info.color }}>{info.text}</strong> <span className="text-muted">({info.detail})</span></td></tr> : null;
+                    })()}
+                    <tr><td>Idioma</td><td>{respondTarget.lang === 'en' ? 'Inglés — la respuesta se envía en inglés' : 'Español'}</td></tr>
                     <tr><td>Consumidor</td><td><strong>{respondTarget.full_name}</strong></td></tr>
                     <tr><td>Documento</td><td>{respondTarget.document_type} {respondTarget.document_number}</td></tr>
                     <tr><td>Email</td><td>{respondTarget.email}</td></tr>
