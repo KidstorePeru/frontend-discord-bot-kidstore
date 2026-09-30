@@ -33,3 +33,16 @@ describe('estilos compartidos siguen definidos', () => {
     expect(new RegExp('\\.bot-car(?![\\w-])').test(allCss)).toBe(false);
   });
 });
+
+// Regresión: el fondo de sección de la tienda es sticky con height 100vh y
+// margin-bottom -100vh; sin recortar la tienda, al llegar al final sobresalía una
+// pantalla entera y tapaba el footer. Debe ser overflow: clip (no hidden, que
+// rompería los sticky de la tienda).
+describe('la tienda no tapa el footer', () => {
+  it('.fnshop recorta lo que sobresale con overflow: clip', () => {
+    const shopCss = readFileSync(join(__dirname, '../components/fortnite-shop/fortnite-shop.css'), 'utf8');
+    const block = shopCss.match(/\n\.fnshop \{([^}]*)\}/)?.[1] ?? '';
+    expect(block).toMatch(/overflow:\s*clip/);
+    expect(block).not.toMatch(/overflow:\s*hidden/);
+  });
+});

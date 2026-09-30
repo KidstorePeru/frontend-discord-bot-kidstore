@@ -3,7 +3,11 @@
    Todo va con el prefijo fns- y bajo .fnshop para no tocar el resto de la web.
    ══════════════════════════════════════════════════════════════════ */
 
+/* overflow: clip (NO hidden: hidden rompería los sticky de dentro). El fondo de
+   sección es sticky con height 100vh y margin-bottom -100vh: al llegar al final de
+   la tienda sobresalía una pantalla entera por debajo y tapaba el footer. */
 .fnshop {
+  overflow: clip;
   --fn-blue: #0774bb;
   --fn-blue-mid: #052f6f;
   --fn-blue-deep: #040a3f;
