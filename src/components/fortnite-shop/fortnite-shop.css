@@ -1368,7 +1368,8 @@
   line-height: 1;
 }
 .fns-price__current,
-.fns-price__original {
+.fns-price__original,
+.fns-card__cart {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-ui);
@@ -1402,7 +1403,8 @@
 }
 @media (min-width: 48rem) {
   .fns-price__current,
-  .fns-price__original {
+  .fns-price__original,
+  .fns-card__cart {
     font-size: var(--text-md);
   }
   .fns-price__icon {
@@ -1412,8 +1414,8 @@
 }
 
 /* Botón de compra de la tarjeta: carrito + precio en KidCoins (lo que se paga).
-   Amarillo de la tienda para que destaque sobre cualquier color de tarjeta; verde
-   con ✓ cuando el objeto ya está en el carrito. El contenido de la tarjeta no
+   Blanco (se lee sobre cualquier color de tarjeta) y con la misma tipografía que
+   el precio en monedas V; verde con ✓ cuando el objeto ya está en el carrito. El contenido de la tarjeta no
    recibe el ratón (pointer-events: none, para que el hover llegue a la tarjeta),
    así que el botón lo reactiva. En tarjetas angostas baja a su propia línea. */
 .fns-card__buy {
@@ -1443,22 +1445,15 @@
   pointer-events: auto;
   flex: none;
   margin-inline-start: auto;
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
   height: 36px;
   padding: 0 12px 0 10px;
   border-radius: 12px;
-  background: #f7ff19;
+  background: rgba(255, 255, 255, 0.94);
   color: #111;
-  border: 2px solid rgba(0, 0, 0, 0.85);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  font-family: var(--font-ui);
-  font-variation-settings: var(--fv-bold);
-  font-size: var(--text-xs);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   line-height: 1;
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
   transition: transform 0.15s var(--ease), background-color 0.15s, color 0.15s;
 }
 .fns-card__cart:hover {
@@ -1471,7 +1466,6 @@
 .fns-card__cart.is-in-cart {
   background: #22c55e;
   color: #fff;
-  border-color: #14532d;
 }
 .fns-card__cart.is-in-cart:hover {
   background: #16a34a;
@@ -1480,7 +1474,6 @@
   .fns-card__cart {
     height: 40px;
     padding: 0 14px 0 12px;
-    font-size: var(--text-sm);
   }
 }
 
@@ -1608,6 +1601,7 @@
 .fns-card__title,
 .fns-price__current,
 .fns-price__original,
+.fns-card__cart,
 .fns-rail__panel button,
 .fns-mnav__toggle,
 .fns-mnav__list button,
