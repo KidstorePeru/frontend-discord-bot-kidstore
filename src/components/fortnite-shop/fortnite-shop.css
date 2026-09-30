@@ -1414,8 +1414,8 @@
 }
 
 /* Botón de compra de la tarjeta: carrito + precio en KidCoins (lo que se paga).
-   Blanco (se lee sobre cualquier color de tarjeta) y con la misma tipografía que
-   el precio en monedas V; verde con ✓ cuando el objeto ya está en el carrito. El contenido de la tarjeta no
+   Amarillo de la tienda (#f7ff19), sin borde y con la misma tipografía que el
+   precio en monedas V; verde con ✓ cuando el objeto ya está en el carrito. El contenido de la tarjeta no
    recibe el ratón (pointer-events: none, para que el hover llegue a la tarjeta),
    así que el botón lo reactiva. En tarjetas angostas baja a su propia línea. */
 .fns-card__buy {
@@ -1449,7 +1449,7 @@
   height: 36px;
   padding: 0 12px 0 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.94);
+  background: #f7ff19;
   color: #111;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   line-height: 1;
@@ -1457,7 +1457,7 @@
   transition: transform 0.15s var(--ease), background-color 0.15s, color 0.15s;
 }
 .fns-card__cart:hover {
-  background: #fff;
+  background: #fbff8a;
   transform: translateY(-1px) scale(1.04);
 }
 .fns-card__cart:active {
