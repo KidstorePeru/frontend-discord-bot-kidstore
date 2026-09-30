@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
+import { useAuth } from '../context/AuthContext';
 
 const SOCIAL_LINKS = [
   { label: 'WhatsApp', href: 'https://wa.me/51983454837',
@@ -14,8 +15,12 @@ const SOCIAL_LINKS = [
     svg: <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-6.13 6.3 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.17a8.2 8.2 0 0 0 4.79 1.52V7.25a4.85 4.85 0 0 1-1.02-.56z"/></svg> },
 ];
 
+// Pie de página único de todo el sitio (también lo usa la portada). Los nombres de
+// los enlaces son los mismos que los del menú superior, y "Cuenta" cambia según
+// haya sesión iniciada o no.
 export default function Footer() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
+  const { customer } = useAuth();
   const es = lang === 'es';
 
   return (
@@ -40,19 +45,27 @@ export default function Footer() {
         <div className="lv7-footer-links">
           <div className="lv7-fcol">
             <strong>{es ? 'Tienda' : 'Store'}</strong>
-            <Link to="/store">{es ? 'Ver items' : 'Browse items'}</Link>
-            <Link to="/recharge">{es ? 'Recargar KC' : 'Recharge KC'}</Link>
-            <Link to="/bots">{es ? 'Cuentas Bot' : 'Bot Accounts'}</Link>
+            <Link to="/store">{es ? 'Tienda de objetos' : 'Item shop'}</Link>
+            <Link to="/recharge">{t('nav.recharge')}</Link>
+            <Link to="/bots">{t('nav.bots')}</Link>
           </div>
           <div className="lv7-fcol">
             <strong>{es ? 'Cuenta' : 'Account'}</strong>
-            <Link to="/register">{es ? 'Registrarse' : 'Sign up'}</Link>
-            <Link to="/login">{es ? 'Iniciar sesión' : 'Login'}</Link>
-            <Link to="/dashboard">{es ? 'Mi Panel' : 'My Panel'}</Link>
+            {customer ? (
+              <>
+                <Link to="/dashboard">{t('nav.orders')}</Link>
+                <Link to="/account">{t('nav.profile')}</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/register">{es ? 'Crear cuenta' : 'Create account'}</Link>
+                <Link to="/login">{t('nav.login')}</Link>
+              </>
+            )}
           </div>
           <div className="lv7-fcol">
             <strong>{es ? 'Soporte' : 'Support'}</strong>
-            <Link to="/faq">FAQ</Link>
+            <Link to="/faq">{es ? 'Preguntas frecuentes' : 'FAQ'}</Link>
             <Link to="/contact">{es ? 'Contacto' : 'Contact'}</Link>
           </div>
           <div className="lv7-fcol">

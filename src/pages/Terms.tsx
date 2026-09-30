@@ -22,7 +22,7 @@ export default function Terms() {
           <div className="legal-icon"><FileText size={28}/></div>
           <div>
             <h1>{es ? 'Términos y Condiciones' : 'Terms and Conditions'}</h1>
-            <p className="legal-updated">{es ? 'Última actualización: 9 de setiembre de 2026' : 'Last updated: September 9, 2026'}</p>
+            <p className="legal-updated">{es ? 'Última actualización: 30 de setiembre de 2026' : 'Last updated: September 30, 2026'}</p>
           </div>
         </div>
         {es ? (<div className="legal-body"><p>Estos Términos y Condiciones regulan el uso del sitio web KidStorePeru y la compra de productos digitales ofrecidos. Al acceder, navegar o comprar, aceptas estos Términos.</p>
@@ -50,7 +50,7 @@ export default function Terms() {
             <h2>8. Entrega y contingencias</h2>
             <p>Los tiempos son estimados y pueden variar. La entrega se considera completada cuando el ítem figura entregado dentro del juego. Si no puede completarse por causas ajenas a KidStorePeru, ofrecemos reintentos, cambios o crédito.</p>
             <h2>9. Reembolsos</h2>
-            <p>Por la naturaleza digital e inmediata de los productos, no hay reembolsos una vez completada la entrega. Los pagos realizados por MercadoPago o dLocal Go pueden ser disputados directamente a través de la pasarela correspondiente. Los pagos manuales no son reembolsables una vez acreditados los KC. Ver nuestra <Link to="/refunds" className="legal-link">Política de Reembolsos</Link>.</p>
+            <p>Por la naturaleza digital e inmediata de los productos, no hay reembolsos una vez completada la entrega. Los pagos realizados por MercadoPago, dLocal Go, PayPal o criptomonedas pueden ser disputados directamente a través de la pasarela correspondiente. Los pagos manuales no son reembolsables una vez acreditados los KC. Ver nuestra <Link to="/refunds" className="legal-link">Política de Reembolsos</Link>.</p>
             <h2>10. Contacto</h2>
             <p>Para consultas, contáctanos por nuestros <Link to="/contact" className="legal-link">canales de soporte</Link>.</p></div>) : (<div className="legal-body"><p>These Terms and Conditions govern the use of the KidStorePeru website and the purchase of digital products offered. By accessing, browsing, or purchasing, you accept these Terms.</p>
             <div className="legal-highlight">
@@ -77,7 +77,7 @@ export default function Terms() {
             <h2>8. Delivery and contingencies</h2>
             <p>Delivery times are estimates and may vary. Delivery is considered complete when the item appears delivered in-game. If delivery cannot be completed due to causes outside KidStorePeru, we offer retries, exchanges, or credit.</p>
             <h2>9. Refunds</h2>
-            <p>Due to the immediate digital nature of products, no refunds are issued once delivery is complete. Payments made via MercadoPago or dLocal Go can be disputed directly through the corresponding gateway. Manual payments are non-refundable once KC are credited. See our <Link to="/refunds" className="legal-link">Refund Policy</Link>.</p>
+            <p>Due to the immediate digital nature of products, no refunds are issued once delivery is complete. Payments made via MercadoPago, dLocal Go, PayPal, or cryptocurrency can be disputed directly through the corresponding gateway. Manual payments are non-refundable once KC are credited. See our <Link to="/refunds" className="legal-link">Refund Policy</Link>.</p>
             <h2>10. Contact</h2>
             <p>For inquiries, contact us through our <Link to="/contact" className="legal-link">support channels</Link>.</p></div>)}
       </div>
