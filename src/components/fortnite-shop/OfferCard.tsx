@@ -26,21 +26,21 @@ function LeaveBadge({ outDate, label, live }: { outDate: string; label: string; 
 function OfferCard({
   offer,
   t,
-  formatLocal,
+  formatKC,
   inCart,
   onToggleCart,
 }: {
   offer: Offer;
   t: ShopText;
-  /** Precio de referencia en la moneda del cliente (ver vbucksReferencePrice). */
-  formatLocal: (vbucks: number) => string;
+  /** Precio en KidCoins (lo que se cobra) a partir del precio en monedas V. */
+  formatKC: (vbucks: number) => string;
   inCart: boolean;
   onToggleCart: (o: Offer) => void;
 }) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref);
   const wide = offer.cols > 1;
-  const local = formatLocal(offer.price.final);
+  const kc = formatKC(offer.price.final);
 
   return (
     <div className={`fns-cell fns-cell--${offer.cols}`}>
@@ -68,7 +68,7 @@ function OfferCard({
             {offer.subtitle && <div className="fns-card__subtitle">{offer.subtitle}</div>}
             <h3 className="fns-card__title">{offer.title}</h3>
             <div className="fns-card__buy">
-              <Price price={offer.price} t={t} local={local} />
+              <Price price={offer.price} t={t} kc={kc} />
               <button
                 type="button"
                 className={`fns-card__cart${inCart ? ' is-in-cart' : ''}`}

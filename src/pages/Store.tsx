@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart, type CartItem } from '../context/CartContext';
 import { useLang } from '../context/LangContext';
-import { useCurrency } from '../context/CurrencyContext';
-import { vbucksToKC, vbucksReferencePrice } from '../services/constants';
+import { vbucksToKC } from '../services/constants';
 import { PageLoader, Toast } from '../components/UI';
 import { ShoppingBag, X } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
@@ -30,7 +29,6 @@ export default function StorePage() {
   const { refresh } = useAuth();
   const { cart, cartCount, addToCart, removeFromCart, setCartOpen, validateAgainstShop } = useCart();
   const { lang, setLang } = useLang();
-  const { currency, rates } = useCurrency();
 
   const langKey: ShopLangKey = lang === 'en' ? 'en' : 'es';
   const t = SHOP_LANGS[langKey];
@@ -70,11 +68,10 @@ export default function StorePage() {
   const sectionIds = useMemo(() => visibleShop?.sections.map((s) => s.domId) ?? [], [visibleShop]);
   const activeSectionId = useActiveSection(sectionIds);
 
-  // Precio de referencia en la moneda del cliente (nunca lo que se cobra de
-  // verdad: eso siempre es en KC) — reusa la infraestructura de moneda que ya
-  // usa el resto del sitio (CurrencyContext/useExchangeRates), en vez de
-  // inventar una nueva.
-  const formatLocal = useCallback((vbucks: number) => vbucksReferencePrice(vbucks, currency, rates), [currency, rates]);
+  // Precio en KidCoins: lo que de verdad se cobra (el mismo cálculo que usa el
+  // carrito, vbucksToKC). La divisa del cliente solo aparece al recargar KC.
+  const kcFormat = useMemo(() => new Intl.NumberFormat(t.locale), [t.locale]);
+  const formatKC = useCallback((vbucks: number) => kcFormat.format(vbucksToKC(vbucks)), [kcFormat]);
 
   const cartIds = useMemo(() => new Set(cart.map((i) => i.offerId)), [cart]);
 
@@ -255,7 +252,7 @@ export default function StorePage() {
                 t={t}
                 onToggleCart={handleToggleCart}
                 filtering={filtering}
-                formatLocal={formatLocal}
+                formatKC={formatKC}
                 cartIds={cartIds}
               />
             ))}

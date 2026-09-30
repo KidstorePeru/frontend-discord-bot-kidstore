@@ -2,16 +2,19 @@ import { VBuckIcon } from './Icons';
 import type { Offer } from './model';
 import type { ShopText } from './i18n';
 
-// Precio en monedas V como la tienda oficial y, al lado, el equivalente en KidCoins/moneda local.
+// Precio en monedas V como la tienda oficial y, al lado, lo que de verdad se
+// cobra: KidCoins (la moneda de la tienda; los clientes compran KC con su divisa
+// en Recargar y con KC pagan los objetos). Nunca un importe en PEN/USD/EUR.
 export default function Price({
   price,
   t,
-  local,
+  kc,
   className = '',
 }: {
   price: Offer['price'];
   t: ShopText;
-  local?: string;
+  /** Precio en KidCoins ya formateado (p. ej. "1,000"). */
+  kc?: string;
   className?: string;
 }) {
   const discounted = price.regular > price.final;
@@ -28,7 +31,13 @@ export default function Price({
           <s className="fns-price__original">{price.formattedRegular}</s>
         </>
       )}
-      {local && <span className="fns-price__local">{local}</span>}
+      {kc && (
+        <span className="fns-price__kc">
+          <span className="fns-sr-only">{t.kcPrice}</span>
+          <img src="/kidcoin.png" alt="" className="fns-price__kc-icon" width={16} height={16} />
+          {kc} KC
+        </span>
+      )}
     </div>
   );
 }

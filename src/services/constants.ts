@@ -78,22 +78,6 @@ export function vbucksToKC(vbucks: number): number {
   return Math.ceil(vbucks * 1);
 }
 
-// PEN_PER_KC: 1 KC = 1 V-Buck (ver vbucksToKC) y KC siempre cuesta lo mismo en
-// soles sin importar el paquete (S/ 1.30 cada 100 KC) — se deriva del paquete
-// "starter" en vez de repetir el número suelto, para que solo haya un lugar
-// que cambiar si el precio de KC cambia algún día.
-export const PEN_PER_KC = KC_PACKAGES[0].price_pen / KC_PACKAGES[0].kc;
-
-/** Precio de referencia de un objeto de la tienda en la moneda del cliente
- *  (nunca lo que se cobra: eso siempre es en KC). Se convierte el IMPORTE TOTAL
- *  y recién después se redondea — convertir primero la tasa por V-Buck y
- *  redondearla a céntimos daba 0,00 en USD/EUR (0,013 × 0,27 = 0,0035 → 0,00).
- *  Si no hay tasa para esa divisa, muestra el importe en soles con su propio
- *  símbolo (ver formatReferencePrice), nunca soles con el símbolo de otra moneda. */
-export function vbucksReferencePrice(vbucks: number, currencyCode: string, rates: ExchangeRates = FALLBACK_RATES): string {
-  return formatReferencePrice(vbucks * PEN_PER_KC, currencyCode, rates);
-}
-
 // ─────────────────────────────────────────────────────────────
 // DATOS DE PAGO — se obtienen del backend via GET /store/payment-info
 // ─────────────────────────────────────────────────────────────

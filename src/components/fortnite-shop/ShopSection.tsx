@@ -7,7 +7,7 @@ import type { ShopText } from './i18n';
 // Ofertas visibles en un grupo "expandableList" (pistas) antes de pulsar "Ver todo".
 const LIST_PREVIEW = 4;
 
-type CardProps = { t: ShopText; onToggleCart: (o: Offer) => void; formatLocal: (vbucks: number) => string; cartIds: Set<string> };
+type CardProps = { t: ShopText; onToggleCart: (o: Offer) => void; formatKC: (vbucks: number) => string; cartIds: Set<string> };
 
 function OfferGroup({ group, forceExpanded, ...card }: CardProps & { group: ShopGroup; forceExpanded: boolean }) {
   const [expanded, setExpanded] = useState(false);
@@ -23,7 +23,7 @@ function OfferGroup({ group, forceExpanded, ...card }: CardProps & { group: Shop
             key={offer.id}
             offer={offer}
             t={card.t}
-            formatLocal={card.formatLocal}
+            formatKC={card.formatKC}
             inCart={card.cartIds.has(offer.id)}
             onToggleCart={card.onToggleCart}
           />

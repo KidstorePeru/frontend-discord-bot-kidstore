@@ -184,6 +184,21 @@ describe('Store — compra directa desde la tarjeta', () => {
   });
 });
 
+// Regresión: las tarjetas mostraban un precio en S/ / $ / € como si los objetos
+// se cobraran en divisas. Se cobran en KidCoins (1 monedas V = 1 KC): la divisa
+// solo aparece al recargar KC.
+describe('Store — precio en KidCoins', () => {
+  it('cada tarjeta muestra lo que se cobra en KC y ningún importe en divisas', async () => {
+    localStorage.setItem('kc_currency', 'USD');
+    const { container } = renderStore();
+    await waitFor(() => expect(container.querySelectorAll('.fns-card').length).toBe(2));
+    const kc = [...container.querySelectorAll('.fns-price__kc')].map(e => e.textContent);
+    expect(kc).toEqual(expect.arrayContaining(['Precio en KidCoins800 KC', 'Precio en KidCoins1,200 KC']));
+    const cards = [...container.querySelectorAll('.fns-card')].map(c => c.textContent ?? '');
+    for (const text of cards) expect(text).not.toMatch(/S\/|\$|€|US\$/);
+  });
+});
+
 describe('Store — lo más vendido de hoy', () => {
   it('aparece primero, en el orden del ranking, sin inflar el total de objetos disponibles', async () => {
     bestSellers = ['offer-2', 'offer-1', 'ya-no-esta'];

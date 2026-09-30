@@ -1400,8 +1400,11 @@
   opacity: 0.8;
   transform: translate(-50%, -50%) rotate(-7deg);
 }
-/* Equivalente en la moneda del cliente, a la derecha del precio en monedas V */
-.fns-price__local {
+/* Precio en KidCoins (lo que se cobra), a la derecha del precio en monedas V */
+.fns-price__kc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   margin-inline-start: 10px;
   padding-inline-start: 10px;
   border-inline-start: 1px solid rgba(255, 255, 255, 0.35);
@@ -1421,7 +1424,7 @@
     width: 24px;
     height: 24px;
   }
-  .fns-price__local {
+  .fns-price__kc {
     font-size: var(--text-sm);
   }
 }
@@ -1594,7 +1597,7 @@
 .fns-card__title,
 .fns-price__current,
 .fns-price__original,
-.fns-price__local,
+.fns-price__kc,
 .fns-rail__panel button,
 .fns-mnav__toggle,
 .fns-mnav__list button,
