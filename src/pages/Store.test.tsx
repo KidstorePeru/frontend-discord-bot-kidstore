@@ -67,12 +67,26 @@ const SHOP_JSON = {
 };
 
 let bestSellers: string[] | 'fail' = [];
+// Cómo responde el catálogo: 'ok', 'fail' (red caída) o un cuerpo roto.
+let shopMode: 'ok' | 'fail' | 'empty' | 'malformed' = 'ok';
 
 function stubFetch() {
   vi.stubGlobal('fetch', vi.fn((url: string) => {
     if (String(url).includes('/store/shop/bestsellers')) {
       if (bestSellers === 'fail') return Promise.reject(new TypeError('Failed to fetch'));
       return Promise.resolve(new Response(JSON.stringify({ offer_ids: bestSellers }), { status: 200 }));
+    }
+    if (shopMode === 'fail') return Promise.reject(new TypeError('Failed to fetch'));
+    if (shopMode === 'empty') return Promise.resolve(new Response(JSON.stringify({ status: 200, data: { date: 'x', entries: [] } }), { status: 200 }));
+    if (shopMode === 'malformed') {
+      // Un catálogo "nuevo" con una entrada buena y otras rotas.
+      const broken = { status: 200, data: { date: 'y', entries: [
+        entry('offer-9', 'Objeto nuevo', 'Sección A', 1, 500),
+        { offerId: 'roto-1', finalPrice: 'gratis', brItems: [{ name: 'X' }] },
+        { finalPrice: 500, brItems: [{ name: 'Sin id' }] },
+        null,
+      ] } };
+      return Promise.resolve(new Response(JSON.stringify(broken), { status: 200 }));
     }
     return Promise.resolve(new Response(JSON.stringify(SHOP_JSON), { status: 200, headers: { 'Content-Type': 'application/json' } }));
   }));
@@ -102,6 +116,7 @@ const cartOf = () => JSON.parse(localStorage.getItem('kc_cart_c1') || '[]');
 beforeEach(() => {
   mockCustomer = customer();
   bestSellers = [];
+  shopMode = 'ok';
   localStorage.clear();
   localStorage.setItem('kc_lang', 'es');
   stubFetch();
@@ -204,3 +219,41 @@ describe('Store — idioma', () => {
     expect(getByText('EN').getAttribute('aria-pressed')).toBe('true');
   });
 });
+
+describe('Store — fallo al actualizar el catálogo', () => {
+  it.each([['red caída', 'fail'], ['catálogo vacío', 'empty'], ['entradas malformadas', 'malformed']] as const)(
+    'con %s conserva los objetos, avisa que no se actualizaron y "Reintentar" recupera', async (_name, mode) => {
+      const { getByText, getByLabelText, queryByRole, queryByText, findByRole } = renderStore();
+      await waitFor(() => expect(getByText('Objeto de prueba')).toBeTruthy());
+
+      shopMode = mode;
+      fireEvent.click(getByLabelText('Actualizar')); // fuerza la consulta (salta la caché)
+      const alert = await findByRole('alert');
+      expect(alert.textContent).toContain('No se pudo actualizar la tienda');
+      expect(getByText('Objeto de prueba')).toBeTruthy(); // los productos siguen ahí
+      expect(queryByText('Objeto nuevo')).toBeNull(); // no se mezcla con un catálogo roto
+
+      shopMode = 'ok';
+      fireEvent.click(getByText('Reintentar'));
+      await waitFor(() => expect(queryByRole('alert')).toBeNull());
+      expect(getByText('Objeto de prueba')).toBeTruthy();
+    });
+
+  it('si falla el cambio de idioma, lo dice (los objetos visibles son del idioma anterior)', async () => {
+    // Módulos frescos: la caché de catálogo del módulo no debe traer el inglés ya cargado.
+    vi.resetModules();
+    const { default: FreshStore } = await import('./Store');
+    const { CartProvider: FreshCart } = await import('../context/CartContext');
+    const { LangProvider: FreshLang } = await import('../context/LangContext');
+    const { getByText, findByRole } = render(
+      <MemoryRouter><FreshLang><FreshCart><FreshStore /></FreshCart></FreshLang></MemoryRouter>,
+    );
+    await waitFor(() => expect(getByText('Objeto de prueba')).toBeTruthy());
+    shopMode = 'fail';
+    fireEvent.click(getByText('EN'));
+    const alert = await findByRole('alert');
+    expect(alert.textContent).toContain("Couldn't load the shop in English");
+    expect(getByText('Objeto de prueba')).toBeTruthy();
+  });
+});
+

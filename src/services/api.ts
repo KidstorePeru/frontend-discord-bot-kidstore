@@ -31,6 +31,39 @@ let authEpoch = 0;
 export function getAuthEpoch(): number { return authEpoch; }
 export function beginNewSession(): void { authEpoch++; }
 
+// Intentos de inicio de sesión (contraseña, 2FA, OAuth, registro OAuth,
+// verificación de correo). Cada intento captura su número y la época al salir;
+// su respuesta solo se acepta si al volver sigue siendo el intento MÁS NUEVO y
+// nadie cerró sesión ni empezó otra sesión mientras tanto. Así una respuesta
+// lenta de un intento viejo no reemplaza una sesión nueva ni "revive" la sesión
+// después de cerrarla: se descarta con SESSION_CHANGED sin guardar tokens.
+// Además, cada pantalla pasa un AbortSignal que aborta al salir de ella: el
+// intento se cancela (también la petición de red) y su respuesta, si llega, se
+// descarta igual — no inicia sesión ni navega desde una pantalla que ya no está.
+let authAttemptSeq = 0;
+function startAuthAttempt(signal?: AbortSignal) {
+  const attempt = ++authAttemptSeq;
+  const epoch = authEpoch;
+  const isCurrent = () => attempt === authAttemptSeq && epoch === authEpoch && !signal?.aborted;
+  return {
+    /** Espera la respuesta y la descarta (SESSION_CHANGED) si el intento dejó de ser vigente. */
+    async guard<T>(pending: Promise<T>): Promise<T> {
+      if (!isCurrent()) throw sessionChangedError();
+      try {
+        const res = await pending;
+        if (!isCurrent()) throw sessionChangedError();
+        return res;
+      } catch (err) {
+        if (!isCurrent()) throw sessionChangedError(); // incluye el AbortError de fetch
+        throw err;
+      }
+    },
+  };
+}
+/** Abandona los intentos de inicio de sesión en vuelo (el usuario canceló el
+ *  paso de 2FA): sus respuestas se descartarán. */
+export function cancelAuthAttempts(): void { authAttemptSeq++; }
+
 // Códigos de error propios de este mecanismo.
 export const SESSION_CHANGED = 'SESSION_CHANGED';
 export const SESSION_REFRESH_UNAVAILABLE = 'SESSION_REFRESH_UNAVAILABLE';
@@ -210,11 +243,13 @@ export type LoginResult =
   | { requires2FA: false; token: string; customer: Customer }
   | { requires2FA: true; tempToken: string };
 
-export async function login(email: string, password: string): Promise<LoginResult> {
-  const res = await request<{ success: boolean; token?: string; refresh_token?: string; customer?: Customer; requires_2fa?: boolean; temp_token?: string }>('/store/login', {
+export async function login(email: string, password: string, signal?: AbortSignal): Promise<LoginResult> {
+  const attempt = startAuthAttempt(signal);
+  const res = await attempt.guard(request<{ success: boolean; token?: string; refresh_token?: string; customer?: Customer; requires_2fa?: boolean; temp_token?: string }>('/store/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
-  });
+    signal,
+  }));
   if (res.requires_2fa && res.temp_token) {
     return { requires2FA: true, tempToken: res.temp_token };
   }
@@ -230,28 +265,37 @@ export async function login(email: string, password: string): Promise<LoginResul
 // sirve para nada (no es el token real), así que aunque quedara en la URL
 // visible o en el historial, no compromete la cuenta; los tokens de
 // verdad viajan acá, en el cuerpo de la respuesta, nunca en una URL.
-export async function exchangeOAuthCode(code: string): Promise<
+export async function exchangeOAuthCode(code: string, signal?: AbortSignal): Promise<
   { requires2FA: true; tempToken: string } | { requires2FA: false; token: string; refreshToken?: string }
 > {
-  const res = await request<{ success: boolean; token?: string; refresh_token?: string; requires_2fa?: boolean; temp_token?: string }>('/auth/exchange', {
+  const attempt = startAuthAttempt(signal);
+  const res = await attempt.guard(request<{ success: boolean; token?: string; refresh_token?: string; requires_2fa?: boolean; temp_token?: string }>('/auth/exchange', {
     method: 'POST',
     body: JSON.stringify({ code }),
-  });
+    signal,
+  }));
   if (res.requires_2fa && res.temp_token) {
     return { requires2FA: true, tempToken: res.temp_token };
   }
   if (!res.token) throw new Error('Código inválido o expirado');
+  // Los tokens se guardan aquí mismo, en el mismo paso que la comprobación de
+  // arriba: no queda ningún hueco en el que un logout pueda colarse en medio.
+  beginNewSession();
+  localStorage.setItem('kc_token', res.token);
+  if (res.refresh_token) localStorage.setItem('kc_refresh_token', res.refresh_token);
   return { requires2FA: false, token: res.token, refreshToken: res.refresh_token };
 }
 
 // verify2FA completa un login que quedó pendiente de segundo factor —
 // "code" acepta tanto un código TOTP de 6 dígitos como un código de
 // respaldo (formato XXXX-XXXX).
-export async function verify2FA(tempToken: string, code: string): Promise<AuthResponse & { refresh_token?: string }> {
-  const res = await request<{ success: boolean; token: string; refresh_token: string; customer: Customer }>('/store/login/2fa', {
+export async function verify2FA(tempToken: string, code: string, signal?: AbortSignal): Promise<AuthResponse & { refresh_token?: string }> {
+  const attempt = startAuthAttempt(signal);
+  const res = await attempt.guard(request<{ success: boolean; token: string; refresh_token: string; customer: Customer }>('/store/login/2fa', {
     method: 'POST',
     body: JSON.stringify({ temp_token: tempToken, code }),
-  });
+    signal,
+  }));
   if (res.refresh_token) {
     beginNewSession(); // empieza una sesión nueva: descarta respuestas de la anterior
     localStorage.setItem('kc_refresh_token', res.refresh_token);
@@ -682,10 +726,11 @@ export async function adminCloseComplaint(adminKey: string, id: string) {
 
 /* ── Email verification ── */
 
-export async function verifyEmail(token: string): Promise<{ token: string; customer: Customer }> {
-  const res = await request<{ success: boolean; token: string; customer: Customer }>(
-    `/store/verify-email?token=${token}`
-  );
+export async function verifyEmail(token: string, signal?: AbortSignal): Promise<{ token: string; customer: Customer }> {
+  const attempt = startAuthAttempt(signal);
+  const res = await attempt.guard(request<{ success: boolean; token: string; customer: Customer }>(
+    `/store/verify-email?token=${encodeURIComponent(token)}`, { signal }
+  ));
   return { token: res.token, customer: res.customer };
 }
 
@@ -711,11 +756,16 @@ export async function getPendingOAuthRegistration(token: string): Promise<{
 }
 
 export async function completeOAuthRegistration(
-  token: string, epic_username: string
+  token: string, epic_username: string, signal?: AbortSignal
 ): Promise<{ token: string; refresh_token: string; customer: Customer }> {
-  const res = await request<{ success: boolean; token: string; refresh_token: string; customer: Customer }>(
+  const attempt = startAuthAttempt(signal);
+  const res = await attempt.guard(request<{ success: boolean; token: string; refresh_token: string; customer: Customer }>(
     '/auth/complete-registration',
-    { method: 'POST', body: JSON.stringify({ token, epic_username }) }
-  );
+    { method: 'POST', body: JSON.stringify({ token, epic_username }), signal }
+  ));
+  if (res.refresh_token) {
+    beginNewSession();
+    localStorage.setItem('kc_refresh_token', res.refresh_token);
+  }
   return { token: res.token, refresh_token: res.refresh_token, customer: res.customer };
 }

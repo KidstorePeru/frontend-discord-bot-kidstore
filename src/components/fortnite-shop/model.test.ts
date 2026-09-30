@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildShop, filterShop, withBestSellers, type ApiEntry } from './model';
+import { buildShop, filterShop, isValidEntry, withBestSellers, type ApiEntry } from './model';
 import { SHOP_LANGS } from './i18n';
 
 // Regresiones del orden exacto de la tienda oficial (ver PROMPT-tienda-fortnite.md §2):
@@ -138,5 +138,34 @@ describe('withBestSellers — "LO MÁS VENDIDO DE HOY"', () => {
   it('el filtro por tipo también aplica a la sección de más vendidos', () => {
     const r = filterShop(withBestSellers(shop, ['a'], 'X'), '', new Set(['emote']));
     expect(r.sections).toHaveLength(0);
+  });
+});
+
+// Regresión: una entrada rota del catálogo (sin offerId, precio no numérico,
+// listas que no son listas de objetos…) llegaba a buildShop y podía romper la
+// tienda entera. isValidEntry aplica las mismas reglas que el backend.
+describe('isValidEntry', () => {
+  const ok = { offerId: 'a', finalPrice: 500, regularPrice: 800, brItems: [{ name: 'X' }] };
+  it('acepta entradas válidas de distintos tipos', () => {
+    expect(isValidEntry(ok)).toBe(true);
+    expect(isValidEntry({ offerId: 'b', finalPrice: 0, tracks: [{ title: 'T' }] })).toBe(true);
+    expect(isValidEntry({ offerId: 'c', finalPrice: 1200, bundle: { name: 'Lote' }, brItems: [] })).toBe(true);
+    expect(isValidEntry({ offerId: 'd', finalPrice: 300, cars: [{ name: 'C' }], layout: null })).toBe(true);
+  });
+  it.each([
+    ['null', null],
+    ['texto', 'x'],
+    ['sin offerId', { finalPrice: 500, brItems: [{}] }],
+    ['offerId vacío', { ...ok, offerId: ' ' }],
+    ['precio texto', { ...ok, finalPrice: 'gratis' }],
+    ['precio negativo', { ...ok, finalPrice: -1 }],
+    ['precio decimal', { ...ok, finalPrice: 1.5 }],
+    ['regularPrice null', { ...ok, regularPrice: null }],
+    ['sin contenido', { offerId: 'a', finalPrice: 500 }],
+    ['brItems no es lista', { ...ok, brItems: { name: 'X' } }],
+    ['brItems con null', { ...ok, brItems: [null] }],
+    ['layout no es objeto', { ...ok, layout: 'x' }],
+  ])('rechaza %s', (_name, value) => {
+    expect(isValidEntry(value)).toBe(false);
   });
 });

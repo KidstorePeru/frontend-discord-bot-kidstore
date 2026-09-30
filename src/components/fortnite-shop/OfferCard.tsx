@@ -26,22 +26,21 @@ function LeaveBadge({ outDate, label, live }: { outDate: string; label: string; 
 function OfferCard({
   offer,
   t,
-  sym,
-  perVb,
+  formatLocal,
   inCart,
   onToggleCart,
 }: {
   offer: Offer;
   t: ShopText;
-  sym: string;
-  perVb: number;
+  /** Precio de referencia en la moneda del cliente (ver vbucksReferencePrice). */
+  formatLocal: (vbucks: number) => string;
   inCart: boolean;
   onToggleCart: (o: Offer) => void;
 }) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref);
   const wide = offer.cols > 1;
-  const local = `${sym} ${(offer.price.final * perVb).toFixed(2)}`;
+  const local = formatLocal(offer.price.final);
 
   return (
     <div className={`fns-cell fns-cell--${offer.cols}`}>

@@ -79,7 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearRetry]);
 
   const refresh = useCallback(async () => {
-    if (!localStorage.getItem('kc_token')) return;
+    const stored = localStorage.getItem('kc_token');
+    if (!stored) return;
+    // Tokens guardados fuera de setAuth (canje OAuth en AuthCallback): el estado
+    // tiene que reflejarlos para que ProtectedRoute sepa que HAY una sesión que
+    // comprobar aunque la comprobación falle por algo temporal.
+    setToken(stored);
     const seq = ++seqRef.current;
     try {
       const me = await getMe();
@@ -104,13 +109,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           retryTimer.current = setTimeout(() => { retryTimer.current = null; void refresh(); }, delay);
         }
       }
+    } finally {
+      // Solo la comprobación MÁS NUEVA termina la carga: si una anterior (ya
+      // reemplazada, p. ej. el doble montaje de React StrictMode) la terminaba,
+      // ProtectedRoute veía "sin cliente y sin fallo temporal" durante un
+      // instante y mandaba a /login perdiendo la ruta.
+      if (seq === seqRef.current) setLoading(false);
     }
   }, [logout, clearRetry]);
 
   useEffect(() => {
-    if (token) {
-      refresh().finally(() => setLoading(false));
-    }
+    if (token) void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Solo al montar — refresh y token se estabilizan con useCallback/useState
 

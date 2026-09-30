@@ -84,19 +84,14 @@ export function vbucksToKC(vbucks: number): number {
 // que cambiar si el precio de KC cambia algún día.
 export const PEN_PER_KC = KC_PACKAGES[0].price_pen / KC_PACKAGES[0].kc;
 
-/** Cuánto vale 1 KC/V-Buck en la divisa pedida (null si no hay tipo de cambio
- *  para esa divisa — ver convertFromPEN). Lo usa la tienda de Fortnite para
- *  mostrar, junto al precio en V-Bucks, el equivalente en la moneda del
- *  cliente (nunca lo que se cobra de verdad: eso siempre es en KC). */
-export function kcToLocalRate(currencyCode: string, rates: ExchangeRates = FALLBACK_RATES): number {
-  return convertFromPEN(PEN_PER_KC, currencyCode, rates) ?? PEN_PER_KC;
-}
-
-/** Símbolo de una divisa (ej. "S/", "$", "€") sin ningún monto — se obtiene
- *  formateando 0 y quitando los dígitos/separadores, en vez de mantener un
- *  mapa de símbolos aparte que se puede desactualizar. */
-export function currencySymbol(currencyCode: string, locale = 'es-PE'): string {
-  return formatCurrency(0, currencyCode, locale).replace(/[\d.,\s]/g, '').trim() || currencyCode;
+/** Precio de referencia de un objeto de la tienda en la moneda del cliente
+ *  (nunca lo que se cobra: eso siempre es en KC). Se convierte el IMPORTE TOTAL
+ *  y recién después se redondea — convertir primero la tasa por V-Buck y
+ *  redondearla a céntimos daba 0,00 en USD/EUR (0,013 × 0,27 = 0,0035 → 0,00).
+ *  Si no hay tasa para esa divisa, muestra el importe en soles con su propio
+ *  símbolo (ver formatReferencePrice), nunca soles con el símbolo de otra moneda. */
+export function vbucksReferencePrice(vbucks: number, currencyCode: string, rates: ExchangeRates = FALLBACK_RATES): string {
+  return formatReferencePrice(vbucks * PEN_PER_KC, currencyCode, rates);
 }
 
 // ─────────────────────────────────────────────────────────────

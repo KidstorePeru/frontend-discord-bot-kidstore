@@ -34,6 +34,8 @@
 .toast-error   { background: color-mix(in srgb, var(--red-500) 10%, var(--bg-surface)); color: var(--red-500); border-color: color-mix(in srgb, var(--red-500) 25%, transparent); }
 .toast-info    { background: color-mix(in srgb, var(--blue-500) 10%, var(--bg-surface)); color: var(--blue-500); border-color: color-mix(in srgb, var(--blue-500) 25%, transparent); }
 .page-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: calc(100vh - var(--nav-height)); color: var(--text-muted); }
+.page-loader p { max-width: 42ch; padding-inline: 16px; text-align: center; }
+.page-loader .btn { display: inline-flex; align-items: center; gap: 8px; }
 
 /* ═══════════════════════════════════════════════════
    TRUSTPILOT CTA — invitación a reseñar tras compra/recarga exitosa

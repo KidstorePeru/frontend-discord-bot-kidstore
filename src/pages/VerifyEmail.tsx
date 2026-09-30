@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { verifyEmail } from '../services/api';
+import { verifyEmail, isSessionChangedError } from '../services/api';
 import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 
@@ -13,15 +13,11 @@ export default function VerifyEmail() {
   const navigate       = useNavigate();
   const es             = lang === 'es';
   useSEO({ title: es ? 'Verificar correo' : 'Verify email', noindex: true });
-  const called         = useRef(false); // evita doble ejecución en React Strict Mode
 
   const [status,  setStatus]  = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (called.current) return;
-    called.current = true;
-
     const token = searchParams.get('token');
     if (!token) {
       setStatus('error');
@@ -29,19 +25,27 @@ export default function VerifyEmail() {
       return;
     }
 
-    verifyEmail(token)
+    // Arranca en el siguiente tick (StrictMode cancela el primer montaje antes de
+    // que corra: el enlace se verifica una sola vez). Salir de la pantalla aborta
+    // la verificación y la redirección pendiente.
+    const ctrl = new AbortController();
+    let redirect: ReturnType<typeof setTimeout> | undefined;
+    const start = setTimeout(() => verifyEmail(token, ctrl.signal)
       .then(res => {
         setAuth(res.token, res.customer);
         setStatus('success');
         setMessage(es
           ? '¡Tu cuenta ha sido verificada correctamente!'
           : 'Your account has been verified successfully!');
-        setTimeout(() => navigate('/store'), 2500);
+        redirect = setTimeout(() => navigate('/store'), 2500);
       })
       .catch(err => {
+        if (isSessionChangedError(err) || ctrl.signal.aborted) return;
         setStatus('error');
         setMessage(err.message || (es ? 'Token inválido o expirado.' : 'Invalid or expired token.'));
-      });
+      }), 0);
+    return () => { clearTimeout(start); clearTimeout(redirect); ctrl.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

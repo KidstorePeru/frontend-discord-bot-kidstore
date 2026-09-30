@@ -88,6 +88,34 @@ export interface ShopModel { sections: ShopSection[]; categories: ShopCategory[]
 
 const SIZE_COLS: Record<string, 1 | 2 | 3 | 4> = { Size_1_x_1: 1, Size_2_x_1: 2, Size_3_x_1: 3, Size_4_x_1: 4 };
 
+/* ── Validación de entradas ──────────────────────────────────────────
+   Lo mismo que exige el backend (validateShopEntry en shop.go): un objeto con
+   offerId, precios enteros no negativos y algún contenido. Una entrada rota
+   nunca llega a buildShop (podía romper el render de toda la tienda). */
+
+const CONTENT_KEYS = ['brItems', 'tracks', 'instruments', 'cars', 'legoKits'] as const;
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+const isPrice = (v: unknown) => typeof v === 'number' && Number.isInteger(v) && v >= 0;
+
+export function isValidEntry(e: unknown): e is ApiEntry {
+  if (!isObject(e)) return false;
+  if (typeof e.offerId !== 'string' || !e.offerId.trim()) return false;
+  if (!isPrice(e.finalPrice)) return false;
+  if ('regularPrice' in e && !isPrice(e.regularPrice)) return false;
+  for (const key of ['layout', 'bundle']) {
+    if (e[key] != null && !isObject(e[key])) return false;
+  }
+  let hasContent = false;
+  for (const key of CONTENT_KEYS) {
+    const list = e[key];
+    if (list == null) continue;
+    if (!Array.isArray(list) || !list.every(isObject)) return false;
+    if (list.length > 0) hasContent = true;
+  }
+  return hasContent || isObject(e.bundle);
+}
+
 export function buildShop(entries: ApiEntry[], t: ShopText): ShopModel {
   const nf = new Intl.NumberFormat(t.locale);
   const sections = new Map<string, Omit<ShopSection, 'groups'> & { groups: Map<number, ShopGroup> }>();
