@@ -157,7 +157,7 @@ export default function Voucher() {
 
         <p className="vc-support">
           {es ? '¿Dudas sobre este comprobante? Escríbenos a ' : 'Questions about this receipt? Email us at '}
-          <a href="mailto:contacto@kidstoreperu.net">contacto@kidstoreperu.net</a>
+          <a href="mailto:contacto@kidstoreperu.com">contacto@kidstoreperu.com</a>
         </p>
       </div>
     </div>
