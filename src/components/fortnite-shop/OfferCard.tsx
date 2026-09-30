@@ -68,16 +68,18 @@ function OfferCard({
             {offer.subtitle && <div className="fns-card__subtitle">{offer.subtitle}</div>}
             <h3 className="fns-card__title">{offer.title}</h3>
             <div className="fns-card__buy">
-              <Price price={offer.price} t={t} kc={kc} />
+              <Price price={offer.price} t={t} />
+              {/* El precio en KidCoins ES el botón de compra: lo que pagas al pulsarlo. */}
               <button
                 type="button"
                 className={`fns-card__cart${inCart ? ' is-in-cart' : ''}`}
                 onClick={() => onToggleCart(offer)}
                 aria-pressed={inCart}
-                aria-label={inCart ? t.removeFromCart(offer.title) : t.addToCart(offer.title)}
-                title={inCart ? t.removeFromCart(offer.title) : t.addToCart(offer.title)}
+                aria-label={inCart ? t.removeFromCart(offer.title, kc) : t.addToCart(offer.title, kc)}
+                title={inCart ? t.removeFromCart(offer.title, kc) : t.addToCart(offer.title, kc)}
               >
-                {inCart ? <CheckIcon size={18} /> : <CartIcon size={18} />}
+                {inCart ? <CheckIcon size={18} /> : <CartIcon size={20} />}
+                <span className="fns-card__cart-price">{kc} KC</span>
               </button>
             </div>
           </div>

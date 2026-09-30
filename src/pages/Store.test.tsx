@@ -130,10 +130,10 @@ afterEach(() => {
 describe('Store — compra directa desde la tarjeta', () => {
   it('el botón de carrito agrega el objeto con el CartItem de siempre y abre el carrito', async () => {
     const { getByLabelText, getByTestId, getAllByText } = renderStore();
-    await waitFor(() => expect(getByLabelText('Agregar Objeto de prueba al carrito')).toBeTruthy());
+    await waitFor(() => expect(getByLabelText(/^Agregar Objeto de prueba al carrito/)).toBeTruthy());
     expect(getByTestId('cart-open').textContent).toBe('false');
 
-    fireEvent.click(getByLabelText('Agregar Objeto de prueba al carrito'));
+    fireEvent.click(getByLabelText(/^Agregar Objeto de prueba al carrito/));
 
     await waitFor(() => expect(cartOf()).toHaveLength(1));
     expect(cartOf()[0]).toMatchObject({
@@ -143,25 +143,25 @@ describe('Store — compra directa desde la tarjeta', () => {
     });
     expect(getByTestId('cart-open').textContent).toBe('true'); // primer objeto: se abre el carrito
     expect(getAllByText('En tu carrito').length).toBe(1);
-    expect(getByLabelText('Quitar Objeto de prueba del carrito').getAttribute('aria-pressed')).toBe('true');
+    expect(getByLabelText(/^Quitar Objeto de prueba del carrito/).getAttribute('aria-pressed')).toBe('true');
   });
 
   it('volver a tocarlo lo quita del carrito', async () => {
     const { getByLabelText, queryByText } = renderStore();
-    await waitFor(() => expect(getByLabelText('Agregar Objeto de prueba al carrito')).toBeTruthy());
-    fireEvent.click(getByLabelText('Agregar Objeto de prueba al carrito'));
+    await waitFor(() => expect(getByLabelText(/^Agregar Objeto de prueba al carrito/)).toBeTruthy());
+    fireEvent.click(getByLabelText(/^Agregar Objeto de prueba al carrito/));
     await waitFor(() => expect(cartOf()).toHaveLength(1));
-    fireEvent.click(getByLabelText('Quitar Objeto de prueba del carrito'));
+    fireEvent.click(getByLabelText(/^Quitar Objeto de prueba del carrito/));
     await waitFor(() => expect(cartOf()).toHaveLength(0));
     expect(queryByText('En tu carrito')).toBeNull();
   });
 
   it('se pueden agregar varios objetos distintos, uno por uno', async () => {
     const { getByLabelText } = renderStore();
-    await waitFor(() => expect(getByLabelText('Agregar Objeto de prueba al carrito')).toBeTruthy());
-    fireEvent.click(getByLabelText('Agregar Objeto de prueba al carrito'));
+    await waitFor(() => expect(getByLabelText(/^Agregar Objeto de prueba al carrito/)).toBeTruthy());
+    fireEvent.click(getByLabelText(/^Agregar Objeto de prueba al carrito/));
     await waitFor(() => expect(cartOf()).toHaveLength(1));
-    fireEvent.click(getByLabelText('Agregar Otro objeto al carrito'));
+    fireEvent.click(getByLabelText(/^Agregar Otro objeto al carrito/));
     await waitFor(() => expect(cartOf()).toHaveLength(2));
     expect(cartOf().map((i: { offerId: string }) => i.offerId)).toEqual(['offer-1', 'offer-2']);
   });
@@ -169,8 +169,8 @@ describe('Store — compra directa desde la tarjeta', () => {
   it('sin sesión iniciada muestra el modal de inicio de sesión y no toca el carrito', async () => {
     mockCustomer = null;
     const { getByLabelText, getByText } = renderStore();
-    await waitFor(() => expect(getByLabelText('Agregar Objeto de prueba al carrito')).toBeTruthy());
-    fireEvent.click(getByLabelText('Agregar Objeto de prueba al carrito'));
+    await waitFor(() => expect(getByLabelText(/^Agregar Objeto de prueba al carrito/)).toBeTruthy());
+    fireEvent.click(getByLabelText(/^Agregar Objeto de prueba al carrito/));
     await waitFor(() => expect(getByText('¡Inicia sesión para comprar!')).toBeTruthy());
     expect(localStorage.getItem('kc_cart_c1')).toBeNull();
   });
@@ -192,8 +192,12 @@ describe('Store — precio en KidCoins', () => {
     localStorage.setItem('kc_currency', 'USD');
     const { container } = renderStore();
     await waitFor(() => expect(container.querySelectorAll('.fns-card').length).toBe(2));
-    const kc = [...container.querySelectorAll('.fns-price__kc')].map(e => e.textContent);
-    expect(kc).toEqual(expect.arrayContaining(['Precio en KidCoins800 KC', 'Precio en KidCoins1,200 KC']));
+    // El precio en KC es el propio botón de compra.
+    const buttons = [...container.querySelectorAll('.fns-card__cart')];
+    expect(buttons.map(b => b.textContent)).toEqual(expect.arrayContaining(['800 KC', '1,200 KC']));
+    expect(buttons.map(b => b.getAttribute('aria-label'))).toEqual(expect.arrayContaining([
+      'Agregar Objeto de prueba al carrito por 800 KC', 'Agregar Otro objeto al carrito por 1,200 KC',
+    ]));
     const cards = [...container.querySelectorAll('.fns-card')].map(c => c.textContent ?? '');
     for (const text of cards) expect(text).not.toMatch(/S\/|\$|€|US\$/);
   });
@@ -226,7 +230,7 @@ describe('Store — lo más vendido de hoy', () => {
 describe('Store — idioma', () => {
   it('el selector ES/EN de la tienda cambia el idioma de todo el sitio y pide el catálogo en ese idioma', async () => {
     const { getByText, getByLabelText } = renderStore();
-    await waitFor(() => expect(getByLabelText('Agregar Objeto de prueba al carrito')).toBeTruthy());
+    await waitFor(() => expect(getByLabelText(/^Agregar Objeto de prueba al carrito/)).toBeTruthy());
     fireEvent.click(getByText('EN'));
     await waitFor(() => expect(localStorage.getItem('kc_lang')).toBe('en'));
     const urls = (fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls.map((c) => String(c[0]));

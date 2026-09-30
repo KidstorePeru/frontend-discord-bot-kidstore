@@ -1400,21 +1400,6 @@
   opacity: 0.8;
   transform: translate(-50%, -50%) rotate(-7deg);
 }
-/* Precio en KidCoins (lo que se cobra), a la derecha del precio en monedas V */
-.fns-price__kc {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-inline-start: 10px;
-  padding-inline-start: 10px;
-  border-inline-start: 1px solid rgba(255, 255, 255, 0.35);
-  font-family: var(--font-ui);
-  font-weight: 600;
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  opacity: 0.92;
-}
 @media (min-width: 48rem) {
   .fns-price__current,
   .fns-price__original {
@@ -1424,52 +1409,78 @@
     width: 24px;
     height: 24px;
   }
-  .fns-price__kc {
-    font-size: var(--text-sm);
-  }
 }
 
-/* Botón de carrito de la tarjeta (compra directa): a la derecha del precio. El
-   contenido de la tarjeta no recibe el ratón (pointer-events: none, para que el
-   hover llegue a la tarjeta), así que el botón lo reactiva. */
+/* Botón de compra de la tarjeta: carrito + precio en KidCoins (lo que se paga).
+   Amarillo de la tienda para que destaque sobre cualquier color de tarjeta; verde
+   con ✓ cuando el objeto ya está en el carrito. El contenido de la tarjeta no
+   recibe el ratón (pointer-events: none, para que el hover llegue a la tarjeta),
+   así que el botón lo reactiva. En tarjetas angostas baja a su propia línea. */
 .fns-card__buy {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px 8px;
 }
 .fns-card__buy .fns-price {
-  flex: 1;
-  min-width: 0;
+  /* El precio en monedas V nunca se encoge bajo el botón: si no caben juntos,
+     el botón baja a la línea siguiente. */
+  flex: 1 0 auto;
+}
+/* Móvil: en tarjetas de una columna, precio arriba y botón de compra a lo ancho. */
+@media (max-width: 47.99rem) {
+  .fns-card--1 .fns-card__buy {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .fns-card--1 .fns-card__cart {
+    justify-content: center;
+    margin-inline-start: 0;
+  }
 }
 .fns-card__cart {
   pointer-events: auto;
   flex: none;
-  display: grid;
-  place-items: center;
-  width: 36px;
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   height: 36px;
+  padding: 0 12px 0 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.92);
+  background: #f7ff19;
   color: #111;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(0, 0, 0, 0.85);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  font-family: var(--font-ui);
+  font-variation-settings: var(--fv-bold);
+  font-size: var(--text-xs);
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   transition: transform 0.15s var(--ease), background-color 0.15s, color 0.15s;
 }
 .fns-card__cart:hover {
   background: #fff;
-  transform: translateY(-1px) scale(1.06);
+  transform: translateY(-1px) scale(1.04);
 }
 .fns-card__cart:active {
-  transform: scale(0.92);
+  transform: scale(0.94);
 }
 .fns-card__cart.is-in-cart {
   background: #22c55e;
   color: #fff;
+  border-color: #14532d;
+}
+.fns-card__cart.is-in-cart:hover {
+  background: #16a34a;
 }
 @media (min-width: 64rem) {
   .fns-card__cart {
-    width: 40px;
     height: 40px;
+    padding: 0 14px 0 12px;
+    font-size: var(--text-sm);
   }
 }
 
@@ -1597,7 +1608,6 @@
 .fns-card__title,
 .fns-price__current,
 .fns-price__original,
-.fns-price__kc,
 .fns-rail__panel button,
 .fns-mnav__toggle,
 .fns-mnav__list button,
