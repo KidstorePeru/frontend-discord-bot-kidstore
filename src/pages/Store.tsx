@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart, type CartItem } from '../context/CartContext';
 import { useLang } from '../context/LangContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { vbucksToKC, kcToLocalRate, currencySymbol } from '../services/constants';
+import { vbucksToKC, vbucksReferencePrice } from '../services/constants';
 import { PageLoader, Toast } from '../components/UI';
 import { ShoppingBag, X } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
@@ -35,7 +35,7 @@ export default function StorePage() {
   const langKey: ShopLangKey = lang === 'en' ? 'en' : 'es';
   const t = SHOP_LANGS[langKey];
   const es = langKey === 'es';
-  const { status, entries, date, stale, reload } = useShopData(t.apiLang);
+  const { status, entries, date, stale, entriesLang, reload } = useShopData(t.apiLang);
 
   useSEO({
     title: es ? 'Tienda de Fortnite' : 'Fortnite Store',
@@ -74,8 +74,7 @@ export default function StorePage() {
   // verdad: eso siempre es en KC) — reusa la infraestructura de moneda que ya
   // usa el resto del sitio (CurrencyContext/useExchangeRates), en vez de
   // inventar una nueva.
-  const perVb = useMemo(() => kcToLocalRate(currency, rates), [currency, rates]);
-  const sym = useMemo(() => currencySymbol(currency), [currency]);
+  const formatLocal = useCallback((vbucks: number) => vbucksReferencePrice(vbucks, currency, rates), [currency, rates]);
 
   const cartIds = useMemo(() => new Set(cart.map((i) => i.offerId)), [cart]);
 
@@ -208,7 +207,17 @@ export default function StorePage() {
               />
             )}
 
-            {shop && stale && (
+            {/* Falló la actualización pero hay objetos de antes: se conservan, con un
+                aviso claro de que pueden no estar al día y la opción de reintentar. */}
+            {shop && status === 'error' && (
+              <div className="fns-notice fns-notice--error" role="alert">
+                <span>{entriesLang && entriesLang !== t.apiLang ? t.updateFailedLang : t.updateFailed}</span>
+                <button type="button" className="fns-pill-button" onClick={reload}>
+                  {t.retry}
+                </button>
+              </div>
+            )}
+            {shop && stale && status !== 'error' && (
               <div className="fns-notice" role="status">
                 <span>{t.stale}</span>
                 <button type="button" className="fns-pill-button" onClick={reload}>
@@ -246,8 +255,7 @@ export default function StorePage() {
                 t={t}
                 onToggleCart={handleToggleCart}
                 filtering={filtering}
-                sym={sym}
-                perVb={perVb}
+                formatLocal={formatLocal}
                 cartIds={cartIds}
               />
             ))}

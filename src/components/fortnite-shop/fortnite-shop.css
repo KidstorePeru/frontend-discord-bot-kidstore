@@ -208,6 +208,11 @@
   flex: 1;
   min-width: 200px;
 }
+/* Falló la actualización: se distingue del aviso de "datos del respaldo". */
+.fns-notice--error {
+  background: rgba(120, 16, 32, 0.6);
+  border-inline-start: 3px solid #f87171;
+}
 
 /* ══════════════════════════════════════════════════════
    Fondo: degradado radial + textura de la sección activa.
@@ -680,6 +685,7 @@
   position: relative;
 }
 .fns-rail__dots {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -752,15 +758,20 @@
   background: #fff;
   color: #111;
 }
+/* Abierta con el ratón (hover) o con el botón de los puntos (.is-open, teclado). */
 .fns-rail__hover:hover .fns-rail__panel,
-.fns-rail__hover:focus-within .fns-rail__panel {
+.fns-rail__hover.is-open .fns-rail__panel {
   opacity: 1;
   visibility: visible;
   clip-path: inset(0 0 0 0 round var(--radius-lg));
   transition: clip-path 0.2s var(--ease), opacity 0.1s, visibility 0s;
 }
+.fns-rail__dots:focus-visible {
+  outline: 2px solid #f7ff19;
+  outline-offset: 2px;
+}
 .fns-rail__hover:hover .fns-rail__dots,
-.fns-rail__hover:focus-within .fns-rail__dots {
+.fns-rail__hover.is-open .fns-rail__dots {
   opacity: 0;
 }
 @media (min-width: 64rem) {

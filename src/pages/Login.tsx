@@ -2,11 +2,20 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { login, verify2FA } from '../services/api';
+import { login, verify2FA, cancelAuthAttempts, isSessionChangedError } from '../services/api';
 import { LogIn, Loader2, Mail, Lock, AlertCircle, ShieldCheck, ArrowLeft } from 'lucide-react';
 import OAuthButtons from '../components/OAuthButtons';
 import AuthSwitch from '../components/AuthSwitch';
 import { useSEO } from '../hooks/useSEO';
+import { useAbortOnLeave } from '../hooks/useAbortOnLeave';
+
+// A dónde volver tras iniciar sesión: la ruta protegida que mandó aquí
+// (ProtectedRoute la pasa en el state) o, si no hay, el dashboard. Solo rutas
+// internas — nunca una URL externa ("//evil.com" o "https://…").
+function returnPath(state: unknown): string {
+  const from = (state as { from?: unknown } | null)?.from;
+  return typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard';
+}
 
 const OAUTH_ERROR_MESSAGES: Record<string, { es: string; en: string }> = {
   invalid_state:      { es: 'La sesión de inicio expiró, intenta de nuevo.', en: 'The login session expired, please try again.' },
@@ -25,6 +34,10 @@ export default function Login() {
   const [params] = useSearchParams();
   const location = useLocation();
   const es = lang === 'es';
+  const afterLogin = returnPath(location.state);
+  // Salir de esta pantalla (a recuperar contraseña, registrarse…) cancela el
+  // login o el 2FA en vuelo: su respuesta ya no inicia sesión ni navega.
+  const leaveSignal = useAbortOnLeave();
   useSEO({
     title: es ? 'Iniciar sesión' : 'Log in',
     description: es
@@ -61,14 +74,16 @@ export default function Login() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault(); setError(''); setLoading(true);
     try {
-      const res = await login(email.trim(), password);
+      const res = await login(email.trim(), password, leaveSignal());
       if (res.requires2FA) {
         setTempToken(res.tempToken);
       } else {
         setAuth(res.token, res.customer);
-        navigate('/dashboard');
+        navigate(afterLogin, { replace: true });
       }
     } catch (err: unknown) {
+      // Respuesta de un intento viejo (se canceló o hubo otro después): se ignora.
+      if (isSessionChangedError(err)) return;
       if (err instanceof Error && (err as Error & { code?: string }).code === 'EMAIL_NOT_VERIFIED') {
         setError(es
           ? '📧 Debes verificar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.'
@@ -82,10 +97,11 @@ export default function Login() {
   async function handleVerify2FA(e: FormEvent) {
     e.preventDefault(); setError(''); setVerifying(true);
     try {
-      const res = await verify2FA(tempToken, twoFACode.trim());
+      const res = await verify2FA(tempToken, twoFACode.trim(), leaveSignal());
       setAuth(res.token, res.customer);
-      navigate('/dashboard');
+      navigate(afterLogin, { replace: true });
     } catch (err: unknown) {
+      if (isSessionChangedError(err)) return;
       setError(err instanceof Error ? err.message : (es ? 'Código incorrecto' : 'Incorrect code'));
     } finally { setVerifying(false); }
   }
@@ -134,7 +150,7 @@ export default function Login() {
             </button>
 
             <p className="auth-footer">
-              <a href="#" onClick={e => { e.preventDefault(); setTempToken(''); setTwoFACode(''); setError(''); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <a href="#" onClick={e => { e.preventDefault(); cancelAuthAttempts(); setVerifying(false); setTempToken(''); setTwoFACode(''); setError(''); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <ArrowLeft size={13} /> {es ? 'Volver' : 'Back'}
               </a>
             </p>

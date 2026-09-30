@@ -2,9 +2,10 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { getPendingOAuthRegistration, completeOAuthRegistration, beginNewSession } from '../services/api';
+import { getPendingOAuthRegistration, completeOAuthRegistration, isSessionChangedError } from '../services/api';
 import { Gamepad2, Loader2, AlertCircle, UserPlus } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
+import { useAbortOnLeave } from '../hooks/useAbortOnLeave';
 
 /** Destino del redirect que hace el backend cuando el login con Google/Discord
  *  corresponde a una cuenta nueva: pide el usuario Epic Games antes de crear
@@ -19,6 +20,7 @@ export default function CompleteOAuthRegistration() {
   useSEO({ title: es ? 'Completar registro' : 'Complete registration', noindex: true });
 
   const [epicUsername, setEpicUsername] = useState('');
+  const leaveSignal = useAbortOnLeave(); // salir de la pantalla cancela el registro en vuelo
   const [displayName, setDisplayName] = useState('');
   const [provider, setProvider] = useState('');
   const [loadingInfo, setLoadingInfo] = useState(true);
@@ -38,11 +40,12 @@ export default function CompleteOAuthRegistration() {
     e.preventDefault();
     setError(''); setSubmitting(true);
     try {
-      const res = await completeOAuthRegistration(token, epicUsername.trim());
-      if (res.refresh_token) { beginNewSession(); localStorage.setItem('kc_refresh_token', res.refresh_token); }
+      const res = await completeOAuthRegistration(token, epicUsername.trim(), leaveSignal());
+      // completeOAuthRegistration ya guardó el refresh token (solo si el intento seguía vigente).
       setAuth(res.token, res.customer);
       navigate('/dashboard');
     } catch (err: unknown) {
+      if (isSessionChangedError(err)) return;
       setError(err instanceof Error ? err.message : (es ? 'Error al completar el registro' : 'Error completing registration'));
     } finally { setSubmitting(false); }
   }

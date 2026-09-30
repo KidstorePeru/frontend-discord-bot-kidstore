@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { BASE } from '../../services/api';
-import type { ApiEntry } from './model';
+import { isValidEntry, type ApiEntry } from './model';
 
 /* ── Datos de la tienda ──────────────────────────────────────────────
    Se piden a nuestro proxy GET /store/shop (mismos datos que fortnite-api.com
@@ -21,19 +21,25 @@ interface ShopState {
   entries: ApiEntry[] | null;
   date: string | null;
   stale: boolean;
+  /** Idioma del catálogo que se está mostrando (puede ser el anterior si falló el cambio). */
+  entriesLang: string | null;
 }
 
 export function useShopData(apiLang: string) {
-  const [state, setState] = useState<ShopState>({ status: 'loading', entries: null, date: null, stale: false });
+  const [state, setState] = useState<ShopState>({ status: 'loading', entries: null, date: null, stale: false, entriesLang: null });
   const [reloadKey, setReloadKey] = useState(0);
   const forceRef = useRef(false);
+  // Catálogo que se está mostrando (para decidir si una respuesta con entradas
+  // rotas debe reemplazarlo o no).
+  const shownRef = useRef<ApiEntry[] | null>(null);
+  useEffect(() => { shownRef.current = state.entries; }, [state.entries]);
 
   useEffect(() => {
     const force = forceRef.current;
     forceRef.current = false;
     const hit = cache.get(apiLang);
     if (!force && hit && Date.now() - hit.ts < CACHE_TTL_MS) {
-      setState({ status: 'ready', entries: hit.entries, date: hit.date, stale: false });
+      setState({ status: 'ready', entries: hit.entries, date: hit.date, stale: false, entriesLang: apiLang });
       return undefined;
     }
     const ctrl = new AbortController();
@@ -43,16 +49,29 @@ export function useShopData(apiLang: string) {
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
-        const entries = json?.data?.entries;
-        if (!Array.isArray(entries)) throw new Error('Respuesta inesperada de la tienda');
+        const raw: unknown = json?.data?.entries;
+        // Un catálogo vacío o con otra forma no reemplaza el que ya se muestra:
+        // cuenta como fallo de actualización (ver el aviso en Store.tsx).
+        if (!Array.isArray(raw) || raw.length === 0) throw new Error('Respuesta inesperada de la tienda');
+        const entries = raw.filter(isValidEntry);
+        const malformed = raw.length - entries.length;
+        if (entries.length === 0) throw new Error('Catálogo sin entradas válidas');
+        if (malformed > 0) {
+          // Datos malformados: si ya hay un catálogo válido en pantalla, se
+          // conserva (fallo de actualización). Si es la primera carga, se muestra
+          // lo que sí es válido, sin guardarlo en caché.
+          if (shownRef.current?.length) throw new Error(`Catálogo con ${malformed} entradas malformadas`);
+          console.warn(`useShopData: se descartaron ${malformed} entradas malformadas`);
+        }
         const stale = Boolean(json._stale);
-        if (!stale) cache.set(apiLang, { entries, date: json.data.date, ts: Date.now() });
-        setState({ status: 'ready', entries, date: json.data.date, stale });
+        if (!stale && malformed === 0) cache.set(apiLang, { entries, date: json.data.date, ts: Date.now() });
+        setState({ status: 'ready', entries, date: json.data.date, stale, entriesLang: apiLang });
       })
       .catch((err: unknown) => {
         if (ctrl.signal.aborted) return;
-        // El detalle técnico (HTTP 500, red caída…) queda en la consola para
-        // diagnosticar; al cliente solo se le muestra el aviso y "Reintentar".
+        // Se conservan los objetos que ya se mostraban (si los hay) y la página
+        // avisa que no pudieron actualizarse, con "Reintentar". El detalle
+        // técnico (HTTP 500, red caída…) queda en la consola para diagnosticar.
         console.warn('useShopData: no se pudo cargar la tienda', err);
         setState((s) => ({ ...s, status: 'error' }));
       });

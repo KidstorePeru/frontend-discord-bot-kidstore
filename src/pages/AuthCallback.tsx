@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { exchangeOAuthCode, beginNewSession } from '../services/api';
+import { exchangeOAuthCode, isSessionChangedError } from '../services/api';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 
@@ -19,12 +19,17 @@ export default function AuthCallback() {
   const es = lang === 'es';
   useSEO({ title: es ? 'Conectando cuenta' : 'Connecting account', noindex: true });
   const [error, setError] = useState(false);
-
   useEffect(() => {
     const code = params.get('code');
     if (!code) { setError(true); return; }
 
-    exchangeOAuthCode(code).then(result => {
+    // El código es de un solo uso. El canje arranca en el siguiente tick: en
+    // React StrictMode el primer montaje se desmonta antes y cancela ese tick,
+    // así que solo se canjea una vez. Salir de la pantalla aborta el canje: su
+    // respuesta ya no inicia sesión ni navega.
+    const ctrl = new AbortController();
+    const start = setTimeout(() => exchangeOAuthCode(code, ctrl.signal).then(result => {
+      if (ctrl.signal.aborted) return;
       if (result.requires2FA) {
         // Cuenta admin con 2FA activado: el backend no entregó un token
         // real, solo uno temporal — se manda a /login para completar con
@@ -33,11 +38,14 @@ export default function AuthCallback() {
         navigate('/login', { replace: true, state: { tempToken: result.tempToken } });
         return;
       }
-      beginNewSession();
-      localStorage.setItem('kc_token', result.token);
-      if (result.refreshToken) localStorage.setItem('kc_refresh_token', result.refreshToken);
-      return refresh().then(() => navigate('/dashboard', { replace: true }));
-    }).catch(() => setError(true));
+      // exchangeOAuthCode ya guardó los tokens (solo si el intento seguía vigente).
+      return refresh().then(() => { if (!ctrl.signal.aborted) navigate('/dashboard', { replace: true }); });
+    }).catch(err => {
+      // Un intento más nuevo, un cierre de sesión o salir de la pantalla: no es un error del usuario.
+      if (isSessionChangedError(err) || ctrl.signal.aborted) return;
+      setError(true);
+    }), 0);
+    return () => { clearTimeout(start); ctrl.abort(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
