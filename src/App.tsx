@@ -9,6 +9,7 @@ import { createOrder } from './services/api';
 import { useLang } from './context/LangContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
 import GuestRoute from './components/GuestRoute';
 import Landing from './pages/Landing';
@@ -324,6 +325,7 @@ function GlobalFooter() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ThemeProvider>
         <LangProvider>
           <CurrencyProvider>
