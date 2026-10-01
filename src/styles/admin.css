@@ -470,3 +470,27 @@
 .adm-review-comment { margin: 0; font-size: .88rem; color: var(--text-primary); line-height: 1.5; overflow-wrap: anywhere; }
 .adm-review-reply { width: 100%; resize: vertical; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg-surface-2); color: var(--text-primary); font: inherit; font-size: .84rem; }
 .adm-review-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Comprobantes de pago manual ── */
+.mpa-list { display: flex; flex-direction: column; gap: 12px; }
+.mpa-card { background: var(--bg-surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.mpa-card.is-pending { border-color: rgba(245,158,11,.45); }
+.mpa-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .86rem; }
+.mpa-muted { color: var(--text-muted); font-size: .78rem; margin: 0; overflow-wrap: anywhere; }
+.mpa-status { margin-left: auto; font-size: .72rem; font-weight: 800; padding: 3px 10px; border-radius: 100px; }
+.mpa-status.is-pending { background: rgba(245,158,11,.14); color: #b45309; }
+.mpa-status.is-approved { background: rgba(34,197,94,.14); color: #15803d; }
+.mpa-status.is-rejected { background: rgba(220,38,38,.1); color: #b91c1c; }
+.mpa-body { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.mpa-proof { display: block; width: 220px; max-width: 100%; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--bg-surface-2); flex-shrink: 0; }
+.mpa-proof img { display: block; width: 100%; max-height: 320px; object-fit: contain; }
+.mpa-proof-empty { height: 160px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+.mpa-info { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
+.mpa-info > div { display: flex; justify-content: space-between; gap: 12px; font-size: .84rem; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+.mpa-info > div span { color: var(--text-muted); }
+.mpa-info > div strong { color: var(--text-primary); text-align: right; overflow-wrap: anywhere; }
+.mpa-amount { font-size: 1.05rem; color: #d97706 !important; }
+.mpa-warn { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; padding: 8px 10px; border-radius: 10px; background: rgba(220,38,38,.08); color: #b91c1c; font-size: .8rem; font-weight: 700; }
+.mpa-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.mpa-reject { display: flex; flex-direction: column; gap: 8px; }
+.mpa-reject select, .mpa-reject textarea { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg-surface-2); color: var(--text-primary); font: inherit; font-size: .84rem; }

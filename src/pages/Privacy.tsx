@@ -37,6 +37,7 @@ export default function Privacy() {
               <li>Si presentas un reclamo o queja en nuestro Libro de Reclamaciones Virtual: nombre completo, tipo y número de documento, correo, teléfono y domicilio (estos dos últimos opcionales), y si indicas que el consumidor es menor de edad, esa condición junto con los datos que hayas incluido en el formulario — es información exigida por la normativa de defensa del consumidor</li>
               <li>Dirección IP, registrada en nuestros logs de seguridad junto con ciertas acciones de la cuenta (inicio de sesión, cambios de contraseña, activación de 2FA, entre otras) para poder investigar actividad sospechosa</li>
               <li>País y divisa aproximados, detectados a partir de tu IP mediante un servicio externo (ver "Servicios de terceros")</li>
+              <li>Si pagas de forma manual y subes tu comprobante: la imagen o PDF del comprobante y, si lo indicas, el número de operación. Lo guardamos cifrado, solo lo ve nuestro equipo para verificar tu pago, le quitamos los datos ocultos de la foto (como la ubicación) y se borra automáticamente a los 30 días; el registro de la recarga se conserva</li>
             </ul>
             <h2>Cómo usamos tu información</h2>
             <ul><li>Procesar y completar tus pedidos</li><li>Mantener un registro de transacciones</li><li>Enviar notificaciones por correo sobre aprobación de pagos y entregas</li><li>Atender y responder reclamos y quejas conforme a la normativa vigente</li><li>Detectar y prevenir accesos indebidos a tu cuenta</li><li>Mejorar nuestros productos y servicios</li></ul>
@@ -78,6 +79,7 @@ export default function Privacy() {
               <li>If you submit a complaint or grievance through our Virtual Complaints Book: full name, document type and number, email, phone, and address (the last two optional), and if you indicate the consumer is a minor, that status along with whatever you included in the form — required by consumer-protection regulations</li>
               <li>IP address, recorded in our security logs alongside certain account actions (login, password changes, 2FA activation, among others) so we can investigate suspicious activity</li>
               <li>Approximate country and currency, detected from your IP through a third-party service (see "Third-party services")</li>
+              <li>If you pay manually and upload your receipt: the receipt image or PDF and, if you provide it, the operation number. We store it encrypted, only our team sees it to verify your payment, we remove hidden photo data (such as location), and it is deleted automatically after 30 days; the recharge record is kept</li>
             </ul>
             <h2>How we use your information</h2>
             <ul><li>Process and complete your orders</li><li>Maintain a transaction record</li><li>Send email notifications about payment approvals and deliveries</li><li>Handle and respond to complaints and grievances as required by law</li><li>Detect and prevent unauthorized access to your account</li><li>Improve our products and services</li></ul>

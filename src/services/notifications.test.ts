@@ -25,6 +25,13 @@ describe('describeNotification', () => {
     expect(kc.title).toMatch(/^Recarga acreditada: \+2[.,]?400 KC$/);
   });
 
+  it('comprobante rechazado: muestra el motivo y lleva a Recargar', () => {
+    const v = describeNotification(n('manual_payment_rejected', { amount_kc: 2400, reason: 'El monto no coincide' }), true);
+    expect(v.title).toMatch(/^Comprobante rechazado: 2[.,]?400 KC$/);
+    expect(v).toMatchObject({ sub: 'Motivo: El monto no coincide', to: '/recharge', icon: 'alert' });
+    expect(describeNotification(n('manual_payment_rejected', { amount_kc: 800, reason: 'x' }), false).title).toBe('Receipt rejected: 800 KC');
+  });
+
   it('un tipo desconocido no rompe nada', () => {
     expect(describeNotification(n('otro', {}), true).title).toBe('Nueva notificación');
   });

@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { getMyOrders, getMyRecharges, getMyOrderStats, getMyRechargeStats, getReviewableOrders } from '../services/api';
+import { getMyOrders, getMyRecharges, getMyOrderStats, getMyRechargeStats, getReviewableOrders, getMyManualPayments, type ManualPaymentRequest } from '../services/api';
 import type { RechargeHistoryItem } from '../services/api';
 import { KCBadge, StatusBadge, PageLoader } from '../components/UI';
 import SegTabs from '../components/SegTabs';
 import ReviewModal from '../components/ReviewModal';
+import ManualPaymentsList from '../components/ManualPaymentsList';
 import type { Order } from '../types';
 import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coins, CreditCard, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Wallet, DollarSign, Loader2, AlertCircle, Star } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
@@ -136,6 +137,12 @@ export default function Dashboard() {
   const [reviewOrder, setReviewOrder] = useState<Order | null>(null);
   useEffect(() => {
     getReviewableOrders().then((ids) => setReviewable(new Set(ids))).catch(() => {});
+  }, []);
+  // Comprobantes de pago manual en revisión o rechazados (los aprobados ya
+  // aparecen como recargas en el historial).
+  const [manualReqs, setManualReqs] = useState<ManualPaymentRequest[]>([]);
+  useEffect(() => {
+    getMyManualPayments().then((r) => setManualReqs(r.requests.filter((m) => m.status !== 'approved'))).catch(() => {});
   }, []);
   const [orderPage, setOrderPage] = useState(1);
   // Totales calculados en el servidor sobre TODO el historial — antes se
@@ -371,6 +378,15 @@ export default function Dashboard() {
 
       {/* ══════════ TAB: HISTORIAL DE RECARGAS ══════════ */}
       {tab === 'recharges' && <>
+        {manualReqs.length > 0 && (
+          <div className="dash-section" style={{ marginBottom: 20 }}>
+            <div className="dash-section-head">
+              <h2><Clock size={18} /> {es ? 'Comprobantes de pago manual' : 'Manual payment receipts'}</h2>
+              <Link to="/recharge" className="btn btn-ghost btn-sm">{es ? 'Recargar' : 'Recharge'} <ArrowRight size={14} /></Link>
+            </div>
+            <ManualPaymentsList requests={manualReqs} es={es} />
+          </div>
+        )}
         <div className="dash-stats">
           <div className="dash-stat" style={{'--sc':'#22c55e','--sg':'rgba(34,197,94,0.12)'} as React.CSSProperties}>
             <div className="dash-stat-icon"><Coins size={20} /></div>

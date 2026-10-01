@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, Star, X, CheckCircle } from 'lucide-react';
 import { createReview } from '../services/api';
 import { useModalFocusTrap } from '../hooks/useModalFocusTrap';
@@ -53,7 +54,9 @@ export default function ReviewModal({
 
   const shown = hover || rating;
 
-  return (
+  // Portal: la ventana se dibuja sobre toda la página aunque se abra dentro de
+  // una sección animada (un transform rompe position: fixed).
+  return createPortal(
     <div className="confirm-modal-overlay" onClick={close}>
       <div
         className="confirm-modal review-modal"
@@ -133,6 +136,7 @@ export default function ReviewModal({
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

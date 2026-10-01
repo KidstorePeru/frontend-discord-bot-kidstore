@@ -5,10 +5,12 @@ import { useLang } from '../context/LangContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { KC_PACKAGES, COMMISSIONS, withCommission, formatReferencePrice } from '../services/constants';
 import type { PaymentInfo } from '../services/constants';
-import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefreshToken } from '../services/api';
+import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefreshToken, getMyManualPayments, type ManualPaymentRequest } from '../services/api';
+import ProofUploadModal from '../components/ProofUploadModal';
+import ManualPaymentsList from '../components/ManualPaymentsList';
 import { track } from '../services/analytics';
 import type { KCPackage } from '../types';
-import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X, Globe } from 'lucide-react';
+import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X, Globe, Upload } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
 import SegTabs from '../components/SegTabs';
 import { useSEO } from '../hooks/useSEO';
@@ -95,6 +97,17 @@ export default function Recharge() {
   // pago haya fallado, así que nunca se muestra como si lo fuera.
   const [payResult, setPayResult] = useState<'success'|'error'|'unconfirmed'|null>(null);
   const [payKcCredited, setPayKcCredited] = useState(0);
+  // Comprobantes de pago manual: los que ya envió el cliente y si la subida
+  // está disponible (si no, se ofrece WhatsApp/Discord como antes).
+  const [manualReqs, setManualReqs] = useState<ManualPaymentRequest[]>([]);
+  const [uploadsEnabled, setUploadsEnabled] = useState(true);
+  const [showProofModal, setShowProofModal] = useState(false);
+  const loadManualReqs = () => {
+    getMyManualPayments()
+      .then((r) => { setManualReqs(r.requests); setUploadsEnabled(r.enabled); })
+      .catch(() => {});
+  };
+  useEffect(loadManualReqs, []);
   // Medición: recarga acreditada (una vez por cada pago aprobado).
   useEffect(() => {
     if (payResult === 'success') track('recarga_aprobada', { kc: payKcCredited });
@@ -273,6 +286,18 @@ export default function Recharge() {
       alert(err instanceof Error ? err.message : (es ? 'Error al crear el pago' : 'Error creating payment'));
       setPayLoading('');
     }
+  }
+
+  // Mensaje ya escrito para quien prefiere mandar el comprobante por WhatsApp.
+  function whatsappProofLink(): string {
+    const parts = [
+      es ? 'Hola, ya realicé un pago manual.' : 'Hi, I made a manual payment.',
+      selectedPkg ? `${es ? 'Paquete' : 'Package'}: ${selectedPkg.name} (${selectedPkg.kc.toLocaleString('es-PE')} KC)` : '',
+      activeMethod ? `${es ? 'Método' : 'Method'}: ${activeMethod.label} — ${getMethodPrice(activeMethod)}` : '',
+      `${es ? 'Usuario de Epic' : 'Epic username'}: ${customer?.epic_username ?? ''}`,
+      es ? 'Adjunto mi comprobante.' : 'Attaching my receipt.',
+    ].filter(Boolean);
+    return `https://wa.me/51983454837?text=${encodeURIComponent(parts.join('\n'))}`;
   }
 
   function getMethodPrice(m: PayMethod): string {
@@ -663,20 +688,71 @@ export default function Recharge() {
             </div>
           )}
 
-          {/* Confirm block */}
+          {/* ¿Ya pagaste? Subir el comprobante (o, como segunda opción, WhatsApp/Discord) */}
           <div className="rc-confirm">
-            <div className="rc-confirm-icon"><MessageCircle size={22}/></div>
+            <div className="rc-confirm-icon">{uploadsEnabled ? <Upload size={22}/> : <MessageCircle size={22}/>}</div>
             <div className="rc-confirm-body">
-              <h3>{t('rech.confirm.title')}</h3>
+              <h3>{uploadsEnabled ? (es ? '¿Ya pagaste?' : 'Already paid?') : t('rech.confirm.title')}</h3>
               <p>
-                {txt.confirmP} <strong>{customer?.epic_username}</strong>
+                {uploadsEnabled
+                  ? (es
+                    ? 'Primero realiza el pago con los datos de arriba. Después sube aquí la captura o foto de tu comprobante y lo revisamos.'
+                    : 'First pay using the details above. Then upload a screenshot or photo of your receipt here and we\'ll review it.')
+                  : <>{txt.confirmP} <strong>{customer?.epic_username}</strong></>}
               </p>
               <p className="rc-confirm-note">{t('rech.confirm.note')}</p>
+              {uploadsEnabled && (
+                <p className="rc-confirm-alt">
+                  {es ? '¿Prefieres enviarlo por ' : 'Prefer sending it via '}
+                  <a href={whatsappProofLink()} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                  {es ? ' o ' : ' or '}
+                  <a href="https://discord.gg/kidstore" target="_blank" rel="noopener noreferrer">Discord</a>?
+                </p>
+              )}
             </div>
-            <Link to="/contact" className="rc-confirm-btn">
-              {txt.contactar} <ArrowRight size={13}/>
-            </Link>
+            {uploadsEnabled ? (
+              <button
+                type="button"
+                className="rc-confirm-btn"
+                onClick={() => setShowProofModal(true)}
+                disabled={!method || !selectedPkg}
+                title={!method ? (es ? 'Elige primero el método de pago' : 'Choose a payment method first') : undefined}
+              >
+                <Upload size={13}/> {es ? 'Ya pagué, subir comprobante' : 'I paid, upload receipt'}
+              </button>
+            ) : (
+              <Link to="/contact" className="rc-confirm-btn">
+                {txt.contactar} <ArrowRight size={13}/>
+              </Link>
+            )}
           </div>
+          {uploadsEnabled && !method && (
+            <p className="rc-gateway-note">{es ? 'Elige un método de pago arriba para ver sus datos y luego subir tu comprobante.' : 'Choose a payment method above to see its details and then upload your receipt.'}</p>
+          )}
+
+          {manualReqs.length > 0 && (
+            <div className="rc-proofs">
+              <div className="rc-methods-label">{es ? 'Tus comprobantes enviados' : 'Your submitted receipts'}</div>
+              <ManualPaymentsList requests={manualReqs.slice(0, 5)} es={es} onRetry={() => method && selectedPkg ? setShowProofModal(true) : window.scrollTo({ top: 0, behavior: 'smooth' })} />
+            </div>
+          )}
+
+          {showProofModal && selectedPkg && activeMethod && (
+            <ProofUploadModal
+              es={es}
+              summary={{
+                packageId: selectedPkg.id,
+                customKC: selectedPkg.id === 'custom' ? selectedPkg.kc : undefined,
+                packageName: selectedPkg.name,
+                kc: selectedPkg.kc,
+                amountLabel: getMethodPrice(activeMethod),
+                methodId: activeMethod.id,
+                methodLabel: activeMethod.label,
+              }}
+              onClose={() => setShowProofModal(false)}
+              onDone={() => loadManualReqs()}
+            />
+          )}
           </>}
             </>
           )}
@@ -715,7 +791,7 @@ export default function Recharge() {
                 </p>
                 <TrustpilotCTA />
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16 }}>
-                  <Link to="/dashboard" className="btn btn-primary" style={{ gap: 6 }}>{es ? 'Ir al dashboard' : 'Go to dashboard'} <ArrowRight size={14}/></Link>
+                  <Link to="/dashboard/recharges" className="btn btn-primary" style={{ gap: 6 }}>{es ? 'Ver mis recargas' : 'See my recharges'} <ArrowRight size={14}/></Link>
                   <button onClick={() => { setPayPending(false); setPayResult(null); window.location.reload(); }} className="btn btn-ghost">{es ? 'Seguir recargando' : 'Recharge more'}</button>
                 </div>
               </>

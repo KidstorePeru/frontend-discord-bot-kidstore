@@ -63,6 +63,16 @@ export function describeNotification(n: AppNotification, es: boolean): Notificat
         image: null,
         icon: 'coin',
       };
+    case 'manual_payment_rejected':
+      return {
+        title: es
+          ? `Comprobante rechazado: ${nf.format(d.amount_kc ?? 0)} KC`
+          : `Receipt rejected: ${nf.format(d.amount_kc ?? 0)} KC`,
+        sub: d.reason ? (es ? `Motivo: ${d.reason}` : `Reason: ${d.reason}`) : '',
+        to: '/recharge',
+        image: null,
+        icon: 'alert',
+      };
     default:
       return { title: es ? 'Nueva notificación' : 'New notification', sub: '', to: '/notifications', image: null, icon: 'bell' };
   }

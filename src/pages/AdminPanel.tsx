@@ -10,12 +10,13 @@ import {
   CheckCircle2, RefreshCw, ShieldCheck, Bot,
   Plus, Trash2, ExternalLink, Copy, Zap, X, Edit2,
   AlertTriangle, Gamepad2, Mail, Clock, Moon, Sun, ToggleLeft, ToggleRight,
-  CreditCard, ClipboardList, Send, UserCheck, Star
+  CreditCard, ClipboardList, Send, UserCheck, Star, Receipt
 } from 'lucide-react';
+import ManualPaymentsAdmin from '../components/admin/ManualPaymentsAdmin';
 import { useSEO } from '../hooks/useSEO';
 
-type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments' | 'complaints' | 'reviews';
-const ADMIN_TABS: AdminTab[] = ['stats', 'customers', 'orders', 'recharge', 'bots', 'schedule', 'payments', 'complaints', 'reviews'];
+type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments' | 'proofs' | 'complaints' | 'reviews';
+const ADMIN_TABS: AdminTab[] = ['stats', 'customers', 'orders', 'recharge', 'bots', 'schedule', 'payments', 'proofs', 'complaints', 'reviews'];
 const ADMIN_PER_PAGE = 10;
 
 function AdminPagination({ page, total, setPage }: { page: number; total: number; setPage: (p: number) => void }) {
@@ -45,6 +46,30 @@ function formatAdminCharged(p: { amount_pen?: number; charged_amount?: number; c
   } catch {
     return `${p.charged_currency} ${p.charged_amount.toFixed(2)}`;
   }
+}
+
+// Descarga un archivo del panel (comprobantes) con la misma autenticación
+// que adminFetch, incluida la renovación del token vencido.
+async function adminFetchBlob(path: string): Promise<Blob> {
+  const apiKey = sessionStorage.getItem('kc_admin_key') || '';
+  const doFetch = () => {
+    const token = localStorage.getItem('kc_token') || '';
+    return fetch(`${BASE}${path}`, {
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...(apiKey ? { 'X-Admin-Key': apiKey } : {}),
+      },
+    });
+  };
+  let res = await doFetch();
+  if (res.status === 401 && localStorage.getItem('kc_refresh_token') && await tryRefreshToken()) {
+    res = await doFetch();
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Error ${res.status}`);
+  }
+  return res.blob();
 }
 
 async function adminFetch(path: string, _adminKey?: string, opts: RequestInit = {}) {
@@ -208,9 +233,19 @@ export default function AdminPanel() {
   // este efecto general cubre el resto.
   useEffect(() => {
     if (!authed) return;
-    if (tab === 'customers' || tab === 'orders' || tab === 'payments') return;
+    if (tab === 'customers' || tab === 'orders' || tab === 'payments' || tab === 'proofs') return;
     loadTab(tab);
   }, [authed, tab]);
+
+  // Comprobantes de pago manual pendientes (contador de la pestaña).
+  const [pendingProofs, setPendingProofs] = useState(0);
+  const refreshPendingProofs = () => {
+    adminFetch('/admin/manual-payments?status=pending').then((r) => setPendingProofs((r.requests || []).length)).catch(() => {});
+  };
+  useEffect(() => {
+    if (authed) refreshPendingProofs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed]);
 
   // Antes, el panel pedía un solo lote SIN page/limit/search y paginaba (y
   // "buscaba") solo dentro de ese primer lote — con más clientes/pedidos de
@@ -597,6 +632,7 @@ export default function AdminPanel() {
           ['recharge', 'Recargar KC',  <Coins size={15}/>],
           ['bots',     'Cuentas Bot',  <Bot size={15}/>],
           ['payments', 'Pagos',        <CreditCard size={15}/>],
+          ['proofs',   'Comprobantes', <Receipt size={15}/>],
           ['schedule', 'Horario Bots', <Clock size={15}/>],
           ['complaints', 'Reclamos',   <ClipboardList size={15}/>],
           ['reviews',  'Reseñas',      <Star size={15}/>],
@@ -605,6 +641,9 @@ export default function AdminPanel() {
             {icon} {label}
             {key === 'complaints' && complaints.some((c: any) => c.status === 'pendiente') && (
               <span className="adm-tab-badge">{complaints.filter((c: any) => c.status === 'pendiente').length}</span>
+            )}
+            {key === 'proofs' && pendingProofs > 0 && (
+              <span className="adm-tab-badge">{pendingProofs}</span>
             )}
             {key === 'reviews' && reviews.some((r: any) => r.status === 'pending') && (
               <span className="adm-tab-badge">{reviews.filter((r: any) => r.status === 'pending').length}</span>
@@ -1059,6 +1098,16 @@ export default function AdminPanel() {
       )}
 
       {/* ── LIBRO DE RECLAMACIONES ── */}
+      {/* ── COMPROBANTES DE PAGO MANUAL ── */}
+      {tab === 'proofs' && (
+        <ManualPaymentsAdmin
+          adminFetch={adminFetch}
+          fetchBlob={adminFetchBlob}
+          notify={(msg, type) => setToast({ msg, type })}
+          onChanged={refreshPendingProofs}
+        />
+      )}
+
       {/* ── RESEÑAS ── */}
       {tab === 'reviews' && !loading && (
         <div className="admin-table-section">

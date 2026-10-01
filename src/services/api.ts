@@ -161,7 +161,8 @@ async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE}${url}`, {
     ...opts,
     headers: {
-      'Content-Type': 'application/json',
+      // Un FormData (subida de archivos) lleva su propio Content-Type con el boundary.
+      ...(opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
       'X-Lang': getLang(),
       ...authHeaders(),
       ...(opts.headers as Record<string, string> || {}),
@@ -187,7 +188,8 @@ async function request<T>(url: string, opts: RequestInit = {}): Promise<T> {
         const retryRes = await fetch(`${BASE}${url}`, {
           ...opts,
           headers: {
-            'Content-Type': 'application/json',
+            // Un FormData (subida de archivos) lleva su propio Content-Type con el boundary.
+            ...(opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
             'X-Lang': getLang(),
             ...authHeaders(),
             ...(opts.headers as Record<string, string> || {}),
@@ -678,7 +680,7 @@ export async function completeOAuthRegistration(
 
 /* ── Notificaciones (campana) y lista de deseos ── */
 
-export type NotificationKind = 'wishlist_back' | 'order_sent' | 'order_failed' | 'kc_credited';
+export type NotificationKind = 'wishlist_back' | 'order_sent' | 'order_failed' | 'kc_credited' | 'manual_payment_rejected';
 
 export interface AppNotification {
   id: string;
@@ -695,6 +697,8 @@ export interface AppNotification {
     refunded?: boolean;
     amount_kc?: number;
     method?: string;
+    reason?: string;
+    amount?: string;
   };
   read: boolean;
   created_at: string;
@@ -788,3 +792,47 @@ export async function getReviewableOrders(): Promise<string[]> {
 export async function createReview(orderId: string, rating: number, comment: string): Promise<void> {
   await request('/store/reviews', { method: 'POST', body: JSON.stringify({ order_id: orderId, rating, comment }) });
 }
+
+/* ── Pagos manuales con comprobante ── */
+
+export interface ManualPaymentRequest {
+  id: string;
+  package_id: string;
+  package_name: string;
+  kc_amount: number;
+  amount: number;
+  currency: 'PEN' | 'EUR' | string;
+  method: string;
+  operation_number: string;
+  proof_content_type: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reject_reason?: string;
+  reviewed_at?: string;
+  proof_deleted: boolean;
+  created_at: string;
+}
+
+export async function getMyManualPayments(): Promise<{ requests: ManualPaymentRequest[]; enabled: boolean; maxPending: number }> {
+  const res = await request<{ requests: ManualPaymentRequest[]; enabled: boolean; max_pending: number }>('/store/manual-payments');
+  return { requests: res.requests ?? [], enabled: res.enabled !== false, maxPending: res.max_pending ?? 2 };
+}
+
+export async function createManualPayment(data: {
+  packageId: string;
+  customKC?: number;
+  method: string;
+  operationNumber: string;
+  proof: Blob;
+  fileName: string;
+}): Promise<ManualPaymentRequest> {
+  const form = new FormData();
+  form.append('package_id', data.packageId);
+  if (data.customKC) form.append('custom_kc', String(data.customKC));
+  form.append('method', data.method);
+  form.append('operation_number', data.operationNumber);
+  form.append('confirm', 'true');
+  form.append('proof', data.proof, data.fileName);
+  const res = await request<{ request: ManualPaymentRequest }>('/store/manual-payments', { method: 'POST', body: form });
+  return res.request;
+}
+
