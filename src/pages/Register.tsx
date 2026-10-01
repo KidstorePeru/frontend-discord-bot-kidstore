@@ -177,6 +177,13 @@ export default function Register() {
             {loading ? <Loader2 className="spin" size={18} /> : <><UserPlus size={16} /> {t('auth.register.btn')}</>}
           </button>
 
+          <p className="auth-legal-note">
+            {es ? 'Al crear tu cuenta aceptas los ' : 'By creating your account you accept the '}
+            <Link to="/terms">{es ? 'Términos y Condiciones' : 'Terms & Conditions'}</Link>
+            {es ? ' y la ' : ' and the '}
+            <Link to="/privacy">{es ? 'Política de Privacidad' : 'Privacy Policy'}</Link>.
+          </p>
+
           <p className="auth-footer">
             {t('auth.register.footer')} <Link to="/login">{t('auth.register.footer.link')}</Link>
           </p>

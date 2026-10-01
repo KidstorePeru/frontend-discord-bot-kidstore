@@ -148,7 +148,7 @@ export default function PaymentReturn() {
               <p className="pr-product-name">{productName}</p>
 
               {kcAmount > 0 && (
-                <div className="pr-kc-badge">+{kcAmount.toLocaleString()} KC</div>
+                <div className="pr-kc-badge">+{kcAmount.toLocaleString('es-PE')} KC</div>
               )}
 
               <TrustpilotCTA />

@@ -133,6 +133,14 @@ export default function ComplaintBook() {
         </div>
 
         <div className="legal-body" style={{ marginBottom: 8 }}>
+          <div className="legal-highlight" style={{ marginBottom: 12 }}>
+            <strong>{es ? 'Proveedor' : 'Provider'}:</strong> KidStorePeru — Freddy Aystin Rodríguez Uricay, RUC 10725091651.{' '}
+            {es ? 'Domicilio: Provincia Constitucional del Callao, Perú.' : 'Address: Constitutional Province of Callao, Peru.'}{' '}
+            {es ? 'Correo: ' : 'Email: '}<a href="mailto:contacto@kidstoreperu.com" className="legal-link">contacto@kidstoreperu.com</a>.{' '}
+            {es
+              ? 'Respondemos cada reclamo o queja en un plazo máximo de 15 días hábiles.'
+              : 'We answer every complaint or grievance within 15 business days at most.'}
+          </div>
           <div className="legal-highlight">
             {es
               ? 'Este es un canal gratuito para presentar un reclamo (disconformidad con el producto o servicio) o una queja (disconformidad con la atención). Presentarlo aquí no te impide acudir directamente a INDECOPI.'

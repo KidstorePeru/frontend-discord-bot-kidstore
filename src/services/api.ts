@@ -28,7 +28,6 @@ let refreshInFlight: { epoch: number; promise: Promise<RefreshOutcome> } | null 
 // pertenece a una sesión anterior y se DESCARTA — no restaura usuarios, no guarda
 // tokens y no borra los de la sesión nueva.
 let authEpoch = 0;
-export function getAuthEpoch(): number { return authEpoch; }
 export function beginNewSession(): void { authEpoch++; }
 
 // Intentos de inicio de sesión (contraseña, 2FA, OAuth, registro OAuth,
@@ -629,106 +628,6 @@ export interface ComplaintStatus {
 export async function getComplaintStatus(reference: string): Promise<ComplaintStatus> {
   const res = await request<{ success: boolean; complaint: ComplaintStatus }>(`/store/complaints/${encodeURIComponent(reference)}`);
   return res.complaint;
-}
-
-/* ── Product Availability ── */
-
-export async function checkProductAvailable(productId: string): Promise<boolean> {
-  try {
-    const res = await request<{ success: boolean; available: boolean }>(`/store/product-available/${productId}`);
-    return res.available;
-  } catch { return true; } // default available if endpoint fails
-}
-
-/* ── Admin ── */
-
-export async function adminGetCustomers(adminKey: string) {
-  return request<{ success: boolean; customers: Customer[] }>('/admin/customers', {
-    headers: { 'X-Admin-Key': adminKey },
-  });
-}
-
-export async function adminGetOrders(adminKey: string) {
-  return request<{ success: boolean; orders: Order[] }>('/admin/orders', {
-    headers: { 'X-Admin-Key': adminKey },
-  });
-}
-
-export async function adminGetStats(adminKey: string) {
-  return request<{
-    success: boolean;
-    total_customers: number;
-    total_orders: number;
-    total_sent: number;
-    total_pending: number;
-    total_kc_recharged: number;
-  }>('/admin/stats', {
-    headers: { 'X-Admin-Key': adminKey },
-  });
-}
-
-export async function adminRechargeKC(adminKey: string, data: {
-  customer_id: string;
-  amount_kc: number;
-  amount_soles?: number;
-  note?: string;
-}) {
-  return request<{ success: boolean; new_balance: number; message: string }>('/admin/recharge', {
-    method: 'POST',
-    headers: { 'X-Admin-Key': adminKey, 'X-Approved-By': 'admin-panel' },
-    body: JSON.stringify(data),
-  });
-}
-
-export interface AdminComplaint {
-  id: string;
-  reference: string;
-  kind: 'reclamo' | 'queja';
-  full_name: string;
-  document_type: string;
-  document_number: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  is_minor: boolean;
-  guardian_name?: string;
-  order_id?: string;
-  amount_involved?: number;
-  product_description: string;
-  detail: string;
-  consumer_request: string;
-  status: 'pendiente' | 'respondido' | 'cerrado';
-  admin_response?: string;
-  responded_at?: string;
-  created_at: string;
-  /** Idioma en que se presentó: la respuesta por correo va en ese idioma. */
-  lang?: 'es' | 'en';
-  /** Vencimiento del plazo legal (15 días hábiles), AAAA-MM-DD en hora de Perú. */
-  deadline?: string;
-  deadline_label?: string;
-  /** Días hábiles que quedan: 0 = vence hoy; negativo = vencido. */
-  business_days_left?: number;
-}
-
-export async function adminGetComplaints(adminKey: string) {
-  return request<{ success: boolean; complaints: AdminComplaint[]; total: number }>('/admin/complaints', {
-    headers: { 'X-Admin-Key': adminKey },
-  });
-}
-
-export async function adminRespondComplaint(adminKey: string, id: string, response: string) {
-  return request<{ success: boolean; message: string }>(`/admin/complaints/${id}/respond`, {
-    method: 'PUT',
-    headers: { 'X-Admin-Key': adminKey },
-    body: JSON.stringify({ response }),
-  });
-}
-
-export async function adminCloseComplaint(adminKey: string, id: string) {
-  return request<{ success: boolean }>(`/admin/complaints/${id}/close`, {
-    method: 'PUT',
-    headers: { 'X-Admin-Key': adminKey },
-  });
 }
 
 /* ── Email verification ── */

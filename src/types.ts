@@ -31,16 +31,6 @@ export interface Order {
   created_at: string;
 }
 
-export interface KCRecharge {
-  id: string;
-  customer_id: string;
-  amount_kc: number;
-  amount_soles: number;
-  method: string;
-  note: string;
-  created_at: string;
-}
-
 /* ── API Responses ── */
 
 export interface AuthResponse {

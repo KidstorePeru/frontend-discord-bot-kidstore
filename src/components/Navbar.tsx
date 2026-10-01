@@ -54,7 +54,7 @@ export default function Navbar() {
         {customer && (
           <div className="navbar-balance">
             <img src="/kidcoin.png" alt="KC" className="kc-icon-sm" />
-            <span>{balance.toLocaleString()} KC</span>
+            <span>{balance.toLocaleString('es-PE')} KC</span>
           </div>
         )}
 

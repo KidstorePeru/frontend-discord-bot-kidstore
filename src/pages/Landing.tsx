@@ -348,7 +348,7 @@ export default function Landing() {
                 </div>
                 <div className="lv7-pkg-body">
                   <div className="lv7-pkg-name">{pkg.name}</div>
-                  <div className="lv7-pkg-kc">{pkg.kc.toLocaleString()} <span>KC</span></div>
+                  <div className="lv7-pkg-kc">{pkg.kc.toLocaleString('es-PE')} <span>KC</span></div>
                   <div className="lv7-pkg-prices">
                     <strong>{formatReferencePrice(pkg.price_soles, refCurrency, refRates)}</strong>
                   </div>

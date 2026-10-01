@@ -13,14 +13,6 @@ export function VBuckIcon({ size = 24, className }: { size?: number; className?:
 
 type P = { size?: number };
 
-export function PlusIcon({ size = 22 }: P) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z" fill="currentColor" />
-    </svg>
-  );
-}
-
 export function FilterIcon({ size = 20 }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
@@ -86,22 +78,6 @@ export function CartIcon({ size = 18 }: P) {
       <path d="M3 4h2.2l2.3 11h10.2l2-8H6.3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="9.5" cy="19.5" r="1.5" fill="currentColor" />
       <circle cx="17" cy="19.5" r="1.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-export function BoltIcon({ size = 18 }: P) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="currentColor" />
-    </svg>
-  );
-}
-
-export function ChatIcon({ size = 18 }: P) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
     </svg>
   );
 }

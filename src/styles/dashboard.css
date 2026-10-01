@@ -175,6 +175,8 @@
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text-primary);
 }
 .dash-order-info span { font-size:0.73rem; color:var(--text-muted); margin-top:2px; }
+/* Qué significa el estado del pedido (pendiente, en revisión, reembolsado…) */
+.dash-order-info .dash-order-hint { display:block; font-size:0.72rem; color:var(--text-secondary); line-height:1.35; }
 
 /* Dashboard tabs — ahora usa el componente SegTabs (styles/segtabs.css) */
 .dash-tabs { margin-bottom: 24px; }
@@ -207,6 +209,11 @@
   color: var(--text-muted); font-weight: 700; user-select: none;
 }
 @media (max-width:480px) {
+  /* Móvil: imagen + nombre en la primera línea; KC, estado y comprobante debajo
+     (antes no cabían en una fila y el botón se salía de la pantalla). */
+  .dash-order-row { flex-wrap: wrap; row-gap: 8px; }
+  .dash-order-info { flex: 1 1 calc(100% - 60px); }
+  .dash-voucher-link { margin-left: auto; }
   .dash-pagination { gap: 3px; }
   .dash-pagination button, .dash-pagination-dots { width: 30px; height: 30px; font-size: .78rem; }
 }

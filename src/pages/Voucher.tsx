@@ -6,6 +6,7 @@ import type { Voucher as VoucherData } from '../services/api';
 import { PageLoader } from '../components/UI';
 import { AlertCircle, Download, Printer, ArrowLeft } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
+import { paymentMethodLabel } from '../services/paymentMethods';
 
 type Kind = 'pago' | 'pedido' | 'recarga';
 
@@ -68,7 +69,7 @@ export default function Voucher() {
     }
   }
   const amount = isOrder
-    ? `${voucher.price_kc?.toLocaleString()} KC`
+    ? `${voucher.price_kc?.toLocaleString('es-PE')} KC`
     : hasChargedInfo
       ? formatMoney(voucher.charged_amount!, voucher.charged_currency!)
       : (es ? 'Monto no disponible' : 'Amount not available');
@@ -125,9 +126,9 @@ export default function Voucher() {
           <tbody>
             <tr><td>{es ? 'Cliente' : 'Customer'}</td><td>{voucher.customer_name}</td></tr>
             {!isOrder && <tr><td>{es ? 'Producto' : 'Product'}</td><td>{voucher.product_name}</td></tr>}
-            {!isOrder && voucher.kc_amount ? <tr><td>{es ? 'KC acreditado' : 'KC credited'}</td><td>{voucher.kc_amount.toLocaleString()} KC</td></tr> : null}
+            {!isOrder && voucher.kc_amount ? <tr><td>{es ? 'KC acreditado' : 'KC credited'}</td><td>{voucher.kc_amount.toLocaleString('es-PE')} KC</td></tr> : null}
             {isOrder && <tr><td>{es ? 'Cuenta Epic' : 'Epic account'}</td><td>{voucher.epic_username}</td></tr>}
-            {!isOrder && <tr><td>{es ? 'Método de pago' : 'Payment method'}</td><td>{voucher.gateway}</td></tr>}
+            {!isOrder && <tr><td>{es ? 'Método de pago' : 'Payment method'}</td><td>{paymentMethodLabel(voucher.gateway, es)}</td></tr>}
             {voucher.external_id && <tr><td>{es ? 'ID de operación' : 'Operation ID'}</td><td>{voucher.external_id}</td></tr>}
             {isOrder && voucher.delivery_confirmed && (
               <tr>

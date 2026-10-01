@@ -252,6 +252,11 @@
 .auth-card .btn:disabled { opacity: 0.6; }
 
 /* Footer link */
+/* Aceptación de Términos y Privacidad bajo el botón de registro */
+.auth-legal-note { margin: 12px 0 0; text-align: center; font-size: 0.76rem; color: var(--text-muted); line-height: 1.5; }
+.auth-legal-note a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.auth-legal-note a:hover { text-decoration: underline; }
+
 .auth-footer {
   text-align: center;
   margin-top: 22px;

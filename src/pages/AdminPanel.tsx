@@ -304,7 +304,7 @@ export default function AdminPanel() {
         method: 'POST', headers: { 'X-Approved-By': 'admin-panel' },
         body: JSON.stringify({ customer_id: rSelected.id, amount_kc: parseInt(rAmount), amount_soles: rSoles ? parseFloat(rSoles) : undefined, note: rNote || undefined }),
       });
-      setToast({ msg: `✅ ${res.message} — Nuevo balance: ${res.new_balance.toLocaleString()} KC`, type: 'success' });
+      setToast({ msg: `✅ ${res.message} — Nuevo balance: ${res.new_balance.toLocaleString('es-PE')} KC`, type: 'success' });
       setRSelected(null); setRAmount(''); setRSoles(''); setRNote(''); setRSearch('');
       setRCustomers(prev => prev.map(c => c.id === rSelected.id ? {...c, kc_balance: res.new_balance} : c));
     } catch (err: unknown) { setToast({ msg: err instanceof Error ? err.message :'Error recargando KC', type: 'error' }); }
@@ -525,8 +525,8 @@ export default function AdminPanel() {
               </div>
               {parseInt(editKC) !== editCustomer.kc_balance && (
                 <div className="adm-modal-preview">
-                  <span>Balance anterior: <strong>{editCustomer.kc_balance.toLocaleString()} KC</strong></span>
-                  <span>→ Nuevo: <strong style={{color:'var(--green-500)'}}>{parseInt(editKC||'0').toLocaleString()} KC</strong></span>
+                  <span>Balance anterior: <strong>{editCustomer.kc_balance.toLocaleString('es-PE')} KC</strong></span>
+                  <span>→ Nuevo: <strong style={{color:'var(--green-500)'}}>{parseInt(editKC||'0').toLocaleString('es-PE')} KC</strong></span>
                 </div>
               )}
               <div className="adm-modal-actions">
@@ -555,7 +555,7 @@ export default function AdminPanel() {
               <div className="adm-delete-warning">
                 <AlertTriangle size={32} style={{color:'var(--red-500)'}}/>
                 <p>¿Estás seguro de eliminar a <strong>{deleteConfirm.epic_username}</strong>?</p>
-                <p className="adm-delete-sub">Se eliminarán todos sus datos, pedidos y balance de <strong>{deleteConfirm.kc_balance.toLocaleString()} KC</strong>. Esta acción es irreversible.</p>
+                <p className="adm-delete-sub">Se eliminarán todos sus datos, pedidos y balance de <strong>{deleteConfirm.kc_balance.toLocaleString('es-PE')} KC</strong>. Esta acción es irreversible.</p>
               </div>
               <div className="adm-modal-actions">
                 <button className="btn btn-ghost" onClick={() => setDeleteConfirm(null)}>Cancelar</button>
@@ -627,7 +627,7 @@ export default function AdminPanel() {
               { label:'Clientes',     value: stats.total_customers,  sub: `+${stats.new_customers_week || 0} esta semana`, icon:<Users size={20}/>,        color:'#6c5ce7' },
               { label:'Pedidos KC',   value: stats.total_orders,     sub: `${stats.total_sent} enviados`, icon:<Package size={20}/>,      color:'#3b82f6' },
               { label:'Pagos',        value: stats.total_payments || 0, sub: `${stats.fulfilled_payments || 0} completados`, icon:<CreditCard size={20}/>,   color:'#22c55e' },
-              { label:'KC recargados', value:`${(stats.total_kc_recharged||0).toLocaleString()}`, sub: 'total histórico', icon:<Coins size={20}/>, color:'#f59e0b' },
+              { label:'KC recargados', value:`${(stats.total_kc_recharged||0).toLocaleString('es-PE')}`, sub: 'total histórico', icon:<Coins size={20}/>, color:'#f59e0b' },
             ].map(s => (
               <div className="admin-stat-card" key={s.label} style={{'--stat-color':s.color} as React.CSSProperties}>
                 <div className="admin-stat-icon">{s.icon}</div>
@@ -739,19 +739,19 @@ export default function AdminPanel() {
                     <Gamepad2 size={18} style={{ color: netColor }}/>
                   </div>
                   <span className="admin-revenue-value" style={{ color: netColor }}>
-                    {net >= 0 ? '+' : ''}{net.toLocaleString()} KC
+                    {net >= 0 ? '+' : ''}{net.toLocaleString('es-PE')} KC
                   </span>
                   <div className="admin-revenue-sub">
-                    <span>Ganancia: <strong style={{ color: '#22c55e' }}>+{gain.toLocaleString()} KC</strong></span>
-                    <span>Pérdida: <strong style={{ color: '#dc2626' }}>-{loss.toLocaleString()} KC</strong></span>
+                    <span>Ganancia: <strong style={{ color: '#22c55e' }}>+{gain.toLocaleString('es-PE')} KC</strong></span>
+                    <span>Pérdida: <strong style={{ color: '#dc2626' }}>-{loss.toLocaleString('es-PE')} KC</strong></span>
                   </div>
                 </div>
 
                 {/* Datos de apoyo */}
                 <div className="admin-stats-grid" style={{ marginTop: 14, padding: 0 }}>
                   {[
-                    { label: 'Jugadas', value: plays.toLocaleString(), sub: `en este período`, icon: <Gamepad2 size={20}/>, color: '#6c5ce7' },
-                    { label: 'KC apostado', value: wagered.toLocaleString(), sub: 'total apostado', icon: <Coins size={20}/>, color: '#f59e0b' },
+                    { label: 'Jugadas', value: plays.toLocaleString('es-PE'), sub: `en este período`, icon: <Gamepad2 size={20}/>, color: '#6c5ce7' },
+                    { label: 'KC apostado', value: wagered.toLocaleString('es-PE'), sub: 'total apostado', icon: <Coins size={20}/>, color: '#f59e0b' },
                     { label: '% de victoria real', value: `${winRate.toFixed(1)}%`, sub: 'lo configurado es 3%', icon: <TrendingUp size={20}/>, color: '#3b82f6' },
                   ].map(s => (
                     <div className="admin-stat-card" key={s.label} style={{ '--stat-color': s.color } as React.CSSProperties}>
@@ -779,7 +779,7 @@ export default function AdminPanel() {
                           <span className="admin-recent-gateway">{w.plays} jugada{w.plays === 1 ? '' : 's'}</span>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <span className="admin-recent-amount" style={{ color: '#dc2626' }}>+{Number(w.net_kc).toLocaleString()} KC</span>
+                          <span className="admin-recent-amount" style={{ color: '#dc2626' }}>+{Number(w.net_kc).toLocaleString('es-PE')} KC</span>
                         </div>
                       </div>
                     ))}
@@ -842,7 +842,7 @@ export default function AdminPanel() {
               <Search size={15}/>
               <input placeholder="Buscar por usuario o email..." value={search} onChange={e => setSearch(e.target.value)}/>
             </div>
-            <span className="adm-count">{custTotal.toLocaleString()} cliente{custTotal !== 1 ? 's' : ''}</span>
+            <span className="adm-count">{custTotal.toLocaleString('es-PE')} cliente{custTotal !== 1 ? 's' : ''}</span>
           </div>
           <div className="admin-table-wrap">
             <table className="admin-table">
@@ -920,7 +920,7 @@ export default function AdminPanel() {
               <Search size={15}/>
               <input placeholder="Buscar por usuario o item..." value={search} onChange={e => setSearch(e.target.value)}/>
             </div>
-            <span className="adm-count">{orderTotal.toLocaleString()} pedido{orderTotal !== 1 ? 's' : ''}</span>
+            <span className="adm-count">{orderTotal.toLocaleString('es-PE')} pedido{orderTotal !== 1 ? 's' : ''}</span>
             <div className="adm-filter-row">
               {['all','pending','processing','sent','failed','refunded','review'].map(s => (
                 <button key={s} className={`adm-filter-btn ${orderFilter === s ? 'active' : ''}`} onClick={() => setOrderFilter(s)}>
@@ -980,7 +980,7 @@ export default function AdminPanel() {
         <div className="admin-table-section">
           <p className="admin-tab-sub">Recargas de KC pagadas por pasarela automática (MercadoPago, dLocal Go, PayPal, cripto). Los pagos manuales (Yape, Plin, banco) no aparecen aquí — esos se acreditan desde la pestaña "Recargar KC".</p>
           <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span className="adm-count">{paymentTotal.toLocaleString()} transacci{paymentTotal !== 1 ? 'ones' : 'ón'}</span>
+            <span className="adm-count">{paymentTotal.toLocaleString('es-PE')} transacci{paymentTotal !== 1 ? 'ones' : 'ón'}</span>
             <div className="adm-filter-row">
               {['all','pending','review','approved','fulfilled','expired','failed'].map(s => (
                 <button key={s} className={`adm-filter-btn ${payFilter === s ? 'active' : ''}`} onClick={() => setPayFilter(s)}>
@@ -1212,13 +1212,13 @@ export default function AdminPanel() {
                   </div>
                   {rAmount && (
                     <div className="arc-preview">
-                      <span>Balance actual:</span> <strong>{rSelected.kc_balance.toLocaleString()} KC</strong>
-                      <span>→ Nuevo balance:</span> <strong style={{color:'var(--green-500)'}}>{(rSelected.kc_balance + parseInt(rAmount||'0')).toLocaleString()} KC</strong>
+                      <span>Balance actual:</span> <strong>{rSelected.kc_balance.toLocaleString('es-PE')} KC</strong>
+                      <span>→ Nuevo balance:</span> <strong style={{color:'var(--green-500)'}}>{(rSelected.kc_balance + parseInt(rAmount||'0')).toLocaleString('es-PE')} KC</strong>
                     </div>
                   )}
                   <button className="btn btn-primary btn-full" type="submit" disabled={rLoading || !rAmount}>
                     {rLoading ? <Loader2 className="spin" size={18}/> : <Coins size={18}/>}
-                    Recargar {rAmount ? `${parseInt(rAmount).toLocaleString()} KC` : 'KC'}
+                    Recargar {rAmount ? `${parseInt(rAmount).toLocaleString('es-PE')} KC` : 'KC'}
                   </button>
                 </form>
               </>
@@ -1280,7 +1280,7 @@ export default function AdminPanel() {
                         <span>V-Bucks (Pavos)</span>
                         <strong className="bca-vbucks">
                           <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#59c2ea" stroke="#2ba0cb" strokeWidth="1.5"/><text x="12" y="16.5" textAnchor="middle" fontSize="13" fontWeight="900" fontFamily="sans-serif" fill="#fff">V</text></svg>
-                          {bot.vbucks.toLocaleString()}
+                          {bot.vbucks.toLocaleString('es-PE')}
                         </strong>
                       </div>
                       <div className="bca-stat">

@@ -131,19 +131,19 @@ export default function Profile() {
       <div className="profile-stats">
         <div className="pstat pstat-balance">
           <div className="pstat-icon"><img src="/kidcoin.png" alt="KC" /></div>
-          <div><span className="pstat-label">{t('profile.balance')}</span><span className="pstat-value">{customer.kc_balance.toLocaleString()} KC</span></div>
+          <div><span className="pstat-label">{t('profile.balance')}</span><span className="pstat-value">{customer.kc_balance.toLocaleString('es-PE')} KC</span></div>
         </div>
         <div className="pstat">
           <div className="pstat-icon"><Package size={22} /></div>
-          <div><span className="pstat-label">{t('profile.orders.total')}</span><span className="pstat-value">{orderStats.total_orders.toLocaleString()}</span></div>
+          <div><span className="pstat-label">{t('profile.orders.total')}</span><span className="pstat-value">{orderStats.total_orders.toLocaleString('es-PE')}</span></div>
         </div>
         <div className="pstat">
           <div className="pstat-icon"><CheckCircle2 size={22} /></div>
-          <div><span className="pstat-label">{t('profile.orders.sent')}</span><span className="pstat-value">{orderStats.sent_orders.toLocaleString()}</span></div>
+          <div><span className="pstat-label">{t('profile.orders.sent')}</span><span className="pstat-value">{orderStats.sent_orders.toLocaleString('es-PE')}</span></div>
         </div>
         <div className="pstat">
           <div className="pstat-icon"><TrendingUp size={22} /></div>
-          <div><span className="pstat-label">{t('profile.spent')}</span><span className="pstat-value">{totalSpentKC.toLocaleString()} KC</span></div>
+          <div><span className="pstat-label">{t('profile.spent')}</span><span className="pstat-value">{totalSpentKC.toLocaleString('es-PE')} KC</span></div>
         </div>
       </div>
 
@@ -163,7 +163,7 @@ export default function Profile() {
             <Shield size={16} />{es ? ' Seguridad' : ' Security'}
           </Link>
           <Link to="/account/orders" className={`profile-side-tab ${tab === 'orders' ? 'active' : ''}`}>
-            <Package size={16} />{es ? ' Mis Órdenes' : ' My Orders'}
+            <Package size={16} />{es ? ' Mis Pedidos' : ' My Orders'}
           </Link>
         </div>
 
@@ -330,7 +330,7 @@ function PerfilTab({ customer, refresh, setAuth, setToast, lang, onCopyId, copie
             <span className="account-info-value">{customer.phone || (es ? 'No registrado' : 'Not set')}</span>
           </div>
           <div className="account-info-item">
-            <span className="account-info-label"><User size={13}/> {es ? 'Usuario ID' : 'User ID'}</span>
+            <span className="account-info-label"><User size={13}/> {es ? 'ID de usuario' : 'User ID'}</span>
             <span className="account-info-value account-info-mono">
               {customer.id}
               <button className="btn-copy-sm" onClick={onCopyId} type="button">
@@ -1061,7 +1061,7 @@ function OrdersTab({ orders, lang, hasMore, loadingMore, onLoadMore }: {
   return (
     <div className="profile-section orders-tab">
       <div className="section-header">
-        <h2><Package size={20} /> {es ? 'Mis Órdenes' : 'My Orders'}</h2>
+        <h2><Package size={20} /> {es ? 'Mis Pedidos' : 'My Orders'}</h2>
       </div>
 
       <SegTabs
@@ -1160,14 +1160,14 @@ function OrderDetailCard({ order, lang }: { order: Order; lang: string }) {
         </div>
         <div className="order-detail-meta">
           <span className="order-detail-id">
-            {es ? 'ID de orden:' : 'Order ID:'} <code>{order.id.slice(0, 13)}…</code>
+            {es ? 'N.º de pedido:' : 'Order ID:'} <code>{order.id.slice(0, 13)}…</code>
             <button className="btn-copy-sm" onClick={copyId} type="button">{copied ? <CheckCircle2 size={12}/> : <Copy size={12}/>}</button>
           </span>
           <span className="order-detail-date"><Clock size={12}/> {new Date(order.created_at).toLocaleDateString(es ? 'es-PE' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
         </div>
         <div className="order-detail-prices">
           <KCBadge amount={order.price_kc} size="sm" />
-          {order.price_vbucks > 0 && <span className="order-detail-vbucks">🎮 {order.price_vbucks.toLocaleString()} V-Bucks</span>}
+          {order.price_vbucks > 0 && <span className="order-detail-vbucks">🎮 {order.price_vbucks.toLocaleString('es-PE')} V-Bucks</span>}
           <span className="order-detail-epic">{es ? 'Cuenta Epic:' : 'Epic account:'} <strong>{order.epic_username}</strong></span>
         </div>
         {(order.status === 'failed' || order.status === 'refunded') && order.error_msg && (
@@ -1204,7 +1204,7 @@ function LevelBar({ kc, lang }: { kc: number; lang: string }) {
         ))}
       </div>
       <div className="level-bar-bg"><div className="level-bar-fill" style={{ width: `${pct}%`, background: current.color }} /></div>
-      {!isMax && <p className="level-bar-hint">{(next.min - kc).toLocaleString()} {lang === 'es' ? `KC más para ${next.emoji} ${next.name}` : `KC more to reach ${next.emoji} ${next.name}`}</p>}
+      {!isMax && <p className="level-bar-hint">{(next.min - kc).toLocaleString('es-PE')} {lang === 'es' ? `KC más para ${next.emoji} ${next.name}` : `KC more to reach ${next.emoji} ${next.name}`}</p>}
       {isMax && <p className="level-bar-hint">🏆 {lang === 'es' ? 'Nivel máximo alcanzado' : 'Maximum level reached'}</p>}
     </div>
   );

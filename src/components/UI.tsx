@@ -13,7 +13,7 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 export function KCBadge({ amount, size = 'md' }: { amount: number; size?: 'sm' | 'md' | 'lg' }) {
-  return <span className={`kc-badge kc-${size}`}><Coins size={size === 'sm' ? 12 : size === 'lg' ? 20 : 16} />{amount.toLocaleString()} KC</span>;
+  return <span className={`kc-badge kc-${size}`}><Coins size={size === 'sm' ? 12 : size === 'lg' ? 20 : 16} />{amount.toLocaleString('es-PE')} KC</span>;
 }
 
 export function PageLoader() {

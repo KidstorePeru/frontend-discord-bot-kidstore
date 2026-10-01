@@ -207,8 +207,8 @@ function GlobalCart() {
                   <div className="cart-item-info">
                     <span className="cart-item-name">{item.name}</span>
                     <span className="cart-item-rarity">{item.rarityText}</span>
-                    <div className="cart-item-price"><KCIcon s={14} />{item.price_kc.toLocaleString()} KC</div>
-                    <div className="cart-item-vbucks"><VIcon s={13} />{item.finalPrice.toLocaleString()}</div>
+                    <div className="cart-item-price"><KCIcon s={14} />{item.price_kc.toLocaleString('es-PE')} KC</div>
+                    <div className="cart-item-vbucks"><VIcon s={13} />{item.finalPrice.toLocaleString('es-PE')}</div>
                   </div>
                   <button className="cart-item-remove" onClick={() => removeFromCart(item.offerId)} aria-label={es ? `Quitar ${item.name} del carrito` : `Remove ${item.name} from cart`}><Trash2 size={15} /></button>
                 </div>
@@ -227,12 +227,12 @@ function GlobalCart() {
             <div className="cart-footer">
               <div className="cart-total">
                 <span>{es ? 'Total' : 'Total'}</span>
-                <div className="cart-total-amount"><KCIcon s={16} />{cartTotal.toLocaleString()} KC</div>
+                <div className="cart-total-amount"><KCIcon s={16} />{cartTotal.toLocaleString('es-PE')} KC</div>
               </div>
               {customer && !hasBalance && (
                 <div className="cart-warning">
                   <AlertCircle size={14} />
-                  {es ? `Saldo insuficiente. Tienes ${customer.kc_balance.toLocaleString()} KC` : `Insufficient balance. You have ${customer.kc_balance.toLocaleString()} KC`}
+                  {es ? `Saldo insuficiente. Tienes ${customer.kc_balance.toLocaleString('es-PE')} KC` : `Insufficient balance. You have ${customer.kc_balance.toLocaleString('es-PE')} KC`}
                 </div>
               )}
               <div className="cart-actions">
@@ -269,22 +269,22 @@ function GlobalCart() {
                       <strong>{item.name}</strong>
                       <span>{item.rarityText}</span>
                     </div>
-                    <div className="confirm-item-price"><KCIcon s={14} />{item.price_kc.toLocaleString()}</div>
+                    <div className="confirm-item-price"><KCIcon s={14} />{item.price_kc.toLocaleString('es-PE')}</div>
                   </div>
                 ))}
               </div>
               <div className="confirm-summary">
                 <div className="confirm-balance">
                   <span>{es ? 'Tu saldo' : 'Your balance'}</span>
-                  <span>{customer?.kc_balance.toLocaleString()} KC</span>
+                  <span>{customer?.kc_balance.toLocaleString('es-PE')} KC</span>
                 </div>
                 <div className="confirm-total">
                   <span>{es ? 'Total a pagar' : 'Total to pay'}</span>
-                  <span className="confirm-total-num">{cartTotal.toLocaleString()} KC</span>
+                  <span className="confirm-total-num">{cartTotal.toLocaleString('es-PE')} KC</span>
                 </div>
                 <div className="confirm-remaining">
                   <span>{es ? 'Saldo restante' : 'Remaining balance'}</span>
-                  <span>{((customer?.kc_balance ?? 0) - cartTotal).toLocaleString()} KC</span>
+                  <span>{((customer?.kc_balance ?? 0) - cartTotal).toLocaleString('es-PE')} KC</span>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 12, background: 'rgba(34,197,94,0.07)', border: '1.5px solid rgba(34,197,94,0.25)' }}>

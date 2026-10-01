@@ -307,8 +307,8 @@ export default function Recharge() {
     tabManual:  es ? 'Pago manual' : 'Manual payment',
     gatewayNote: es ? 'KC acreditados automáticamente al confirmarse el pago' : 'KC credited automatically once payment is confirmed',
     manualWaitNote: es
-      ? 'Estos métodos requieren verificación manual — puede tomar algunas horas antes de que se acredite tu KC.'
-      : 'These methods require manual verification — it may take a few hours before your KC is credited.',
+      ? 'Estos métodos requieren que nuestro equipo verifique tu pago a mano, así que los KC no se acreditan al instante.'
+      : 'These methods require our team to verify your payment by hand, so your KC are not credited instantly.',
     payWithMP:  es ? 'Pagar con MercadoPago' : 'Pay with MercadoPago',
     payWithDL:  es ? 'Pagar con dLocal Go'   : 'Pay with dLocal Go',
     payWithPP:  es ? 'PayPal'                : 'PayPal',
@@ -339,7 +339,7 @@ export default function Recharge() {
               <img src="/kidcoin.png" alt="KC" className="rc-balance-icon"/>
               <div>
                 <span className="rc-balance-label">{t('rech.balance')}</span>
-                <span className="rc-balance-val">{customer.kc_balance.toLocaleString()} KC</span>
+                <span className="rc-balance-val">{customer.kc_balance.toLocaleString('es-PE')} KC</span>
               </div>
             </div>
           )}
@@ -370,7 +370,7 @@ export default function Recharge() {
                     onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>
                 </div>
                 <div className="rc-pkg-name">{pkg.name}</div>
-                <div className="rc-pkg-kc">{pkg.kc.toLocaleString()} KC</div>
+                <div className="rc-pkg-kc">{pkg.kc.toLocaleString('es-PE')} KC</div>
                 <div className="rc-pkg-divider"/>
                 <div className="rc-pkg-pen">
                   {ratesLoading ? '...' : formatReferencePrice(getPrice(pkg), refCurrency, refRates)}
@@ -430,7 +430,7 @@ export default function Recharge() {
             <img src={pkgImg(selectedPkg.kc)} alt="" className="rc-summary-coin"
               onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>
             <div className="rc-summary-info">
-              <strong>{selectedPkg.name} — {selectedPkg.kc.toLocaleString()} KC</strong>
+              <strong>{selectedPkg.name} — {selectedPkg.kc.toLocaleString('es-PE')} KC</strong>
               <span>{txt.pkgSel}</span>
             </div>
             <div className="rc-summary-prices">
@@ -700,7 +700,7 @@ export default function Recharge() {
                 </h3>
                 {payKcCredited > 0 && (
                   <p style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--accent)', margin: '8px 0' }}>
-                    +{payKcCredited.toLocaleString()} KC
+                    +{payKcCredited.toLocaleString('es-PE')} KC
                   </p>
                 )}
                 <p style={{ color: 'var(--text-muted)', fontSize: '.85rem', margin: '0 0 16px' }}>

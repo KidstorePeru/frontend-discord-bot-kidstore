@@ -10,6 +10,7 @@ import type { Order } from '../types';
 import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coins, CreditCard, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Wallet, DollarSign, Loader2, AlertCircle } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 import { usePaginatedHistory } from '../hooks/usePaginatedHistory';
+import { paymentMethodLabel } from '../services/paymentMethods';
 
 // buildPageList arma la lista compacta de páginas a mostrar (primera,
 // última, la actual y `siblingCount` vecinas a cada lado, con "…" para el
@@ -89,13 +90,25 @@ function formatCharged(p: { amount_pen: number; charged_amount?: number; charged
   }
 }
 
+// Qué significa cada estado, para que el cliente no tenga que preguntar.
+function orderStatusHint(status: string, es: boolean): string {
+  switch (status) {
+    case 'pending': return es ? 'En cola: lo enviamos en unos minutos.' : 'Queued: we send it within minutes.';
+    case 'processing': return es ? 'Enviándolo a tu cuenta de Fortnite.' : 'Sending it to your Fortnite account.';
+    case 'review': return es ? 'Estamos confirmando la entrega con Epic Games; no se te cobra dos veces.' : "We're confirming the delivery with Epic Games; you won't be charged twice.";
+    case 'failed': return es ? 'No se pudo entregar; tus KC se devuelven automáticamente.' : "Couldn't be delivered; your KC are returned automatically.";
+    case 'refunded': return es ? 'Te devolvimos los KC a tu saldo.' : 'Your KC were returned to your balance.';
+    default: return '';
+  }
+}
+
 export default function Dashboard() {
   const { customer, refresh } = useAuth();
   const { t, lang } = useLang();
   const { tab: tabParam } = useParams<{ tab: string }>();
   const es = lang === 'es';
   useSEO({
-    title: es ? 'Mi Panel' : 'My Dashboard',
+    title: es ? 'Mis pedidos' : 'My orders',
     description: es ? 'Revisa tus pedidos y tu historial de recargas de KidCoins.' : 'Check your orders and KidCoins recharge history.',
     path: '/dashboard',
     noindex: true,
@@ -239,7 +252,7 @@ export default function Dashboard() {
           <span className="dash-balance-label">{t('dash.balance')}</span>
           <div className="dash-balance-amount">
             <img src="/kidcoin.png" alt="KC" className="dash-kc-icon" />
-            <span>{customer.kc_balance.toLocaleString()}</span>
+            <span>{customer.kc_balance.toLocaleString('es-PE')}</span>
             <span className="dash-balance-unit">KC</span>
           </div>
           <div className="dash-balance-user">
@@ -283,7 +296,7 @@ export default function Dashboard() {
           </div>
           <div className="dash-stat" style={{'--sc':'#f59e0b','--sg':'rgba(245,158,11,0.12)'} as React.CSSProperties}>
             <div className="dash-stat-icon"><TrendingUp size={20} /></div>
-            <div className="dash-stat-val">{totalSpent.toLocaleString()}</div>
+            <div className="dash-stat-val">{totalSpent.toLocaleString('es-PE')}</div>
             <div className="dash-stat-lbl">{es ? 'KC gastados' : 'KC spent'}</div>
           </div>
           <div className="dash-stat" style={{'--sc':'#06b6d4','--sg':'rgba(6,182,212,0.12)'} as React.CSSProperties}>
@@ -317,6 +330,7 @@ export default function Dashboard() {
                     <div className="dash-order-info">
                       <strong>{o.item_name}</strong>
                       <span>{new Date(o.created_at).toLocaleDateString(es ? 'es-PE' : 'en-US', { day:'numeric', month:'short', year:'numeric' })}</span>
+                      {orderStatusHint(o.status, es) && <span className="dash-order-hint">{orderStatusHint(o.status, es)}</span>}
                     </div>
                     <KCBadge amount={o.price_kc} size="sm" />
                     <StatusBadge status={o.status} />
@@ -339,7 +353,7 @@ export default function Dashboard() {
         <div className="dash-stats">
           <div className="dash-stat" style={{'--sc':'#22c55e','--sg':'rgba(34,197,94,0.12)'} as React.CSSProperties}>
             <div className="dash-stat-icon"><Coins size={20} /></div>
-            <div className="dash-stat-val">{totalKCRecharged.toLocaleString()}</div>
+            <div className="dash-stat-val">{totalKCRecharged.toLocaleString('es-PE')}</div>
             <div className="dash-stat-lbl">{es ? 'KC recargados' : 'KC recharged'}</div>
           </div>
           <div className="dash-stat" style={{'--sc':'#7c3aed','--sg':'rgba(124,58,237,0.12)'} as React.CSSProperties}>
@@ -353,7 +367,7 @@ export default function Dashboard() {
             {/* Suma pagos en varias divisas reales (USD, MXN, etc.) a su
                 equivalente en soles al momento de cada pago — un total
                 referencial, no un monto realmente cobrado en soles. */}
-            <div className="dash-stat-lbl">{es ? 'Pagado via pasarela (referencial)' : 'Paid via gateway (reference)'}</div>
+            <div className="dash-stat-lbl">{es ? 'Pagado vía pasarela (referencial)' : 'Paid via gateway (reference)'}</div>
           </div>
           <div className="dash-stat" style={{'--sc':'#06b6d4','--sg':'rgba(6,182,212,0.12)'} as React.CSSProperties}>
             <div className="dash-stat-icon"><Clock size={20} /></div>
@@ -397,8 +411,8 @@ export default function Dashboard() {
                           <div className="dash-order-placeholder" style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e' }}><Coins size={18} /></div>
                         </div>
                         <div className="dash-order-info">
-                          <strong>+{item.amount_kc.toLocaleString()} KC</strong>
-                          <span>{item.method === 'manual' ? (es ? 'Recarga manual' : 'Manual recharge') : item.method} — {new Date(item.created_at).toLocaleDateString(es ? 'es-PE' : 'en-US', { day:'numeric', month:'short', year:'numeric' })}</span>
+                          <strong>+{item.amount_kc.toLocaleString('es-PE')} KC</strong>
+                          <span>{paymentMethodLabel(item.method, es)} — {new Date(item.created_at).toLocaleDateString(es ? 'es-PE' : 'en-US', { day:'numeric', month:'short', year:'numeric' })}</span>
                         </div>
                         <KCBadge amount={item.amount_kc} size="sm" />
                         <span className="status-badge" style={{ '--badge-color': '#22c55e' } as React.CSSProperties}>{es ? 'Acreditado' : 'Credited'}</span>
@@ -416,7 +430,7 @@ export default function Dashboard() {
                         </div>
                         <div className="dash-order-info">
                           <strong>{item.product_name}{item.kc_amount > 0 ? ` (+${item.kc_amount} KC)` : ''}</strong>
-                          <span>{item.gateway} — {new Date(item.created_at).toLocaleDateString(es ? 'es-PE' : 'en-US', { day:'numeric', month:'short', year:'numeric' })}</span>
+                          <span>{paymentMethodLabel(item.gateway, es)} — {new Date(item.created_at).toLocaleDateString(es ? 'es-PE' : 'en-US', { day:'numeric', month:'short', year:'numeric' })}</span>
                         </div>
                         <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--accent)' }}>{formatCharged(item, lang)}</span>
                         <span className="status-badge" style={{ '--badge-color': badgeColor } as React.CSSProperties}>
