@@ -71,11 +71,14 @@ describe('sectionMeta — fondos que rotan cada día', () => {
     expect(['/d1', '/d2']).toContain(sectionBackground('Sección nueva', day));
   });
 
-  it('con las imágenes reales: Portada tiene 3 fondos, Look del día 3 y Peregrine TT el suyo', () => {
-    expect(sectionBackgrounds('Portada')).toHaveLength(3);
-    expect(sectionBackgrounds('Look del día')).toHaveLength(3);
-    expect(sectionBackgrounds('No te preocupes')).toHaveLength(2);
-    expect(sectionBackgrounds('Pasos con estilo')).toHaveLength(2);
+  // Con "al menos": se pueden seguir agregando fondos sin tocar la prueba.
+  it('con las imágenes reales: las variantes se agrupan y una sección con número usa su archivo', () => {
+    expect(sectionBackgrounds('Portada').length).toBeGreaterThanOrEqual(3);
+    expect(sectionBackgrounds('Look del día').length).toBeGreaterThanOrEqual(3);
+    expect(sectionBackgrounds('No te preocupes').length).toBeGreaterThanOrEqual(2);
+    expect(sectionBackgrounds('Pasos con estilo').length).toBeGreaterThanOrEqual(2);
     expect(sectionBackground('Peregrine TT')).not.toContain('unrealengine');
+    // "Nick Eh 30" es el nombre de la sección (no la variante 30 de "Nick Eh").
+    expect(sectionBackground('Nick Eh 30')).toMatch(/Nick(%20| )Eh(%20| )30/);
   });
 });
