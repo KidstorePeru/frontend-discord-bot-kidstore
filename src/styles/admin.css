@@ -457,3 +457,19 @@
   .admin-revenue-sub { flex-direction: column; gap: 6px; }
   .admin-stats-bottom { grid-template-columns: 1fr; }
 }
+
+/* ── Reseñas verificadas ── */
+.adm-review-list { display: flex; flex-direction: column; gap: 12px; }
+.adm-review-card { background: var(--bg-surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.adm-review-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .85rem; }
+.adm-review-stars { color: #f59e0b; font-size: 1rem; letter-spacing: 1px; }
+.adm-review-date { color: var(--text-muted); font-size: .78rem; }
+.adm-review-status { margin-left: auto; font-size: .72rem; font-weight: 800; padding: 3px 10px; border-radius: 100px; }
+.adm-review-status.is-pending { background: rgba(245,158,11,.14); color: #b45309; }
+.adm-review-status.is-approved { background: rgba(34,197,94,.14); color: #15803d; }
+.adm-review-status.is-rejected { background: rgba(220,38,38,.1); color: #b91c1c; }
+.adm-review-item { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--text-secondary); font-weight: 700; }
+.adm-review-item img { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; }
+.adm-review-comment { margin: 0; font-size: .88rem; color: var(--text-primary); line-height: 1.5; overflow-wrap: anywhere; }
+.adm-review-reply { width: 100%; resize: vertical; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg-surface-2); color: var(--text-primary); font: inherit; font-size: .84rem; }
+.adm-review-actions { display: flex; gap: 8px; flex-wrap: wrap; }

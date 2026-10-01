@@ -81,7 +81,8 @@ export default function Footer() {
       </div>
 
       <div className="lv7-footer-bottom">
-        <span>© {new Date().getFullYear()} KidStorePeru — {es ? 'Todos los derechos reservados' : 'All rights reserved'}</span>
+        {/* Identificación del proveedor (Código de Protección y Defensa del Consumidor). */}
+        <span>© {new Date().getFullYear()} KidStorePeru · RUC 10725091651 — {es ? 'Todos los derechos reservados' : 'All rights reserved'}</span>
         <span>{es ? 'No afiliado con Epic Games' : 'Not affiliated with Epic Games'}</span>
       </div>
     </footer>

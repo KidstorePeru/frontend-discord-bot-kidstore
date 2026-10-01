@@ -223,3 +223,45 @@
    color del icono. */
 .dash-empty-error svg { color: #dc2626; }
 
+
+/* ── Calificar un pedido entregado (reseñas verificadas) ── */
+.dash-rate-btn {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  font-size: .76rem; font-weight: 800; white-space: nowrap;
+  padding: 6px 10px; border-radius: 8px; cursor: pointer;
+  background: #f7ff19; color: #14161a; border: 1.5px solid #e6ee00;
+  transition: transform .15s, box-shadow .15s;
+}
+.dash-rate-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(230,238,0,.35); }
+@media (max-width:480px) {
+  .dash-rate-btn { margin-left: auto; }
+  .dash-rate-btn + .dash-voucher-link { margin-left: 0; }
+}
+
+.review-modal .confirm-modal-body { gap: 14px; }
+.review-item { display: flex; align-items: center; gap: 12px; }
+.review-item img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; background: var(--bg-sunken); }
+.review-item strong { font-size: .95rem; color: var(--text-primary); }
+.review-stars { display: flex; align-items: center; gap: 4px; }
+.review-stars button {
+  background: none; border: none; padding: 2px; cursor: pointer; color: var(--border);
+  transition: transform .12s, color .12s; display: flex;
+}
+.review-stars button.is-on { color: #f59e0b; }
+.review-stars button:hover { transform: scale(1.12); }
+.review-stars button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.review-stars-label { margin-left: 8px; font-size: .85rem; font-weight: 700; color: var(--text-secondary); }
+.review-comment { display: flex; flex-direction: column; gap: 6px; }
+.review-comment span { font-size: .82rem; font-weight: 700; color: var(--text-secondary); }
+.review-comment textarea {
+  width: 100%; resize: vertical; min-height: 90px; padding: 10px 12px; border-radius: 12px;
+  border: 1.5px solid var(--border); background: var(--bg-surface-2); color: var(--text-primary);
+  font: inherit; font-size: .88rem; line-height: 1.5;
+}
+.review-comment textarea:focus { outline: none; border-color: var(--accent); }
+.review-comment small { align-self: flex-end; font-size: .72rem; color: var(--text-muted); }
+.review-note { margin: 0; font-size: .76rem; color: var(--text-muted); line-height: 1.5; }
+.review-error { margin: 0; font-size: .82rem; font-weight: 700; color: #dc2626; }
+.review-done { align-items: center; text-align: center; color: var(--text-secondary); }
+.review-done svg { color: #22c55e; }
+.review-done p { margin: 0; }

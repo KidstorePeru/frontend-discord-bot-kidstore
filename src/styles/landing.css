@@ -1325,6 +1325,17 @@
 .lv7-review-name { font-size:.82rem; font-weight:800; color:var(--text-primary,#0f172a); }
 [data-theme="dark"] .lv7-review-name { color:#fff; }
 .lv7-review-source { font-size:.65rem; font-weight:800; padding:3px 10px; border-radius:100px; letter-spacing:.03em; }
+/* Reseñas verificadas (compras hechas en la web, aprobadas por el admin) */
+.lv7-verified { margin-bottom:28px; }
+.lv7-verified-summary { display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; margin-bottom:18px; font-size:.9rem; color:var(--text-secondary,#475569); text-align:center; }
+.lv7-verified-avg { display:inline-flex; align-items:center; gap:6px; font-size:1.25rem; font-weight:900; color:#f59e0b; }
+.lv7-review-item { display:flex; align-items:center; gap:10px; font-size:.8rem; font-weight:700; color:var(--text-secondary,#475569); }
+.lv7-review-item img { width:34px; height:34px; border-radius:8px; object-fit:cover; background:var(--bg-sunken,#eee); flex-shrink:0; }
+.lv7-review-reply { margin:0; padding:10px 12px; border-radius:10px; background:var(--accent-soft,#efedfd); font-size:.8rem; line-height:1.5; color:var(--text-secondary,#475569); }
+.lv7-review-reply strong { color:var(--accent,#6c5ce7); }
+.lv7-review-verified { display:inline-flex; align-items:center; gap:4px; font-size:.68rem; font-weight:800; padding:3px 10px; border-radius:100px; color:#15803d; background:rgba(34,197,94,.12); white-space:nowrap; }
+[data-theme="dark"] .lv7-review-verified { color:#4ade80; }
+[data-theme="dark"] .lv7-review-item, [data-theme="dark"] .lv7-review-reply { color:rgba(255,255,255,.65); }
 
 /* ════════════════════════════
    FOOTER — theme-aware

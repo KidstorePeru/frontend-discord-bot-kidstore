@@ -756,3 +756,35 @@ export async function searchCosmetics(q: string, signal?: AbortSignal): Promise<
   const res = await request<{ results: CosmeticResult[] }>(`/store/cosmetics/search?q=${encodeURIComponent(q)}`, { signal });
   return res.results ?? [];
 }
+
+/* ── Reseñas verificadas y cifras de la portada ── */
+
+export interface StoreStats { orders_delivered: number; shop_items_today: number; reviews: { average: number; count: number } }
+
+export async function getStoreStats(): Promise<StoreStats> {
+  return request<StoreStats>('/store/stats');
+}
+
+export interface PublicReview {
+  display_name: string;
+  rating: number;
+  comment: string;
+  item_name: string;
+  item_image: string;
+  reply?: string;
+  created_at: string;
+}
+
+export async function getPublicReviews(): Promise<{ reviews: PublicReview[]; summary: { average: number; count: number } }> {
+  const res = await request<{ reviews: PublicReview[]; summary: { average: number; count: number } }>('/store/reviews');
+  return { reviews: res.reviews ?? [], summary: res.summary ?? { average: 0, count: 0 } };
+}
+
+export async function getReviewableOrders(): Promise<string[]> {
+  const res = await request<{ order_ids: string[] }>('/store/reviews/pending-orders');
+  return res.order_ids ?? [];
+}
+
+export async function createReview(orderId: string, rating: number, comment: string): Promise<void> {
+  await request('/store/reviews', { method: 'POST', body: JSON.stringify({ order_id: orderId, rating, comment }) });
+}

@@ -10,12 +10,12 @@ import {
   CheckCircle2, RefreshCw, ShieldCheck, Bot,
   Plus, Trash2, ExternalLink, Copy, Zap, X, Edit2,
   AlertTriangle, Gamepad2, Mail, Clock, Moon, Sun, ToggleLeft, ToggleRight,
-  CreditCard, ClipboardList, Send, UserCheck
+  CreditCard, ClipboardList, Send, UserCheck, Star
 } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 
-type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments' | 'complaints';
-const ADMIN_TABS: AdminTab[] = ['stats', 'customers', 'orders', 'recharge', 'bots', 'schedule', 'payments', 'complaints'];
+type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments' | 'complaints' | 'reviews';
+const ADMIN_TABS: AdminTab[] = ['stats', 'customers', 'orders', 'recharge', 'bots', 'schedule', 'payments', 'complaints', 'reviews'];
 const ADMIN_PER_PAGE = 10;
 
 function AdminPagination({ page, total, setPage }: { page: number; total: number; setPage: (p: number) => void }) {
@@ -142,6 +142,11 @@ export default function AdminPanel() {
   const [orderFilter, setOrderFilter] = useState('all');
   const [bots,      setBots]      = useState<BotAccount[]>([]);
 
+  // Reseñas verificadas (se publican en la portada solo si se aprueban)
+  const [reviews,        setReviews]        = useState<any[]>([]);
+  const [reviewFilter,   setReviewFilter]   = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+  const [reviewReplies,  setReviewReplies]  = useState<Record<string, string>>({});
+
   // Libro de Reclamaciones
   const [complaints,     setComplaints]     = useState<any[]>([]);
   const [complaintPage,  setComplaintPage]  = useState(1);
@@ -259,6 +264,10 @@ export default function AdminPanel() {
       else if (t === 'complaints') {
         const r = await adminFetch('/admin/complaints?limit=200');
         setComplaints(r.complaints || []);
+      }
+      else if (t === 'reviews') {
+        const r = await adminFetch('/admin/reviews');
+        setReviews(r.reviews || []);
       }
       else if (t === 'schedule') {
         const r = await adminFetch('/admin/bot-schedule');
@@ -588,11 +597,15 @@ export default function AdminPanel() {
           ['payments', 'Pagos',        <CreditCard size={15}/>],
           ['schedule', 'Horario Bots', <Clock size={15}/>],
           ['complaints', 'Reclamos',   <ClipboardList size={15}/>],
+          ['reviews',  'Reseñas',      <Star size={15}/>],
         ] as [AdminTab, string, React.ReactNode][]).map(([key, label, icon]) => (
           <Link key={key} to={`/admin/${key}`} className={`admin-tab ${tab===key?'active':''}`}>
             {icon} {label}
             {key === 'complaints' && complaints.some((c: any) => c.status === 'pendiente') && (
               <span className="adm-tab-badge">{complaints.filter((c: any) => c.status === 'pendiente').length}</span>
+            )}
+            {key === 'reviews' && reviews.some((r: any) => r.status === 'pending') && (
+              <span className="adm-tab-badge">{reviews.filter((r: any) => r.status === 'pending').length}</span>
             )}
           </Link>
         ))}
@@ -1044,6 +1057,67 @@ export default function AdminPanel() {
       )}
 
       {/* ── LIBRO DE RECLAMACIONES ── */}
+      {/* ── RESEÑAS ── */}
+      {tab === 'reviews' && !loading && (
+        <div className="admin-table-section">
+          <p className="admin-tab-sub">Reseñas de clientes con un pedido entregado en la web. Solo se publican en la portada las que apruebes. No ocultes las negativas solo por serlo (mostrar únicamente lo positivo puede ser publicidad engañosa): recházalas solo si tienen insultos, spam o datos personales, y responde las críticas — eso también da confianza.</p>
+          <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="adm-count">{reviews.filter((r: any) => reviewFilter === 'all' || r.status === reviewFilter).length} reseña(s)</span>
+            <div className="adm-filter-row">
+              {([['pending', 'Pendientes'], ['approved', 'Publicadas'], ['rejected', 'Rechazadas'], ['all', 'Todas']] as const).map(([k, l]) => (
+                <button key={k} className={`adm-filter-btn ${reviewFilter === k ? 'active' : ''}`} onClick={() => setReviewFilter(k)}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div className="adm-review-list">
+            {reviews.filter((r: any) => reviewFilter === 'all' || r.status === reviewFilter).map((r: any) => {
+              const reply = reviewReplies[r.id] ?? r.reply ?? '';
+              const moderate = async (status: 'approved' | 'rejected') => {
+                try {
+                  await adminFetch(`/admin/reviews/${r.id}`, undefined, { method: 'PUT', body: JSON.stringify({ status, reply }) });
+                  setToast({ msg: status === 'approved' ? 'Reseña publicada' : 'Reseña rechazada', type: 'success' });
+                  loadTab('reviews');
+                } catch (e: any) { setToast({ msg: e.message, type: 'error' }); }
+              };
+              return (
+                <div key={r.id} className="adm-review-card">
+                  <div className="adm-review-top">
+                    <span className="adm-review-stars">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
+                    <strong>{r.display_name}</strong>
+                    <span className="adm-review-date">{new Date(r.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    <span className={`adm-review-status is-${r.status}`}>{r.status === 'pending' ? 'Pendiente' : r.status === 'approved' ? 'Publicada' : 'Rechazada'}</span>
+                  </div>
+                  <div className="adm-review-item">
+                    {r.item_image && <img src={r.item_image} alt="" />}
+                    <span>{r.item_name}</span>
+                  </div>
+                  <p className="adm-review-comment">{r.comment || <em>(sin comentario)</em>}</p>
+                  <textarea
+                    className="adm-review-reply"
+                    placeholder="Respuesta pública de KidStorePeru (opcional)"
+                    value={reply}
+                    maxLength={500}
+                    rows={2}
+                    onChange={e => setReviewReplies(prev => ({ ...prev, [r.id]: e.target.value }))}
+                  />
+                  <div className="adm-review-actions">
+                    <button className="btn btn-primary btn-sm" onClick={() => moderate('approved')}>
+                      <CheckCircle2 size={14}/> {r.status === 'approved' ? 'Guardar respuesta' : 'Aprobar y publicar'}
+                    </button>
+                    {r.status !== 'rejected' && (
+                      <button className="btn btn-ghost btn-sm" onClick={() => moderate('rejected')}><X size={14}/> Rechazar</button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {reviews.filter((r: any) => reviewFilter === 'all' || r.status === reviewFilter).length === 0 && (
+              <p className="admin-tab-sub" style={{ textAlign: 'center', padding: 24 }}>No hay reseñas en esta lista.</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {tab === 'complaints' && !loading && (
         <div className="admin-table-section">
           <p className="admin-tab-sub">Libro de Reclamaciones Virtual — requisito legal (Ley N° 29571, modificada por la Ley N° 31435). Debes responder cada reclamo en un plazo máximo de 15 días hábiles improrrogables desde su presentación.</p>

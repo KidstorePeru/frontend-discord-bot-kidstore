@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
-import { getMyOrders, getMyRecharges, getMyOrderStats, getMyRechargeStats } from '../services/api';
+import { getMyOrders, getMyRecharges, getMyOrderStats, getMyRechargeStats, getReviewableOrders } from '../services/api';
 import type { RechargeHistoryItem } from '../services/api';
 import { KCBadge, StatusBadge, PageLoader } from '../components/UI';
 import SegTabs from '../components/SegTabs';
+import ReviewModal from '../components/ReviewModal';
 import type { Order } from '../types';
-import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coins, CreditCard, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Wallet, DollarSign, Loader2, AlertCircle } from 'lucide-react';
+import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coins, CreditCard, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Wallet, DollarSign, Loader2, AlertCircle, Star } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 import { usePaginatedHistory } from '../hooks/usePaginatedHistory';
 import { paymentMethodLabel } from '../services/paymentMethods';
@@ -129,6 +130,13 @@ export default function Dashboard() {
     loading: rechargeLoading, error: rechargeError, retry: retryRecharges,
   } = usePaginatedHistory<RechargeHistoryItem>(getMyRecharges, PER_PAGE);
   const [loading, setLoading] = useState(true);
+  // Pedidos entregados que el cliente todavía puede calificar (reseñas
+  // verificadas) y el que está calificando ahora.
+  const [reviewable, setReviewable] = useState<Set<string>>(() => new Set());
+  const [reviewOrder, setReviewOrder] = useState<Order | null>(null);
+  useEffect(() => {
+    getReviewableOrders().then((ids) => setReviewable(new Set(ids))).catch(() => {});
+  }, []);
   const [orderPage, setOrderPage] = useState(1);
   // Totales calculados en el servidor sobre TODO el historial — antes se
   // derivaban de sumar/filtrar los arrays ya cargados (orders tope 100,
@@ -334,6 +342,11 @@ export default function Dashboard() {
                     </div>
                     <KCBadge amount={o.price_kc} size="sm" />
                     <StatusBadge status={o.status} />
+                    {o.status === 'sent' && reviewable.has(o.id) && (
+                      <button type="button" className="dash-rate-btn" onClick={() => setReviewOrder(o)}>
+                        <Star size={13} /> {es ? 'Calificar' : 'Rate'}
+                      </button>
+                    )}
                     {o.status === 'sent' && (
                       <Link to={`/dashboard/comprobantes/pedido/${o.id}`} className="dash-voucher-link">
                         {es ? 'Comprobante' : 'Receipt'}
@@ -346,6 +359,14 @@ export default function Dashboard() {
             </>
           )}
         </div>
+        {reviewOrder && (
+          <ReviewModal
+            order={reviewOrder}
+            es={es}
+            onClose={() => setReviewOrder(null)}
+            onDone={(id) => setReviewable((prev) => { const next = new Set(prev); next.delete(id); return next; })}
+          />
+        )}
       </>}
 
       {/* ══════════ TAB: HISTORIAL DE RECARGAS ══════════ */}

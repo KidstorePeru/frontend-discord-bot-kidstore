@@ -47,6 +47,8 @@ describe('Footer', () => {
     expect(hrefOf('Términos y Condiciones')).toBe('/terms');
     expect(hrefOf('Política de Privacidad')).toBe('/privacy');
     expect(hrefOf('Política de Reembolsos')).toBe('/refunds');
+    // Identificación del proveedor visible en todas las páginas.
+    expect(screen.getByText(/RUC 10725091651/)).toBeTruthy();
     expect(hrefOf('Libro de Reclamaciones')).toBe('/libro-de-reclamaciones');
   });
 

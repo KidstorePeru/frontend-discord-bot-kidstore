@@ -8,6 +8,7 @@ import { ArrowRight, ChevronRight, ChevronDown, ShieldCheck, Zap, Clock, Star, W
 import { useSEO } from '../hooks/useSEO';
 import Footer from '../components/Footer';
 import { isSeasonCurrent } from '../services/season';
+import { getPublicReviews, getStoreStats, type PublicReview, type StoreStats } from '../services/api';
 
 function IconStar()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>; }
 function IconFire()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-4.4 0-8-3.6-8-8 0-3.5 2.3-6.5 5.5-7.6-.3 1-.2 2.1.4 3 .3.5.8.9 1.3 1.1C10.1 9.4 10 7 10.8 5c.8-2 2.4-3.5 4.2-4.5-.3 1.6.1 3.3 1.2 4.5.7.8 1.5 1.3 2.5 1.6-1 1.2-1.7 2.7-1.7 4.4 0 3.3 2 4.5 2 7C19 19.4 15.4 23 12 23z"/></svg>; }
@@ -192,6 +193,21 @@ export default function Landing() {
   const { customer } = useAuth();
   const { currency: refCurrency, rates: refRates } = useCurrency();
   const isLogged = !!customer;
+
+  // Cifras reales (pedidos entregados, ofertas de hoy) y reseñas verificadas.
+  // Mientras cargan, o si fallan, se muestran los textos fijos de siempre.
+  const [stats, setStats] = useState<StoreStats | null>(null);
+  const [verified, setVerified] = useState<{ reviews: PublicReview[]; summary: { average: number; count: number } } | null>(null);
+  useEffect(() => {
+    getStoreStats().then(setStats).catch(() => {});
+    getPublicReviews().then(setVerified).catch(() => {});
+  }, []);
+  const statNf = new Intl.NumberFormat('es-PE');
+  const ordersStat = stats && stats.orders_delivered > 0
+    ? `+${statNf.format(Math.floor(stats.orders_delivered / 100) * 100)}`
+    : t('land.stats.orders');
+  const itemsToday = stats?.shop_items_today ?? 0;
+  const verifiedReviews = verified?.reviews ?? [];
   const words = t('land.words').split(',');
   const { word, phase, ref } = useRotatingWord(words);
   const fbTickerRef = useRef<HTMLDivElement>(null);
@@ -280,7 +296,7 @@ export default function Landing() {
       <section className="lv7-stats" aria-label={lang === 'es' ? 'En números' : 'By the numbers'}>
         <div className="lv7-stats-inner">
           <div className="lv7-stat">
-            <strong>{t('land.stats.orders')}</strong>
+            <strong>{ordersStat}</strong>
             <span>{t('land.stats.orders.l')}</span>
           </div>
           <div className="lv7-stat">
@@ -292,8 +308,8 @@ export default function Landing() {
             <span>{t('land.stats.since.l')}</span>
           </div>
           <div className="lv7-stat">
-            <strong>{t('land.stats.items')}</strong>
-            <span>{t('land.stats.items.l')}</span>
+            <strong>{itemsToday > 0 ? statNf.format(itemsToday) : t('land.stats.items')}</strong>
+            <span>{itemsToday > 0 ? t('land.stats.today.l') : t('land.stats.items.l')}</span>
           </div>
         </div>
       </section>
@@ -404,7 +420,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {(FACEBOOK_REVIEWS.length > 0 || TESTIMONIALS.length > 0) && (
+      {(FACEBOOK_REVIEWS.length > 0 || TESTIMONIALS.length > 0 || verifiedReviews.length > 0) && (
         <section className="lv7-sec lv7-sec-reviews">
           <div className="lv7-inner">
             <div className="lv7-head">
@@ -412,6 +428,43 @@ export default function Landing() {
               <h2>{t('land.reviews.title')}</h2>
               <p>{t('land.reviews.sub')}</p>
             </div>
+
+            {/* Reseñas verificadas: de clientes con un pedido entregado en la web, aprobadas por el admin */}
+            {verifiedReviews.length > 0 && verified && (
+              <div className="lv7-verified">
+                <div className="lv7-verified-summary">
+                  <span className="lv7-verified-avg"><Star size={18} fill="currentColor" /> {verified.summary.average.toFixed(1)}</span>
+                  <span>
+                    {lang === 'es'
+                      ? `${verified.summary.count} ${verified.summary.count === 1 ? 'reseña' : 'reseñas'} de compras verificadas en esta web`
+                      : `${verified.summary.count} ${verified.summary.count === 1 ? 'review' : 'reviews'} from verified purchases on this site`}
+                  </span>
+                </div>
+                <div className="lv7-reviews-grid">
+                  {verifiedReviews.map((rv, i) => (
+                    <div className="lv7-review-card" key={i}>
+                      <div className="lv7-review-stars" aria-label={`${rv.rating} / 5`}>
+                        {Array.from({ length: 5 }).map((_, s) => (
+                          <span key={s} style={{ opacity: s < rv.rating ? 1 : 0.25 }}><IconStar /></span>
+                        ))}
+                      </div>
+                      {rv.comment && <p className="lv7-review-text">"{rv.comment}"</p>}
+                      <div className="lv7-review-item">
+                        {rv.item_image && <img src={rv.item_image} alt="" loading="lazy" />}
+                        <span>{rv.item_name}</span>
+                      </div>
+                      {rv.reply && (
+                        <p className="lv7-review-reply"><strong>{lang === 'es' ? 'Respuesta de KidStorePeru:' : 'KidStorePeru replied:'}</strong> {rv.reply}</p>
+                      )}
+                      <div className="lv7-review-foot">
+                        <span className="lv7-review-name">{rv.display_name}</span>
+                        <span className="lv7-review-verified"><BadgeCheck size={13} /> {lang === 'es' ? 'Compra verificada' : 'Verified purchase'}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Reseñas de Facebook — widget oficial, fila horizontal con auto-scroll */}
             {FACEBOOK_REVIEWS.length > 0 && (

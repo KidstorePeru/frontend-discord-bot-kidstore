@@ -65,6 +65,7 @@ const translations = {
   'land.stats.since.l':  { es: 'Operando desde',                         en: 'Serving since' },
   'land.stats.items':    { es: '200+',                                   en: '200+' },
   'land.stats.items.l':  { es: 'Items nuevos a diario',                  en: 'New items daily' },
+  'land.stats.today.l':  { es: 'Objetos en la tienda hoy',               en: 'Items in the shop today' },
 
   'land.why.tag':    { es: '¿Por qué KidStorePeru?',           en: 'Why KidStorePeru?' },
   'land.why.title':  { es: 'La forma más barata y fácil de comprar en Fortnite', en: 'The cheapest, easiest way to buy in Fortnite' },

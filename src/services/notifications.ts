@@ -40,7 +40,7 @@ export function describeNotification(n: AppNotification, es: boolean): Notificat
     case 'order_sent':
       return {
         title: es ? `Pedido entregado: ${d.item_name ?? ''}` : `Order delivered: ${d.item_name ?? ''}`,
-        sub: es ? 'Ya está en tu cuenta de Fortnite.' : "It's in your Fortnite account.",
+        sub: es ? 'Ya está en tu cuenta de Fortnite. ¿Qué tal te fue? Califícalo en Mis pedidos.' : "It's in your Fortnite account. How did it go? Rate it in My orders.",
         to: '/dashboard/orders',
         image: d.item_image || null,
         icon: 'gift',
