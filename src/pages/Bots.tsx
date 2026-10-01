@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLang } from '../context/LangContext';
 import { getBotsStatus } from '../services/api';
 import type { BotsStatusResponse } from '../services/api';
-import { Copy, CheckCircle2, Clock, Bot, Moon, Sparkles } from 'lucide-react';
+import { Copy, CheckCircle2, Clock, Bot, Moon, Sparkles, Users, Ban } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 
 // Roster fijo: siempre se muestran 20 cuentas — cuantas más agregue el
@@ -67,7 +67,13 @@ export default function Bots() {
   // Nunca mostrar una cuenta sin nombre — si la API manda el campo vacío,
   // se trata igual que una cuenta sin datos en vivo (mejor eso que una
   // tarjeta en blanco).
-  const connected = (accounts ?? []).filter(a => !!a.display_name?.trim());
+  // Las cuentas con la lista de amigos llena (1000/1000) van al final: ya no
+  // pueden aceptar más solicitudes, así que no tiene sentido agregarlas.
+  const connected = (accounts ?? [])
+    .filter(a => !!a.display_name?.trim())
+    .map((a, i) => ({ a, i }))
+    .sort((x, y) => Number(isFull(x.a)) - Number(isFull(y.a)) || x.i - y.i)
+    .map(({ a }) => a);
   const scheduleText = schedule
     ? `${pad(schedule.start_hour)}:00 – ${pad(schedule.end_hour)}:00 (${schedule.timezone})`
     : '';
@@ -179,15 +185,70 @@ export default function Bots() {
                 <span className={`bot-status tone-${st.tone}`}>{st.label}</span>
               </div>
 
-              <button className="bot-copy" onClick={() => copyId(card.name)}>
-                {copied === card.name
-                  ? <><CheckCircle2 size={15} /> {t('bots.copied')}</>
-                  : <><Copy size={15} /> {t('bots.copy')}</>}
-              </button>
+              {card.account && <FriendsMeter account={card.account} es={es} />}
+
+              {card.account && isFull(card.account) ? (
+                <span className="bot-copy is-full" role="note">
+                  <Ban size={15} /> {es ? 'Llena · agrega otra' : 'Full · add another'}
+                </span>
+              ) : (
+                <button className="bot-copy" onClick={() => copyId(card.name)}>
+                  {copied === card.name
+                    ? <><CheckCircle2 size={15} /> {t('bots.copied')}</>
+                    : <><Copy size={15} /> {t('bots.copy')}</>}
+                </button>
+              )}
             </article>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+const FRIENDS_LIMIT = 1000;
+
+// Lista de amigos llena: Epic no deja pasar de 1000, así que esa cuenta ya no
+// puede aceptar solicitudes nuevas (no es que el bot no quiera).
+function isFull(a: BotAccount): boolean {
+  const limit = a.friends_limit || FRIENDS_LIMIT;
+  return a.friends_count != null && a.friends_count >= limit;
+}
+
+// Cuántos amigos tiene la cuenta en Epic ("873 / 1000"), con aviso cuando
+// quedan pocos cupos o está llena. Sin dato todavía, no se muestra nada.
+function FriendsMeter({ account, es }: { account: BotAccount; es: boolean }) {
+  if (account.friends_count == null) return null;
+  const limit = account.friends_limit || FRIENDS_LIMIT;
+  const count = Math.min(account.friends_count, limit);
+  const free = limit - count;
+  const full = free <= 0;
+  const low = !full && free <= 50;
+  const nf = new Intl.NumberFormat('es-PE');
+  const tone = full ? 'full' : low ? 'low' : 'ok';
+  const note = full
+    ? (es ? 'No acepta más amigos' : "Can't accept more friends")
+    : low
+      ? (es ? `Quedan ${free} cupos` : `${free} spots left`)
+      : (es ? 'Acepta solicitudes' : 'Accepting requests');
+  return (
+    <div className={`bot-friends tone-${tone}`} title={es ? 'Amigos en Epic Games (máximo 1000)' : 'Epic Games friends (max 1000)'}>
+      <div className="bot-friends-row">
+        <Users size={12} aria-hidden="true" />
+        <span>{es ? 'Amigos' : 'Friends'}</span>
+        <strong>{nf.format(count)} / {nf.format(limit)}</strong>
+      </div>
+      <div
+        className="bot-friends-bar"
+        role="meter"
+        aria-valuemin={0}
+        aria-valuemax={limit}
+        aria-valuenow={count}
+        aria-label={es ? `${count} de ${limit} amigos` : `${count} of ${limit} friends`}
+      >
+        <span style={{ width: `${(count / limit) * 100}%` }} />
+      </div>
+      <span className="bot-friends-note">{note}</span>
     </div>
   );
 }

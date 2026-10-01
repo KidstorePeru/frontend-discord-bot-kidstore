@@ -19,7 +19,7 @@ const translations = {
   'bots.copied':   { es: 'Copiado',                              en: 'Copied' },
   'bots.label':    { es: 'Cuenta bot',                           en: 'Bot account' },
   'bots.list.title': { es: 'Agrégalas como amigos en Epic Games', en: 'Add them as friends in Epic Games' },
-  'bots.list.sub': { es: 'Copia el nombre y agrégalo desde el juego o la app de Epic Games. Con una basta, pero mientras más agregues, más rápida la entrega.', en: 'Copy the name and add it from the game or the Epic Games app. One is enough, but the more you add, the faster delivery.' },
+  'bots.list.sub': { es: 'Copia el nombre y agrégalo desde el juego o la app de Epic Games. Con una basta, pero mientras más agregues, más rápida la entrega. Cada cuenta acepta hasta 1000 amigos: si una dice «Llena», agrega otra.', en: 'Copy the name and add it from the game or the Epic Games app. One is enough, but the more you add, the faster delivery. Each account accepts up to 1000 friends: if one says "Full", add another.' },
   'bots.st.nogifts': { es: 'Sin envíos por hoy · se renueva a medianoche', en: 'No deliveries left today · resets at midnight' },
   'bots.st.inactive':{ es: 'Fuera de servicio temporalmente',    en: 'Temporarily out of service' },
 

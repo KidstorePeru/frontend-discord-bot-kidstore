@@ -88,6 +88,8 @@ interface BotAccount {
   id: string; display_name: string;
   remaining_gifts: number; vbucks: number;
   is_active: boolean; created_at: string;
+  /** Amigos en Epic (máximo 1000); null = todavía sin sincronizar. */
+  friends_count?: number | null;
 }
 
 interface BotSchedule {
@@ -1349,6 +1351,12 @@ export default function AdminPanel() {
                           {Array.from({length:5}).map((_,i) => <div key={i} className={`bca-gift-dot ${i < bot.remaining_gifts ? 'filled' : ''}`}/>)}
                           <strong>{bot.remaining_gifts}/5</strong>
                         </div>
+                      </div>
+                      <div className="bca-stat">
+                        <span>Amigos (máx. 1000)</span>
+                        <strong style={{ color: bot.friends_count != null && bot.friends_count >= 1000 ? '#ef4444' : bot.friends_count != null && bot.friends_count >= 950 ? '#f59e0b' : undefined }}>
+                          {bot.friends_count == null ? 'Sincronizando…' : `${bot.friends_count.toLocaleString('es-PE')} / 1,000`}
+                        </strong>
                       </div>
                       <div className="bca-stat">
                         <span>V-Bucks (Pavos)</span>
