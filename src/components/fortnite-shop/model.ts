@@ -20,6 +20,7 @@ interface ApiItem {
   variants?: ApiVariant[];
 }
 interface ApiTrack {
+  id?: string;
   title?: string;
   artist?: string;
   albumArt?: string;
@@ -70,6 +71,8 @@ export interface Offer {
   outDate?: string;
   rarityLabel: string | null;
   searchText: string;
+  /** Objeto que sigue la lista de deseos (el principal de la oferta) — null si no se puede seguir. */
+  wish: { itemId: string; name: string; type: string; image: string } | null;
 }
 
 export interface ShopGroup { id: number; displayType: string; offers: Offer[] }
@@ -295,7 +298,15 @@ function toOffer(entry: ApiEntry, order: number, t: ShopText, nf: Intl.NumberFor
     outDate: entry.outDate,
     rarityLabel: main?.series?.value || main?.rarity?.displayValue || null,
     searchText: normalize([title, track?.artist, ...includedNames].join(' ')),
+    wish: wishTarget(main?.id || track?.id, title, main?.type?.displayValue ?? (track ? t.jamTrack : ''), images[0]),
   };
+}
+
+// La lista de deseos sigue al objeto principal de la oferta (la skin de un
+// lote, la pista, el auto…): si vuelve solo o en otro lote, igual avisa.
+function wishTarget(itemId: string | undefined, name: string, type: string, image: string | undefined) {
+  if (!itemId || !/^[A-Za-z0-9_.:-]{1,150}$/.test(itemId)) return null;
+  return { itemId, name, type, image: image && image.startsWith('https://') ? image : '' };
 }
 
 // Presets de posición de imagen de la tienda oficial (ver fortnite-shop.css).

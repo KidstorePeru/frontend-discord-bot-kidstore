@@ -1,6 +1,7 @@
 import { memo, useRef, type CSSProperties } from 'react';
 import CardMedia from './CardMedia';
 import Price from './Price';
+import WishBell from './WishBell';
 import { CartIcon, CheckIcon, ClockIcon } from './Icons';
 import { formatClock, useInView, useNow } from './hooks';
 import type { Offer } from './model';
@@ -52,6 +53,7 @@ function OfferCard({
         <div className="fns-card__bg" aria-hidden="true" />
         <CardMedia images={offer.images} preset={offer.preset} alt={offer.title} active={inView} />
         {offer.outDate && <LeaveBadge outDate={offer.outDate} label={t.leavesIn} live={inView} />}
+        {offer.wish && <WishBell wish={offer.wish} t={t} />}
         {inCart && (
           <span className="fns-card__incart">
             <CheckIcon size={11} /> {t.inCart}

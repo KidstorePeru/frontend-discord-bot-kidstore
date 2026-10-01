@@ -1520,6 +1520,56 @@
 }
 
 /* ══════════════════════════════════════════════════════
+   Campana «Avísame cuando vuelva» (lista de deseos)
+   ══════════════════════════════════════════════════════ */
+.fns-card__wish {
+  /* Mismo alto que el contador de tiempo (que va a la derecha): la parte de
+     arriba de la tarjeta es transparente para que la imagen sobresalga. */
+  position: absolute;
+  top: calc(15% + 8px);
+  left: 10px;
+  z-index: 5;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+.fns-card__wish:hover {
+  transform: scale(1.08);
+  background: rgba(0, 0, 0, 0.65);
+}
+.fns-card__wish:focus-visible {
+  outline: 2px solid #f7ff19;
+  outline-offset: 2px;
+}
+.fns-card__wish.is-on {
+  background: #f7ff19;
+  border-color: #f7ff19;
+  color: #14161a;
+}
+@media (max-width: 39.99rem) {
+  .fns-card__wish {
+    top: calc(15% + 6px);
+    left: 7px;
+    width: 28px;
+    height: 28px;
+  }
+  .fns-card__wish svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
    Tiempo restante en la tarjeta
    ══════════════════════════════════════════════════════ */
 .fns-card__leave {

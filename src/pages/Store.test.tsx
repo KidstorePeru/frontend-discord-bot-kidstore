@@ -3,6 +3,7 @@ import { render, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import StorePage from './Store';
 import { CartProvider, useCart } from '../context/CartContext';
+import { WishlistProvider } from '../context/WishlistContext';
 import { LangProvider } from '../context/LangContext';
 import type { Customer } from '../types';
 
@@ -69,9 +70,15 @@ const SHOP_JSON = {
 let bestSellers: string[] | 'fail' = [];
 // Cómo responde el catálogo: 'ok', 'fail' (red caída) o un cuerpo roto.
 let shopMode: 'ok' | 'fail' | 'empty' | 'malformed' = 'ok';
+// Peticiones a la lista de deseos (campana de las tarjetas).
+let wishlistCalls: { method: string; body: unknown }[] = [];
 
 function stubFetch() {
-  vi.stubGlobal('fetch', vi.fn((url: string) => {
+  vi.stubGlobal('fetch', vi.fn((url: string, opts?: RequestInit) => {
+    if (String(url).includes('/store/wishlist')) {
+      wishlistCalls.push({ method: opts?.method ?? 'GET', body: opts?.body ? JSON.parse(String(opts.body)) : null });
+      return Promise.resolve(new Response(JSON.stringify({ success: true, items: [], limit: 30 }), { status: 200 }));
+    }
     if (String(url).includes('/store/shop/bestsellers')) {
       if (bestSellers === 'fail') return Promise.reject(new TypeError('Failed to fetch'));
       return Promise.resolve(new Response(JSON.stringify({ offer_ids: bestSellers }), { status: 200 }));
@@ -103,8 +110,10 @@ function renderStore() {
     <MemoryRouter>
       <LangProvider>
         <CartProvider>
-          <StorePage />
-          <CartOpenProbe />
+          <WishlistProvider>
+            <StorePage />
+            <CartOpenProbe />
+          </WishlistProvider>
         </CartProvider>
       </LangProvider>
     </MemoryRouter>
@@ -117,6 +126,7 @@ beforeEach(() => {
   mockCustomer = customer();
   bestSellers = [];
   shopMode = 'ok';
+  wishlistCalls = [];
   localStorage.clear();
   localStorage.setItem('kc_lang', 'es');
   stubFetch();
@@ -173,6 +183,27 @@ describe('Store — compra directa desde la tarjeta', () => {
     fireEvent.click(getByLabelText(/^Agregar Objeto de prueba al carrito/));
     await waitFor(() => expect(getByText('¡Inicia sesión para comprar!')).toBeTruthy());
     expect(localStorage.getItem('kc_cart_c1')).toBeNull();
+  });
+
+  it('la campana de la tarjeta sigue el objeto principal en la lista de deseos', async () => {
+    const { getByLabelText, findByText } = renderStore();
+    await waitFor(() => expect(getByLabelText('Avísame cuando Objeto de prueba vuelva a la tienda')).toBeTruthy());
+    fireEvent.click(getByLabelText('Avísame cuando Objeto de prueba vuelva a la tienda'));
+    await waitFor(() => expect(wishlistCalls.find((c) => c.method === 'POST')).toBeTruthy());
+    expect(wishlistCalls.find((c) => c.method === 'POST')?.body).toEqual({
+      item_id: 'i-offer-1', name: 'Objeto de prueba', item_type: 'Atuendo', image: 'https://x/render.png',
+    });
+    await findByText('Listo: te avisaremos cuando Objeto de prueba vuelva a la tienda.');
+    expect(getByLabelText('Dejar de seguir Objeto de prueba').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('sin sesión, la campana pide iniciar sesión para recibir avisos', async () => {
+    mockCustomer = null;
+    const { getByLabelText, getByText } = renderStore();
+    await waitFor(() => expect(getByLabelText('Avísame cuando Objeto de prueba vuelva a la tienda')).toBeTruthy());
+    fireEvent.click(getByLabelText('Avísame cuando Objeto de prueba vuelva a la tienda'));
+    await waitFor(() => expect(getByText('¡Inicia sesión para recibir avisos!')).toBeTruthy());
+    expect(wishlistCalls).toHaveLength(0);
   });
 
   it('tocar la tarjeta fuera del botón no abre ningún detalle (ya no hay modal)', async () => {
@@ -264,8 +295,9 @@ describe('Store — fallo al actualizar el catálogo', () => {
     const { default: FreshStore } = await import('./Store');
     const { CartProvider: FreshCart } = await import('../context/CartContext');
     const { LangProvider: FreshLang } = await import('../context/LangContext');
+    const { WishlistProvider: FreshWishlist } = await import('../context/WishlistContext');
     const { getByText, findByRole } = render(
-      <MemoryRouter><FreshLang><FreshCart><FreshStore /></FreshCart></FreshLang></MemoryRouter>,
+      <MemoryRouter><FreshLang><FreshCart><FreshWishlist><FreshStore /></FreshWishlist></FreshCart></FreshLang></MemoryRouter>,
     );
     await waitFor(() => expect(getByText('Objeto de prueba')).toBeTruthy());
     shopMode = 'fail';

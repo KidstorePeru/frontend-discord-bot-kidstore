@@ -5,6 +5,7 @@ const translations = {
   'nav.orders': { es: 'Mis Pedidos', en: 'My Orders' },
   'nav.recharge': { es: 'Recargar KC', en: 'Recharge KC' },
   'nav.login': { es: 'Ingresar', en: 'Login' },
+  'nav.register': { es: 'Crear cuenta', en: 'Sign up' },
   'nav.logout':  { es: 'Salir',       en: 'Logout' },
   'nav.bots':    { es: 'Bots',        en: 'Bots' },
   'nav.profile': { es: 'Mi Cuenta',   en: 'My Account' },

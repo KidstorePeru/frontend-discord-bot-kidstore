@@ -10,6 +10,7 @@ import './styles/auth.css';
 import './styles/dashboard.css';
 import './styles/profile.css';
 import './styles/bots.css';
+import './styles/notifications.css';
 import './styles/recharge.css';
 import './styles/admin.css';
 import './styles/cart.css';

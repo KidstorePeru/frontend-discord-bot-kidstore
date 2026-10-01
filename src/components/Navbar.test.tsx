@@ -57,3 +57,18 @@ describe('Navbar — normalización de ruta para el link activo', () => {
     expect(getByText('nav.store').className).not.toMatch(/active/);
   });
 });
+
+describe('Navbar — sin sesión', () => {
+  it('muestra "Crear cuenta" a la vista, junto a "Ingresar"', () => {
+    const { getByText } = renderAt('/');
+    expect(getByText('nav.login').closest('a')?.getAttribute('href')).toBe('/login');
+    const register = getByText('nav.register').closest('a');
+    expect(register?.getAttribute('href')).toBe('/register');
+    expect(register?.className).toMatch(/nav-cta/);
+  });
+
+  it('sin sesión no hay campana de notificaciones', () => {
+    const { queryByLabelText } = renderAt('/');
+    expect(queryByLabelText(/^Notificaciones/)).toBeNull();
+  });
+});

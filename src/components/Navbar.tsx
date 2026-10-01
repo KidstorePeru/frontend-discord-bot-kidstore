@@ -4,7 +4,8 @@ import { useLang } from '../context/LangContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCart } from '../context/CartContext';
 import CurrencySelector from './CurrencySelector';
-import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart, Shield } from 'lucide-react';
+import NotificationBell from './NotificationBell';
+import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart, Shield, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useCountUp } from '../hooks/useCountUp';
 
@@ -39,6 +40,10 @@ export default function Navbar() {
     : [
         { to: '/store', label: t('nav.store'), icon: <Store size={17} /> },
         { to: '/login', label: t('nav.login'), icon: <Coins size={17} /> },
+        // Registrarse a la vista: sin esto, el único camino era entrar a
+        // "Ingresar" primero, y un cliente nuevo podía creer que para tener
+        // cuenta había que escribirnos.
+        { to: '/register', label: t('nav.register'), icon: <UserPlus size={17} />, cta: true },
       ];
 
   const isActive = (path: string) => normalizedPath === path;
@@ -75,6 +80,9 @@ export default function Navbar() {
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
+          {/* Campana de notificaciones (solo con sesión) */}
+          <NotificationBell />
+
           {/* Carrito — visible solo si el cliente tiene items */}
           {customer && cartCount > 0 && (
             <button
@@ -99,7 +107,7 @@ export default function Navbar() {
             <Link
               key={l.to}
               to={l.to}
-              className={`nav-link ${isActive(l.to) ? 'active' : ''}`}
+              className={`nav-link ${isActive(l.to) ? 'active' : ''}${'cta' in l && l.cta ? ' nav-cta' : ''}`}
               onClick={() => setOpen(false)}
             >
               {l.icon}{l.label}

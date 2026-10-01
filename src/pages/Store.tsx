@@ -61,6 +61,8 @@ export default function StorePage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  // Por qué se pide iniciar sesión: comprar, o seguir un objeto (campana).
+  const [loginReason, setLoginReason] = useState<'buy' | 'wish'>('buy');
 
   const visibleShop = useMemo(() => (shop ? filterShop(shop, deferredQuery, types) : null), [shop, deferredQuery, types]);
   const filtering = Boolean(deferredQuery.trim()) || types.size > 0;
@@ -93,9 +95,19 @@ export default function StorePage() {
   }, [shop]);
 
   useEffect(() => {
-    const handler = () => setShowLoginModal(true);
+    const handler = (e: Event) => {
+      setLoginReason((e as CustomEvent).detail === 'wish' ? 'wish' : 'buy');
+      setShowLoginModal(true);
+    };
     window.addEventListener('show-login-modal', handler);
     return () => window.removeEventListener('show-login-modal', handler);
+  }, []);
+
+  // Avisos de la campana «Avísame cuando vuelva» de las tarjetas (WishBell).
+  useEffect(() => {
+    const handler = (e: Event) => setToast((e as CustomEvent<{ msg: string; type: 'success' | 'error' }>).detail);
+    window.addEventListener('shop-toast', handler);
+    return () => window.removeEventListener('shop-toast', handler);
   }, []);
 
   // offerToCartItem: el carrito, el modal de confirmación y la creación del
@@ -283,12 +295,25 @@ export default function StorePage() {
             <div className="login-modal-icon">
               <ShoppingBag size={32} />
             </div>
-            <h3 id="login-modal-title">{es ? '¡Inicia sesión para comprar!' : 'Log in to purchase!'}</h3>
-            <p id="login-modal-desc">
-              {es
-                ? 'Necesitas una cuenta para comprar productos. Inicia sesión o crea una cuenta gratis.'
-                : 'You need an account to purchase products. Log in or create a free account.'}
-            </p>
+            {loginReason === 'wish' ? (
+              <>
+                <h3 id="login-modal-title">{es ? '¡Inicia sesión para recibir avisos!' : 'Log in to get alerts!'}</h3>
+                <p id="login-modal-desc">
+                  {es
+                    ? 'Con una cuenta gratis te avisamos cuando este objeto vuelva a la tienda. Inicia sesión o crea una cuenta.'
+                    : "With a free account we'll let you know when this item is back in the shop. Log in or create an account."}
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 id="login-modal-title">{es ? '¡Inicia sesión para comprar!' : 'Log in to purchase!'}</h3>
+                <p id="login-modal-desc">
+                  {es
+                    ? 'Necesitas una cuenta para comprar productos. Inicia sesión o crea una cuenta gratis.'
+                    : 'You need an account to purchase products. Log in or create a free account.'}
+                </p>
+              </>
+            )}
             <div className="login-modal-buttons">
               <Link to="/login" className="btn btn-primary btn-full">
                 {es ? 'Iniciar sesión' : 'Log in'}

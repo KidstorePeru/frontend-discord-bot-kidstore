@@ -675,3 +675,84 @@ export async function completeOAuthRegistration(
   }
   return { token: res.token, refresh_token: res.refresh_token, customer: res.customer };
 }
+
+/* ── Notificaciones (campana) y lista de deseos ── */
+
+export type NotificationKind = 'wishlist_back' | 'order_sent' | 'order_failed' | 'kc_credited';
+
+export interface AppNotification {
+  id: string;
+  kind: NotificationKind | string;
+  data: {
+    item_id?: string;
+    name?: string;
+    image?: string;
+    price_kc?: number;
+    out_date?: string;
+    order_id?: string;
+    item_name?: string;
+    item_image?: string;
+    refunded?: boolean;
+    amount_kc?: number;
+    method?: string;
+  };
+  read: boolean;
+  created_at: string;
+}
+
+export async function getNotifications(limit = 20): Promise<{ notifications: AppNotification[]; unread: number }> {
+  const res = await request<{ notifications: AppNotification[]; unread: number }>(`/store/notifications?limit=${limit}`);
+  return { notifications: res.notifications ?? [], unread: res.unread ?? 0 };
+}
+
+export async function getUnreadNotifications(): Promise<number> {
+  const res = await request<{ unread: number }>('/store/notifications/unread');
+  return res.unread ?? 0;
+}
+
+export async function markNotificationsRead(): Promise<void> {
+  await request('/store/notifications/read', { method: 'POST' });
+}
+
+export interface NotificationPrefs { email: boolean; discord: boolean }
+
+export async function getNotificationPrefs(): Promise<NotificationPrefs> {
+  const res = await request<{ prefs: NotificationPrefs }>('/store/notifications/prefs');
+  return res.prefs;
+}
+
+export async function updateNotificationPrefs(prefs: NotificationPrefs): Promise<NotificationPrefs> {
+  const res = await request<{ prefs: NotificationPrefs }>('/store/notifications/prefs', { method: 'PUT', body: JSON.stringify(prefs) });
+  return res.prefs;
+}
+
+export interface WishlistItem {
+  item_id: string;
+  name: string;
+  item_type: string;
+  image: string;
+  created_at: string;
+  in_shop: boolean;
+  price_kc?: number;
+  out_date?: string;
+}
+
+export async function getWishlist(): Promise<{ items: WishlistItem[]; limit: number }> {
+  const res = await request<{ items: WishlistItem[]; limit: number }>('/store/wishlist');
+  return { items: res.items ?? [], limit: res.limit ?? 30 };
+}
+
+export async function addWishlistItem(item: { item_id: string; name: string; item_type?: string; image?: string }): Promise<void> {
+  await request('/store/wishlist', { method: 'POST', body: JSON.stringify(item) });
+}
+
+export async function removeWishlistItem(itemId: string): Promise<void> {
+  await request(`/store/wishlist/${encodeURIComponent(itemId)}`, { method: 'DELETE' });
+}
+
+export interface CosmeticResult { item_id: string; name: string; item_type: string; image: string; last_seen?: string }
+
+export async function searchCosmetics(q: string, signal?: AbortSignal): Promise<CosmeticResult[]> {
+  const res = await request<{ results: CosmeticResult[] }>(`/store/cosmetics/search?q=${encodeURIComponent(q)}`, { signal });
+  return res.results ?? [];
+}

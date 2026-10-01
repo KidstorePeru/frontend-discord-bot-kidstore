@@ -46,6 +46,13 @@ export const SHOP_LANGS = {
     units: { h: 'Horas', m: 'Min', s: 'Seg' },
     refreshing: 'Actualizando…',
     inCart: 'En tu carrito',
+    // Lista de deseos («Avísame cuando vuelva»).
+    wishAdd: (name: string) => `Avísame cuando ${name} vuelva a la tienda`,
+    wishRemove: (name: string) => `Dejar de seguir ${name}`,
+    wishAdded: (name: string) => `Listo: te avisaremos cuando ${name} vuelva a la tienda.`,
+    wishRemoved: (name: string) => `Ya no recibirás avisos de ${name}.`,
+    wishFull: (n: number) => `Tu lista de deseos está llena (${n} objetos). Quita alguno desde Lista de deseos.`,
+    wishError: 'No se pudo actualizar tu lista de deseos. Intenta de nuevo.',
     types: {
       outfit: 'Atuendos',
       bundle: 'Lotes',
@@ -101,6 +108,13 @@ export const SHOP_LANGS = {
     units: { h: 'Hours', m: 'Min', s: 'Sec' },
     refreshing: 'Refreshing…',
     inCart: 'In your cart',
+    // Wishlist ("Notify me when it's back").
+    wishAdd: (name: string) => `Notify me when ${name} is back in the shop`,
+    wishRemove: (name: string) => `Stop following ${name}`,
+    wishAdded: (name: string) => `Done: we'll let you know when ${name} is back in the shop.`,
+    wishRemoved: (name: string) => `You won't get alerts for ${name} anymore.`,
+    wishFull: (n: number) => `Your wishlist is full (${n} items). Remove one from your Wishlist.`,
+    wishError: "Couldn't update your wishlist. Try again.",
     types: {
       outfit: 'Outfits',
       bundle: 'Bundles',

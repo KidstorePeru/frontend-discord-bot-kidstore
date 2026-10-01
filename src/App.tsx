@@ -4,6 +4,7 @@ import { LangProvider } from './context/LangContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider, useCart } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
 import { useAuth } from './context/AuthContext';
 import { createOrder } from './services/api';
 import { useLang } from './context/LangContext';
@@ -44,6 +45,8 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const PaymentReturn = lazy(() => import('./pages/PaymentReturn'));
 const Voucher = lazy(() => import('./pages/Voucher'));
 const ComplaintBook = lazy(() => import('./pages/ComplaintBook'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const Notifications = lazy(() => import('./pages/Notifications'));
 
 function KCIcon({ s = 16 }: { s?: number }) {
   return <img src="/kidcoin.png" alt="KC" width={s} height={s} style={{ objectFit: 'contain', flexShrink: 0 }} />;
@@ -331,6 +334,7 @@ export default function App() {
           <CurrencyProvider>
           <AuthProvider>
             <CartProvider>
+            <WishlistProvider>
               <Navbar />
               <GlobalCart />
               <main className="main-content">
@@ -352,6 +356,8 @@ export default function App() {
                     <Route path="/account"        element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                     <Route path="/account/:tab"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                     <Route path="/bots"           element={<ProtectedRoute><Bots /></ProtectedRoute>} />
+                    <Route path="/wishlist"       element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+                    <Route path="/notifications"  element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                     <Route path="/terms"          element={<Terms />} />
                     <Route path="/privacy"        element={<Privacy />} />
                     <Route path="/refunds"        element={<Refunds />} />
@@ -365,6 +371,7 @@ export default function App() {
                 </Suspense>
               </main>
               <GlobalFooter />
+            </WishlistProvider>
             </CartProvider>
           </AuthProvider>
           </CurrencyProvider>

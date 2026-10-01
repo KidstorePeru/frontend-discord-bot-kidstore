@@ -54,11 +54,13 @@ export default function Footer() {
             {customer ? (
               <>
                 <Link to="/dashboard">{t('nav.orders')}</Link>
+                <Link to="/wishlist">{es ? 'Lista de deseos' : 'Wishlist'}</Link>
+                <Link to="/notifications">{es ? 'Notificaciones' : 'Notifications'}</Link>
                 <Link to="/account">{t('nav.profile')}</Link>
               </>
             ) : (
               <>
-                <Link to="/register">{es ? 'Crear cuenta' : 'Create account'}</Link>
+                <Link to="/register">{t('nav.register')}</Link>
                 <Link to="/login">{t('nav.login')}</Link>
               </>
             )}
