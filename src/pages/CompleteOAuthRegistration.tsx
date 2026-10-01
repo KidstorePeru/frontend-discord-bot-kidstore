@@ -1,4 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
+import { track } from '../services/analytics';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
@@ -43,6 +44,7 @@ export default function CompleteOAuthRegistration() {
       const res = await completeOAuthRegistration(token, epicUsername.trim(), leaveSignal());
       // completeOAuthRegistration ya guardó el refresh token (solo si el intento seguía vigente).
       setAuth(res.token, res.customer);
+      track('registro');
       navigate('/dashboard');
     } catch (err: unknown) {
       if (isSessionChangedError(err)) return;

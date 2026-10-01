@@ -7,6 +7,7 @@ import { CartProvider, useCart } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { useAuth } from './context/AuthContext';
 import { createOrder } from './services/api';
+import { track } from './services/analytics';
 import { useLang } from './context/LangContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -120,6 +121,10 @@ function GlobalCart() {
     }
 
     results.filter(r => r.ok).forEach(r => removeFromCart(r.offerId));
+    const delivered = cart.filter(i => results.some(r => r.ok && r.offerId === i.offerId));
+    if (delivered.length > 0) {
+      track('compra_exitosa', { objetos: delivered.length, kc: delivered.reduce((sum, i) => sum + i.price_kc, 0) });
+    }
     await refresh();
     setConfirming(false);
     setShowConfirm(false);
@@ -240,7 +245,7 @@ function GlobalCart() {
               )}
               <div className="cart-actions">
                 <button className="btn btn-ghost btn-sm" onClick={clearCart}>{es ? 'Vaciar' : 'Clear'}</button>
-                <button className="btn btn-primary" disabled={!hasBalance || confirming} onClick={() => setShowConfirm(true)}>
+                <button className="btn btn-primary" disabled={!hasBalance || confirming} onClick={() => { track('compra_confirmar'); setShowConfirm(true); }}>
                   {es ? 'Confirmar compra' : 'Confirm purchase'}
                 </button>
               </div>

@@ -6,6 +6,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { KC_PACKAGES, COMMISSIONS, withCommission, formatReferencePrice } from '../services/constants';
 import type { PaymentInfo } from '../services/constants';
 import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefreshToken } from '../services/api';
+import { track } from '../services/analytics';
 import type { KCPackage } from '../types';
 import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X, Globe } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
@@ -94,6 +95,11 @@ export default function Recharge() {
   // pago haya fallado, así que nunca se muestra como si lo fuera.
   const [payResult, setPayResult] = useState<'success'|'error'|'unconfirmed'|null>(null);
   const [payKcCredited, setPayKcCredited] = useState(0);
+  // Medición: recarga acreditada (una vez por cada pago aprobado).
+  useEffect(() => {
+    if (payResult === 'success') track('recarga_aprobada', { kc: payKcCredited });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payResult]);
 
   useEffect(() => {
     setRatesLoading(true);
@@ -154,6 +160,7 @@ export default function Recharge() {
 
   async function handleGateway(gateway: string) {
     if (!selectedPkg || payLoading) return;
+    track('recarga_pago', { metodo: gateway });
     setPayLoading(gateway);
     try {
       const isCustom = selectedPkg.id === 'custom';
@@ -542,7 +549,7 @@ export default function Recharge() {
                 key={m.id}
                 className={`rc-method-pill ${method===m.id?'on':''}`}
                 style={{'--mc':m.color,'--mgs':m.color+'18'} as React.CSSProperties}
-                onClick={() => setMethod(method===m.id ? null : m.id)}
+                onClick={() => { if (method !== m.id) track('recarga_pago', { metodo: m.id }); setMethod(method===m.id ? null : m.id); }}
               >
                 <img src={m.icon} alt={m.label} className="rc-method-pill-icon"
                   onError={e=>{(e.target as HTMLImageElement).style.opacity='0';}}/>

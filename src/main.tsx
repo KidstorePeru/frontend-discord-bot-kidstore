@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { initRipple } from './lib/ripple';
+import { initAnalytics } from './services/analytics';
 import './styles/base.css';
 import './styles/navbar.css';
 import './styles/segtabs.css';
@@ -20,6 +21,7 @@ import './styles/complaint-book.css';
 import './styles/utilities.css';
 
 initRipple();
+initAnalytics();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

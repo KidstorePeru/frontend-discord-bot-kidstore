@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { addWishlistItem, getWishlist, removeWishlistItem, type WishlistItem } from '../services/api';
+import { track } from '../services/analytics';
 
 export interface WishTarget { itemId: string; name: string; type: string; image: string }
 
@@ -74,6 +75,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       setItems((prev) => [optimistic, ...(prev ?? [])]);
       try {
         await addWishlistItem({ item_id: target.itemId, name: target.name, item_type: target.type, image: target.image });
+        track('deseos_agregar');
         return 'added';
       } catch (err) {
         setItems((prev) => (prev ?? []).filter((i) => i.item_id !== target.itemId));

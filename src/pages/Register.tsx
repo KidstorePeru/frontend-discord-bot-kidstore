@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { track } from '../services/analytics';
 import { Link } from 'react-router-dom';
 import { useLang } from '../context/LangContext';
 import { register, resendVerification } from '../services/api';
@@ -29,6 +30,7 @@ export default function Register() {
     e.preventDefault(); setError(''); setLoading(true);
     try {
       await register(epicUsername.trim(), email.trim(), password);
+      track('registro');
       setRegistered(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('auth.error.register'));

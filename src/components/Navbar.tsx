@@ -6,7 +6,8 @@ import { useCart } from '../context/CartContext';
 import CurrencySelector from './CurrencySelector';
 import NotificationBell from './NotificationBell';
 import { Store, LayoutDashboard, LogOut, Zap, Menu, X, Globe, User, Bot, Sun, Moon, Coins, ShoppingCart, Shield, UserPlus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { excludeThisBrowser } from '../services/analytics';
 import { useCountUp } from '../hooks/useCountUp';
 
 export default function Navbar() {
@@ -17,6 +18,8 @@ export default function Navbar() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const balance = useCountUp(customer?.kc_balance ?? 0);
+  // Las visitas del dueño no cuentan en las estadísticas.
+  useEffect(() => { if (isAdmin) excludeThisBrowser(); }, [isAdmin]);
 
   // "isActive" compara contra location.pathname, que puede traer una barra
   // final (un link externo, un share, o el usuario escribiéndola a mano) o

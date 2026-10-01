@@ -52,11 +52,15 @@ export default function Privacy() {
               <li><strong>Facebook</strong> — las reseñas de clientes que se muestran en la portada son publicaciones reales incrustadas directamente desde Facebook con su widget oficial. Al cargar esas publicaciones, tu navegador se conecta a servidores de Facebook, que pueden aplicar su propia recolección de datos sobre esa conexión — es algo fuera de nuestro control, sujeto a la política de privacidad de Facebook.</li>
               <li><strong>Discord (bot)</strong> — si vinculas tu cuenta de Discord, nuestro bot puede enviarte notificaciones y responder a los comandos que le envíes en los canales o mensajes directos habilitados para eso.</li>
               <li><strong>Proveedor de envío de correo</strong> — usamos un servicio externo de envío de correo transaccional para entregarte confirmaciones de pago, códigos de verificación y notificaciones de pedidos.</li>
+              <li><strong>Umami (estadísticas de visitas)</strong> — medimos de forma anónima cuántas personas visitan la web, desde qué sitio llegan, qué páginas ven y en qué paso de la compra se quedan, para mejorar la tienda. Umami no usa cookies, no guarda tu dirección IP ni te identifica, y nunca le enviamos tu nombre, correo ni datos de pago.</li>
+              <li><strong>Almacenamiento de copias de seguridad</strong> — guardamos una copia diaria cifrada de nuestra base de datos en un proveedor de almacenamiento externo, solo para poder recuperarla si ocurre una falla. Nadie puede leerla sin nuestra clave.</li>
             </ul>
+            <h2>Reseñas, lista de deseos y notificaciones</h2>
+            <p>Si dejas una reseña de un pedido, se publica (después de revisarla) con tu nombre de Epic abreviado, tu calificación, tu comentario y el objeto que compraste. Si sigues objetos en tu lista de deseos, guardamos esa lista para avisarte en la web, por correo o por Discord cuando vuelvan a la tienda; puedes quitar objetos o apagar los avisos por correo y Discord cuando quieras desde Notificaciones.</p>
             <h2>Seguridad</h2>
             <p>KidStorePeru utiliza sistemas de seguridad actualizados. Tu contraseña se almacena de forma cifrada y nunca se comparte.</p>
             <h2>Cookies y almacenamiento local</h2>
-            <p>Usamos cookies y almacenamiento local esenciales para el funcionamiento del sitio (sesión, idioma, tema, carrito). No colocamos cookies de seguimiento publicitario propias — pero, como se explica arriba, los widgets incrustados de terceros (como las publicaciones de Facebook) pueden establecer sus propias cookies que no controlamos.</p>
+            <p>Usamos cookies y almacenamiento local esenciales para el funcionamiento del sitio (sesión, idioma, tema, carrito). Nuestras estadísticas de visitas no usan cookies. No colocamos cookies de seguimiento publicitario propias — pero, como se explica arriba, los widgets incrustados de terceros (como las publicaciones de Facebook) pueden establecer sus propias cookies que no controlamos.</p>
             <h2>Retención de datos</h2>
             <p>Conservamos tu información mientras tu cuenta esté activa y el tiempo adicional que exija la normativa aplicable (por ejemplo, los registros de pagos y reclamos, que respaldan tu historial de compras y nuestras obligaciones de defensa del consumidor). No tenemos un plazo fijo único de eliminación automática para todos los tipos de datos: si quieres que evaluemos borrar información específica, contáctanos y lo revisamos caso por caso.</p>
             <h2>Tus derechos</h2>
@@ -89,11 +93,15 @@ export default function Privacy() {
               <li><strong>Facebook</strong> — the customer reviews shown on the homepage are real posts embedded directly from Facebook via their official widget. Loading those posts connects your browser to Facebook's servers, which may apply their own data collection to that connection — something outside our control, subject to Facebook's privacy policy.</li>
               <li><strong>Discord (bot)</strong> — if you link your Discord account, our bot can send you notifications and respond to commands you send it in the channels or direct messages enabled for that.</li>
               <li><strong>Email delivery provider</strong> — we use a third-party transactional email service to deliver payment confirmations, verification codes, and order notifications.</li>
+              <li><strong>Umami (visit statistics)</strong> — we anonymously measure how many people visit the site, where they come from, which pages they view, and at which purchase step they stop, to improve the store. Umami doesn't use cookies, doesn't store your IP address or identify you, and we never send it your name, email, or payment details.</li>
+              <li><strong>Backup storage</strong> — we keep a daily encrypted copy of our database with an external storage provider, only so we can restore it if something fails. Nobody can read it without our key.</li>
             </ul>
+            <h2>Reviews, wishlist, and notifications</h2>
+            <p>If you review an order, it's published (after we check it) with your Epic name shortened, your rating, your comment, and the item you bought. If you follow items on your wishlist, we keep that list to notify you on the site, by email, or on Discord when they're back in the shop; you can remove items or turn off email and Discord alerts anytime in Notifications.</p>
             <h2>Security</h2>
             <p>KidStorePeru uses up-to-date security systems. Your password is stored encrypted and never shared.</p>
             <h2>Cookies and local storage</h2>
-            <p>We use essential cookies and local storage for site functionality (session, language, theme, cart). We don't set our own advertising tracking cookies — but as noted above, embedded third-party widgets (like Facebook posts) may set their own cookies we don't control.</p>
+            <p>We use essential cookies and local storage for site functionality (session, language, theme, cart). Our visit statistics don't use cookies. We don't set our own advertising tracking cookies — but as noted above, embedded third-party widgets (like Facebook posts) may set their own cookies we don't control.</p>
             <h2>Data retention</h2>
             <p>We keep your information while your account is active, plus whatever additional time applicable regulations require (for example, payment and complaint records, which back up your purchase history and our consumer-protection obligations). We don't have one single fixed automatic-deletion period for every kind of data — if you'd like us to consider deleting specific information, contact us and we'll review it case by case.</p>
             <h2>Your rights</h2>

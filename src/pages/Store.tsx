@@ -1,4 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { track } from '../services/analytics';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart, type CartItem } from '../context/CartContext';
@@ -150,6 +151,7 @@ export default function StorePage() {
     }
     const result = addToCart(offerToCartItem(offer));
     if (result === 'not_logged_in') { setShowLoginModal(true); return; }
+    if (result === 'added') track('carrito_agregar');
     if (result === 'added' && cartCount === 0) setCartOpen(true);
   }, [cartIds, cartCount, addToCart, removeFromCart, offerToCartItem, setCartOpen]);
 
