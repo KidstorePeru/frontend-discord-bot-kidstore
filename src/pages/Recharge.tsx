@@ -105,7 +105,7 @@ export default function Recharge() {
   const loadManualReqs = () => {
     getMyManualPayments()
       .then((r) => { setManualReqs(r.requests); setUploadsEnabled(r.enabled); })
-      .catch(() => {});
+      .catch(() => setUploadsEnabled(false)); // sin backend: queda el contacto por WhatsApp/Discord
   };
   useEffect(loadManualReqs, []);
   // Medición: recarga acreditada (una vez por cada pago aprobado).
