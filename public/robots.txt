@@ -5,6 +5,8 @@ Disallow: /account
 Disallow: /admin
 Disallow: /bots
 Disallow: /recharge
+Disallow: /wishlist
+Disallow: /notifications
 Disallow: /auth/
 Disallow: /payment/return
 Disallow: /verify-email

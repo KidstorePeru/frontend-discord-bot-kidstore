@@ -231,7 +231,6 @@
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 .field textarea::placeholder { color: var(--text-muted); }
-.field .field-hint { font-size: .74rem; color: var(--text-muted); text-transform: none; letter-spacing: normal; font-weight: 500; margin-top: 2px; }
 
 /* Submit button override */
 .auth-card .btn {
@@ -277,18 +276,6 @@
   .auth-panel { display: none; }
   .auth-right { padding: 32px 20px; }
 }
-.forgot-link {
-  align-self: flex-start; font-size: 0.82rem; color: var(--accent);
-  font-weight: 600; margin-top: -8px; margin-bottom: 10px;
-  padding: 0; background: none; border: none; cursor: pointer;
-}
-.forgot-link:hover { text-decoration: underline; }
-.auth-back {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px;
-  font-weight: 600;
-}
-.auth-back:hover { color: var(--text-primary); }
 
 /* OAuth buttons (Google / Discord) */
 .oauth-buttons {

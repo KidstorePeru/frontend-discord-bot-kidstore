@@ -195,10 +195,7 @@
 .confirm-modal-footer { display: flex; gap: 10px; padding: 16px 26px; border-top: 1px solid var(--border); }
 .confirm-modal-footer .btn-ghost   { white-space: nowrap; }
 .confirm-modal-footer .btn-primary { flex: 1; justify-content: center; }
-.admin-quick-ref  { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
-.admin-quick-list { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
-.admin-quick-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; }
-.admin-quick-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+
 @media (max-width: 640px) {
   .admin-header { padding: 24px 20px 20px; }
   .admin-tabs { padding: 0 16px; }

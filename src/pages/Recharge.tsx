@@ -42,7 +42,7 @@ const METHODS: PayMethod[] = [
 
 const PKG_TAGS: Record<string, { label_es: string; label_en: string; color: string }> = {
   gamer:  { label_es:'⭐ Popular', label_en:'⭐ Popular',    color:'#8b5cf6' },
-  pro:    { label_es:'🔥 Vendido', label_en:'🔥 Best Seller', color:'#f59e0b' },
+  pro:    { label_es:'🔥 Más vendido', label_en:'🔥 Best Seller', color:'#f59e0b' },
   legend: { label_es:'👑 Premium', label_en:'👑 Premium',    color:'#ec4899' },
 };
 

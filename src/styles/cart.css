@@ -4,24 +4,8 @@
    ════════════════════════════════════════ */
 
 /* Botón flotante */
-.cart-fab {
-  position: fixed; bottom: 28px; right: 28px; z-index: 150;
-  display: flex; align-items: center; justify-content: center;
-  width: 56px; height: 56px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  box-shadow: 0 4px 20px var(--accent-glow);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.cart-fab:hover { transform: scale(1.1); box-shadow: 0 6px 28px var(--accent-glow); }
-.cart-fab.has-items { animation: glow-pulse 2s ease-in-out infinite; }
+
 @keyframes glow-pulse { 0%,100% { box-shadow: 0 4px 20px var(--accent-glow); } 50% { box-shadow: 0 4px 32px var(--accent-glow), 0 0 0 6px color-mix(in srgb, var(--accent) 15%, transparent); } }
-.cart-fab-badge {
-  position: absolute; top: -6px; right: -6px;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--kc-gold); color: #000; font-size: 0.72rem; font-weight: 900;
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid var(--bg-base);
-}
 
 /* Overlay */
 .cart-overlay {

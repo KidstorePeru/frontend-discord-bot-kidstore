@@ -130,7 +130,7 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2;
 @keyframes float  { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
 @keyframes spin   { to { transform:rotate(360deg); } }
 .fade-in { animation: fadeIn 0.4s ease-out both; }
-.fade-up { animation: fadeUp 0.5s ease-out both; }
+
 .spin    { animation: spin  0.8s linear infinite; }
 
 /* ── Accesibilidad: respeta la preferencia de menos movimiento ── */
@@ -173,7 +173,6 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2;
 .kc-icon-sm      { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
 .brand-logo-only { height: 38px; width: auto; object-fit: contain; display: block; }
 
-
 /* ═══════════════════════════════════════════════════
    BUTTONS — v4: jerarquía por rol + respuesta física
    (barrido de brillo, hundimiento al presionar, onda al clic)
@@ -191,24 +190,18 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2;
 .btn:disabled { opacity: 0.5; pointer-events: none; filter: grayscale(0.3); }
 
 /* Barrido de brillo — solo en botones con relleno sólido */
-.btn-primary::after, .btn-gold::after, .btn-danger::after {
+.btn-primary::after, .btn-danger::after {
   content: ''; position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.32) 50%, transparent 70%);
   transform: translateX(-120%); transition: transform 0.6s ease;
 }
-.btn-primary:hover::after, .btn-gold:hover::after, .btn-danger:hover::after { transform: translateX(120%); }
+.btn-primary:hover::after, .btn-danger:hover::after { transform: translateX(120%); }
 
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #fff; box-shadow: 0 3px 14px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.18);
 }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.25); }
-
-.btn-gold {
-  background: linear-gradient(135deg, var(--kc-gold), #f59e0b);
-  color: #fff; box-shadow: 0 3px 14px var(--kc-gold-glow), inset 0 1px 0 rgba(255,255,255,0.2);
-}
-.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--kc-gold-glow), inset 0 1px 0 rgba(255,255,255,0.28); }
 
 .btn-danger {
   background: linear-gradient(135deg, var(--red-500), #b91c1c);
@@ -222,13 +215,11 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2;
 }
 .btn-ghost:hover { background: var(--bg-surface-2); color: var(--text-primary); border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
 
-.btn-lg   { padding: 13px 30px; font-size: 1rem; }
 .btn-sm   { padding: 7px 16px;  font-size: 0.82rem; }
 .btn-full { width: 100%; justify-content: center; }
 
 /* Confirmación tras una acción exitosa (pagos, recargas) — la fija el JS
    añadiendo .btn-ok un momento antes de continuar. */
-.btn-ok, .btn-ok:hover { background: linear-gradient(135deg, var(--green-500), #15803d); color: #fff; box-shadow: 0 3px 14px rgba(22,163,74,0.3); transform: none; }
 
 /* Onda al hacer clic — el elemento .btn-ripple lo inyecta lib/ripple.ts */
 .btn-ripple {
@@ -236,7 +227,6 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.2;
   transform: scale(0); animation: btnRipple 0.6s ease-out; pointer-events: none; z-index: 0;
 }
 @keyframes btnRipple { to { transform: scale(2.6); opacity: 0; } }
-
 
 /* ══════════════════════════════════════════════
    LEGAL PAGES (Terms, Privacy, Refunds, FAQ)

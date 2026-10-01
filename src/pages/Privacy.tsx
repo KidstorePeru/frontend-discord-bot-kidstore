@@ -22,7 +22,7 @@ export default function Privacy() {
           <div className="legal-icon" style={{background:'rgba(6,182,212,0.1)',color:'#06b6d4',borderColor:'rgba(6,182,212,0.2)'}}><Shield size={28}/></div>
           <div>
             <h1>{es ? 'Política de Privacidad' : 'Privacy Policy'}</h1>
-            <p className="legal-updated">{es ? 'Tu privacidad es importante para nosotros' : 'Your privacy matters to us'}</p>
+            <p className="legal-updated">{es ? 'Última actualización: 1 de octubre de 2026' : 'Last updated: October 1, 2026'}</p>
           </div>
         </div>
         {es ? (<div className="legal-body"><p>KidStorePeru está comprometido con la seguridad de los datos de nuestros usuarios. Esta política describe qué datos recopilamos realmente y con qué servicios los compartimos — la actualizamos para reflejar cómo funciona el sitio hoy.</p>

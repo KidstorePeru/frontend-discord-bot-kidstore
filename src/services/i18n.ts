@@ -57,7 +57,7 @@ const translations = {
   // Landing v7 — bloque nuevo (rediseño portada)
   'land.hero.value':    { es: 'Mejor precio que la tienda oficial de V-Bucks', en: 'Better price than the official V-Bucks store' },
 
-  'land.stats.orders':   { es: '+10 000',                           en: '+10,000' },
+  'land.stats.orders':   { es: '+10,000',                           en: '+10,000' },
   'land.stats.orders.l': { es: 'Pedidos entregados',                     en: 'Orders delivered' },
   'land.stats.rating':   { es: '5.0',                                    en: '5.0' },
   'land.stats.rating.l': { es: 'Calificación en Facebook',          en: 'Rating on Facebook' },
@@ -95,7 +95,7 @@ const translations = {
   'land.faq.q4':    { es: '¿Por qué es más barato que comprar V-Bucks?', en: 'Why is it cheaper than buying V-Bucks?' },
   'land.faq.a4':    { es: 'Compras al precio de tienda (1 KC = 1 V-Buck) sin pasar por los paquetes de V-Bucks de Epic. Pagas en soles con métodos locales y sin cargos ocultos.', en: 'You buy at store price (1 KC = 1 V-Buck) without going through Epic’s V-Bucks bundles. You pay in soles with local methods and no hidden fees.' },
   'land.faq.q5':    { es: '¿Y si algo sale mal con mi pedido?',     en: 'What if something goes wrong with my order?' },
-  'land.faq.a5':    { es: 'Si un pedido no se puede completar, te devolvemos tus KidCoins automáticamente. Puedes seguir el estado en tu panel y escribirnos 24/7 por WhatsApp o Discord.', en: 'If an order can’t be completed, we return your KidCoins automatically. You can track the status in your panel and message us 24/7 on WhatsApp or Discord.' },
+  'land.faq.a5':    { es: 'Si un pedido no se puede completar, te devolvemos tus KidCoins automáticamente. Puedes seguir el estado en Mis pedidos y escribirnos 24/7 por WhatsApp o Discord.', en: 'If an order can’t be completed, we return your KidCoins automatically. You can track the status in My orders and message us 24/7 on WhatsApp or Discord.' },
 
   'land.cta.title': { es: 'Empieza a comprar hoy',                       en: 'Start buying today' },
   'land.cta.sub':   { es: 'Crea tu cuenta gratis, agrega los bots una vez y recarga cuando quieras.', en: 'Create your free account, add the bots once, and recharge whenever you want.' },
@@ -191,5 +191,3 @@ export type TranslationKey = keyof typeof translations;
 export function t(key: TranslationKey, lang: Lang): string {
   return translations[key]?.[lang] || key;
 }
-
-export default translations;

@@ -274,7 +274,7 @@ export default function Landing() {
           <div className="lv7-btns">
             <Link to="/store" className="lv7-btn-primary">{t('land.btn.store')} <ArrowRight size={17} /></Link>
             {isLogged
-              ? <Link to="/dashboard" className="lv7-btn-ghost">{lang === 'es' ? 'Mi Dashboard' : 'My Dashboard'}</Link>
+              ? <Link to="/dashboard" className="lv7-btn-ghost">{t('nav.orders')}</Link>
               : <Link to="/register" className="lv7-btn-ghost">{t('land.btn.account')}</Link>
             }
           </div>
@@ -288,7 +288,7 @@ export default function Landing() {
 
         <div className="lv7-hero-right">
           <img src="/sung.png" alt="Fortnite" className="lv7-hero-img" />
-          <div className="lv7-img-stat lv7-is1"><strong>200+</strong><span>{lang === 'es' ? 'Items hoy' : 'Items today'}</span></div>
+          <div className="lv7-img-stat lv7-is1"><strong>{itemsToday > 0 ? statNf.format(itemsToday) : '200+'}</strong><span>{lang === 'es' ? 'Objetos hoy' : 'Items today'}</span></div>
           <div className="lv7-img-stat lv7-is2"><strong>48h</strong><span>{lang === 'es' ? 'Entrega máx.' : 'Max delivery'}</span></div>
         </div>
       </section>
@@ -531,7 +531,7 @@ export default function Landing() {
           <div className="lv7-btns">
             <Link to="/store" className="lv7-btn-primary">{t('land.btn.store')} <ArrowRight size={17} /></Link>
             {isLogged
-              ? <Link to="/dashboard" className="lv7-btn-ghost lv7-btn-ghost-onaccent">{lang === 'es' ? 'Mi Dashboard' : 'My Dashboard'}</Link>
+              ? <Link to="/dashboard" className="lv7-btn-ghost lv7-btn-ghost-onaccent">{t('nav.orders')}</Link>
               : <Link to="/register" className="lv7-btn-ghost lv7-btn-ghost-onaccent">{t('land.btn.account')}</Link>
             }
           </div>

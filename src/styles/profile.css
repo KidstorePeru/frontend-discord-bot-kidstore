@@ -173,12 +173,7 @@
 }
 .sec-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .sec-field input::placeholder { color: var(--text-muted); }
-.sec-divider {
-  display: flex; align-items: center; gap: 8px; padding: 4px 0;
-  font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em;
-  color: var(--text-muted);
-}
-.sec-divider::before, .sec-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
 .sec-note {
   font-size: 0.79rem; color: var(--amber-500); line-height: 1.5;
   background: color-mix(in srgb, var(--amber-500) 8%, transparent);
