@@ -25,8 +25,8 @@ const translations = {
   // Landing v7 — todas las claves
   'land.words':         { es: 'Skins,Emotes,Picos,Planeadores,Mochilas,Gestos,Envolturas,Objetos', en: 'Skins,Emotes,Pickaxes,Gliders,Backpacks,Dances,Wraps,Items' },
   'land.eyebrow':       { es: 'Tienda Oficial KidStorePeru',            en: 'Official KidStorePeru Store' },
-  'land.season':        { es: 'Capítulo 7: Temporada 2',                en: 'Chapter 7: Season 2' },
-  'land.season.name':   { es: '«Duelo Final»',                          en: '"Final Showdown"' },
+  'land.season':        { es: 'Capítulo 7: Temporada 4',                en: 'Chapter 7: Season 4' },
+  'land.season.name':   { es: '«Override»',                             en: '"Override"' },
   'land.title.1':       { es: 'Compra tus ',                            en: 'Get your ' },
   'land.title.sub':     { es: 'de Fortnite favoritos',                  en: 'favorite Fortnite items' },
   'land.desc':          { es: 'Usa KidCoins (KC) para comprar cualquier item. Recarga fácil, precios justos, entrega automática en Perú.', en: 'Use KidCoins (KC) to buy any item. Easy recharge, fair prices, automatic delivery in Peru.' },
