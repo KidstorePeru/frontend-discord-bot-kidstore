@@ -10,7 +10,7 @@ import {
   CheckCircle2, RefreshCw, ShieldCheck, Bot,
   Plus, Trash2, ExternalLink, Copy, Zap, X, Edit2,
   AlertTriangle, Gamepad2, Mail, Clock, Moon, Sun, ToggleLeft, ToggleRight,
-  CreditCard, ClipboardList, Send
+  CreditCard, ClipboardList, Send, UserCheck
 } from 'lucide-react';
 import { useSEO } from '../hooks/useSEO';
 
@@ -127,6 +127,9 @@ export default function AdminPanel() {
   const [stats, setStats] = useState<any>(null);
   const [slotPeriod, setSlotPeriod] = useState<'today' | 'week' | 'month' | 'all_time'>('all_time');
   const [customers, setCustomers] = useState<Customer[]>([]);
+  // Registros sin verificar (el correo de verificación no llegó): el admin puede activarlos a mano.
+  const [pendingRegs, setPendingRegs] = useState<{ id: string; epic_username: string; email: string; created_at: string; expires_at: string }[]>([]);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
   const [custTotal,   setCustTotal]   = useState(0);
   const [orders,    setOrders]    = useState<Order[]>([]);
   const [orderTotal,  setOrderTotal]  = useState(0);
@@ -235,6 +238,8 @@ export default function AdminPanel() {
         const qs = new URLSearchParams({ page: String(custPage), limit: String(ADMIN_PER_PAGE), search }).toString();
         const r = await adminFetch(`/admin/customers?${qs}`);
         setCustomers(r.customers || []); setCustTotal(r.total || 0);
+        // Si falla (p. ej. backend anterior sin esta ruta), la lista de clientes se muestra igual.
+        adminFetch('/admin/pending-registrations').then(p => setPendingRegs(p.pending || [])).catch(() => setPendingRegs([]));
       }
       else if (t === 'orders') {
         const qs = new URLSearchParams({ page: String(orderPage), limit: String(ADMIN_PER_PAGE), search, status: orderFilter }).toString();
@@ -790,6 +795,48 @@ export default function AdminPanel() {
       {tab === 'customers' && !loading && (
         <div className="admin-table-section">
           <p className="admin-tab-sub">Todos los clientes registrados. Click en una fila para editar su cuenta o hacerlo administrador.</p>
+          {pendingRegs.length > 0 && (
+            <div style={{ margin: '0 0 16px', padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(245,158,11,0.35)', background: 'rgba(245,158,11,0.07)' }}>
+              <strong style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.9rem' }}>
+                <Mail size={15}/> Registros sin verificar ({pendingRegs.length})
+              </strong>
+              <p className="text-muted" style={{ margin: '4px 0 10px', fontSize: '0.8rem' }}>
+                Se registraron pero todavía no abrieron el enlace del correo (vence a las 24 h). Si el correo no les llega, puedes activar la cuenta a mano —
+                hazlo solo después de confirmar con esa persona que el correo es suyo. Podrá iniciar sesión con la contraseña que eligió.
+              </p>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead><tr><th>Usuario Epic</th><th>Email</th><th>Registrado</th><th>Vence</th><th>Acción</th></tr></thead>
+                  <tbody>
+                    {pendingRegs.map(p => (
+                      <tr key={p.id}>
+                        <td><strong>{p.epic_username}</strong></td>
+                        <td className="text-muted">{p.email}</td>
+                        <td className="text-muted">{new Date(p.created_at).toLocaleString('es-PE')}</td>
+                        <td className="text-muted">{new Date(p.expires_at).toLocaleString('es-PE')}</td>
+                        <td>
+                          <button className="adm-action-btn" disabled={activatingId === p.id} title="Activar cuenta"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#16a34a', width: 'auto', padding: '0 8px' }}
+                            onClick={async () => {
+                              if (!window.confirm(`¿Activar la cuenta de ${p.epic_username} (${p.email})?\n\nHazlo solo si confirmaste con esa persona que el correo es suyo.`)) return;
+                              setActivatingId(p.id);
+                              try {
+                                await adminFetch(`/admin/pending-registrations/${p.id}/activate`, undefined, { method: 'POST' });
+                                setToast({ msg: `Cuenta de ${p.epic_username} activada: ya puede iniciar sesión`, type: 'success' });
+                                loadTab('customers');
+                              } catch (e: any) { setToast({ msg: e.message, type: 'error' }); }
+                              finally { setActivatingId(null); }
+                            }}>
+                            {activatingId === p.id ? <Loader2 size={13} className="spin"/> : <UserCheck size={13}/>} Activar cuenta
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
           <div className="adm-section-head">
             <div className="admin-search-bar">
               <Search size={15}/>
@@ -807,7 +854,25 @@ export default function AdminPanel() {
                 {pagedCustomers.map(c => (
                   <tr key={c.id} className="adm-customer-row" onClick={() => openEditCustomer(c)}>
                     <td><div className="adm-user-cell"><div className="adm-user-avatar">{c.epic_username[0].toUpperCase()}</div><strong>{c.epic_username}</strong></div></td>
-                    <td className="text-muted">{c.email}</td>
+                    <td className="text-muted">
+                      {c.email}
+                      {c.is_verified === false && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 8 }} onClick={e => e.stopPropagation()}>
+                          <span className="status-badge" style={{ '--badge-color': '#f59e0b' } as React.CSSProperties}>Sin verificar</span>
+                          <button className="adm-action-btn" title="Verificar cuenta manualmente" style={{ color: '#16a34a' }}
+                            onClick={async () => {
+                              if (!window.confirm(`¿Marcar como verificada la cuenta de ${c.epic_username}?\n\nHazlo solo si confirmaste con esa persona que el correo es suyo.`)) return;
+                              try {
+                                await adminFetch(`/admin/customers/${c.id}/verify`, undefined, { method: 'PUT' });
+                                setToast({ msg: 'Cuenta verificada', type: 'success' });
+                                loadTab('customers');
+                              } catch (e: any) { setToast({ msg: e.message, type: 'error' }); }
+                            }}>
+                            <UserCheck size={13}/>
+                          </button>
+                        </span>
+                      )}
+                    </td>
                     <td><KCBadge amount={c.kc_balance} size="sm"/></td>
                     <td>
                       {c.is_admin
