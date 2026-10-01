@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 
 const SITE = 'https://www.kidstoreperu.net';
-const DEFAULT_IMAGE = `${SITE}/isotipo-kidstore.png`;
+// Misma imagen que index.html: la que se ve al compartir un enlace de la web.
+const DEFAULT_IMAGE = `${SITE}/og-image.jpg`;
 
 interface SEOOptions {
   title: string;
