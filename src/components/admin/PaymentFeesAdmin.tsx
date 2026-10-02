@@ -37,6 +37,7 @@ export default function PaymentFeesAdmin({ adminFetch, notify }: {
   const [fees, setFees] = useState<PaymentFees | null>(null);
   const [saved, setSaved] = useState<PaymentFees | null>(null);
   const [meta, setMeta] = useState<{ updated_by?: string; updated_at?: string }>({});
+  const [monthVolume, setMonthVolume] = useState(0); // cobrado con Mercado Pago este mes
   const [eurRate, setEurRate] = useState(0.246);
   const [usdRate, setUsdRate] = useState(0.267);
   const [saving, setSaving] = useState(false);
@@ -45,7 +46,10 @@ export default function PaymentFeesAdmin({ adminFetch, notify }: {
   // perdería lo que el admin está escribiendo.
   useEffect(() => {
     adminFetch('/admin/payment-fees')
-      .then((r) => { setFees(r.fees); setSaved(r.fees); setMeta({ updated_by: r.updated_by, updated_at: r.updated_at }); })
+      .then((r) => {
+        setFees(r.fees); setSaved(r.fees); setMeta({ updated_by: r.updated_by, updated_at: r.updated_at });
+        setMonthVolume(Number(r.mercadopago_month_volume) || 0);
+      })
       .catch((e: unknown) => notify(e instanceof Error ? e.message : 'No se pudieron cargar las comisiones', 'error'));
     getExchangeRates().then((r) => { if (r.EUR) setEurRate(r.EUR); if (r.USD) setUsdRate(r.USD); }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,6 +58,9 @@ export default function PaymentFeesAdmin({ adminFetch, notify }: {
   if (!fees) return <div className="admin-loading"><Loader2 className="spin" size={22} /></div>;
 
   const mp = fees.mercadopago;
+  // Comisión de Mercado Pago que corresponde hoy según lo cobrado en el mes.
+  const overTier = !!mp.volume_threshold && !!mp.volume_percent && monthVolume > mp.volume_threshold;
+  const mpNow = overTier ? { ...mp, percent: mp.volume_percent! } : mp;
   const pp = fees.paypal;
   const np = fees.nowpayments;
   const bz = fees.bizum;
@@ -95,7 +102,13 @@ export default function PaymentFeesAdmin({ adminFetch, notify }: {
             <NumField label="Cargo fijo por venta" value={mp.fixed} onChange={(v) => setMP('fixed', v)} suffix="S/" />
             <NumField label="IGV sobre la comisión" value={mp.tax} onChange={(v) => setMP('tax', v)} suffix="%" step={1} />
             <NumField label="Margen extra (opcional)" value={mp.margin} onChange={(v) => setMP('margin', v)} suffix="%" hint="Para cubrir imprevistos; normalmente 0." />
+            <NumField label="Si en el mes cobras más de" value={mp.volume_threshold ?? 0} onChange={(v) => setMP('volume_threshold', v)} suffix="S/" step={100} />
+            <NumField label="…la comisión pasa a" value={mp.volume_percent ?? 0} onChange={(v) => setMP('volume_percent', v)} suffix="%" hint="Mercado Pago: 3.99% por encima de S/25,000 al mes." />
           </div>
+          <p className="pf-help pf-now">
+            Este mes llevas <strong>S/ {monthVolume.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> cobrados con Mercado Pago en la web: se está usando <strong>{mpNow.percent}%</strong> + {pen(mp.fixed)}.
+            {' '}Si también cobras con Mercado Pago fuera de la web, ese volumen cuenta para ellos y no lo vemos aquí.
+          </p>
         </div>
         <div className="pf-box">
           <h4>PayPal (cobra en dólares)</h4>
@@ -132,7 +145,7 @@ export default function PaymentFeesAdmin({ adminFetch, notify }: {
           <tbody>
             {KC_PACKAGES.map((p) => {
               const base = priceUSD(p.price_pen, usdRate);
-              const m = gatewayTotal(p.price_pen, mp);
+              const m = gatewayTotal(p.price_pen, mpNow);
               const q = gatewayTotal(base, pp);
               const c = gatewayTotal(base, np);
               const b = bizumTotal(p.price_pen, eurRate, bz);

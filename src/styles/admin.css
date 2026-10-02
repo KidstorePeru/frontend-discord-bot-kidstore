@@ -514,3 +514,4 @@
 .pf-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft, rgba(108,92,231,.15)); }
 .pf-preview td, .pf-preview th { white-space: nowrap; }
 .pf-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: .8rem; }
+.pf-now { margin: 10px 0 0; }
