@@ -408,6 +408,9 @@
 .mp-text small { font-size: 0.7rem; color: var(--text-muted); }
 .mp-item.is-rejected .mp-text span { color: #dc2626; }
 [data-theme="dark"] .mp-item.is-rejected .mp-text span { color: #f87171; }
+.mp-support { margin: 2px 0 0; font-size: 0.76rem; line-height: 1.45; color: var(--text-secondary); overflow-wrap: anywhere; }
+.mp-support strong { font-size: inherit; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.02em; }
+.mp-support a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 
 /* Ventana para subir el comprobante */
 .proof-modal .confirm-modal-body { gap: 14px; }

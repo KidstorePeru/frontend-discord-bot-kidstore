@@ -8,6 +8,19 @@ export function manualAmount(amount: number, currency: string): string {
   return currency === 'EUR' ? `€${amount.toFixed(2)}` : `S/ ${amount.toFixed(2)}`;
 }
 
+// Código corto de la solicitud: el mismo que ve soporte en el panel admin.
+export function manualSupportCode(id: string): string {
+  return id.slice(0, 8).toUpperCase();
+}
+
+export function manualSupportWhatsApp(id: string, es: boolean): string {
+  const code = manualSupportCode(id);
+  const text = es
+    ? `Hola, mi comprobante de pago ${code} fue rechazado y creo que es un error.`
+    : `Hi, my payment proof ${code} was rejected and I think it's a mistake.`;
+  return `https://wa.me/51983454837?text=${encodeURIComponent(text)}`;
+}
+
 // Comprobantes de pago manual que envió el cliente y en qué quedaron.
 export default function ManualPaymentsList({ requests, es, onRetry }: {
   requests: ManualPaymentRequest[];
@@ -33,6 +46,15 @@ export default function ManualPaymentsList({ requests, es, onRetry }: {
                 {r.status === 'approved' && (es ? 'Aprobado: KC acreditados.' : 'Approved: KC credited.')}
                 {r.status === 'rejected' && (es ? `Rechazado: ${r.reject_reason ?? ''}` : `Rejected: ${r.reject_reason ?? ''}`)}
               </span>
+              {r.status === 'rejected' && (
+                <p className="mp-support">
+                  {es ? '¿Crees que es un error? Contacta a soporte con el código ' : 'Think this is a mistake? Contact support with the code '}
+                  <strong>{manualSupportCode(r.id)}</strong>:{' '}
+                  <a href={manualSupportWhatsApp(r.id, es)} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                  {' · '}
+                  <a href="https://discord.gg/kidstore" target="_blank" rel="noopener noreferrer">Discord</a>
+                </p>
+              )}
               <small>{date}</small>
             </span>
             {r.status === 'rejected' && onRetry && (

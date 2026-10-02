@@ -21,7 +21,8 @@ const csp = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Las imágenes de ítems vienen de la API de Fortnite (dominio variable de
   // Epic/CDN), por eso se permite https: en general en vez de listar hosts.
-  "img-src 'self' https: data:",
+  // blob:: vista previa local del comprobante de pago (cliente y panel admin).
+  "img-src 'self' https: data: blob:",
   // fonts.gstatic.com: los .woff2 de Roboto Flex que sirve la hoja de arriba.
   "font-src 'self' https://fonts.gstatic.com",
   `connect-src 'self' ${BACKEND_ORIGIN} https://ipapi.co`,

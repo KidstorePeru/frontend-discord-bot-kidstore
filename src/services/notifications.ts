@@ -68,7 +68,9 @@ export function describeNotification(n: AppNotification, es: boolean): Notificat
         title: es
           ? `Comprobante rechazado: ${nf.format(d.amount_kc ?? 0)} KC`
           : `Receipt rejected: ${nf.format(d.amount_kc ?? 0)} KC`,
-        sub: d.reason ? (es ? `Motivo: ${d.reason}` : `Reason: ${d.reason}`) : '',
+        sub: es
+          ? `${d.reason ? `Motivo: ${d.reason} · ` : ''}¿Es un error? Contacta a soporte.`
+          : `${d.reason ? `Reason: ${d.reason} · ` : ''}A mistake? Contact support.`,
         to: '/recharge',
         image: null,
         icon: 'alert',

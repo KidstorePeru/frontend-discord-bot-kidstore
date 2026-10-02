@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, ExternalLink, FileText, Loader2, RefreshCw, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Download, ExternalLink, FileText, Loader2, RefreshCw, X } from 'lucide-react';
 
 // Panel admin → Comprobantes: pagos manuales (Yape, Plin, bancos, Bizum) que
 // los clientes subieron desde la web. Se verifica el pago y se aprueba
@@ -63,7 +63,13 @@ function ProofPreview({ item, fetchBlob }: { item: AdminManualPayment; fetchBlob
   if (state === 'loading') return <div className="mpa-proof mpa-proof-empty"><Loader2 size={20} className="spin" /></div>;
   if (state === 'error') return <button className="btn btn-ghost btn-sm" onClick={() => void load()}><RefreshCw size={13} /> Reintentar cargar comprobante</button>;
   if (!url) return <button className="btn btn-ghost btn-sm" onClick={() => void load()}><FileText size={13} /> Ver comprobante</button>;
-  if (isPdf) return <a className="btn btn-ghost btn-sm" href={url} target="_blank" rel="noopener noreferrer"><ExternalLink size={13} /> Abrir PDF</a>;
+  // Descargar funciona aunque el navegador no abra PDFs en pestaña.
+  if (isPdf) return (
+    <div className="mpa-actions">
+      <a className="btn btn-ghost btn-sm" href={url} target="_blank" rel="noopener noreferrer"><ExternalLink size={13} /> Abrir PDF</a>
+      <a className="btn btn-ghost btn-sm" href={url} download={`comprobante-${item.id.slice(0, 8).toUpperCase()}.pdf`}><Download size={13} /> Descargar</a>
+    </div>
+  );
   return (
     <a href={url} target="_blank" rel="noopener noreferrer" className="mpa-proof" title="Abrir en tamaño completo">
       <img src={url} alt="Comprobante de pago" />
@@ -96,12 +102,20 @@ export default function ManualPaymentsAdmin({ adminFetch, fetchBlob, notify, onC
 
   useEffect(() => { void load(); }, [load]);
 
-  const approve = async (it: AdminManualPayment) => {
-    const ok = window.confirm(`¿Confirmas que recibiste ${money(it.amount, it.currency)} por ${METHOD_LABELS[it.method] ?? it.method}?\n\nSe acreditarán ${it.kc_amount.toLocaleString('es-PE')} KC a ${it.customer_epic}.`);
+  // afterReject: el cliente reclamó un rechazo con su código y soporte
+  // confirmó que el pago sí llegó.
+  const approve = async (it: AdminManualPayment, afterReject = false) => {
+    const paid = `${money(it.amount, it.currency)} por ${METHOD_LABELS[it.method] ?? it.method}`;
+    const kc = `${it.kc_amount.toLocaleString('es-PE')} KC a ${it.customer_epic}`;
+    const ok = window.confirm(afterReject
+      ? `¿Aprobar este comprobante que fue rechazado?\n\nHazlo solo si confirmaste que SÍ llegó ${paid} y que ese pago no se acreditó ya con otra solicitud.\n\nSe acreditarán ${kc}.`
+      : `¿Confirmas que recibiste ${paid}?\n\nSe acreditarán ${kc}.`);
     if (!ok) return;
     setBusy(it.id);
     try {
-      await adminFetch(`/admin/manual-payments/${it.id}/approve`, undefined, { method: 'PUT' });
+      await adminFetch(`/admin/manual-payments/${it.id}/approve`, undefined, afterReject
+        ? { method: 'PUT', body: JSON.stringify({ after_reject: true }) }
+        : { method: 'PUT' });
       notify(`Aprobado: +${it.kc_amount.toLocaleString('es-PE')} KC a ${it.customer_epic}`, 'success');
       onChanged?.();
       await load();
@@ -199,6 +213,14 @@ export default function ManualPaymentsAdmin({ adminFetch, fetchBlob, notify, onC
                     </button>
                   </div>
                 )
+              )}
+              {it.status === 'rejected' && (
+                <div className="mpa-actions">
+                  <button className="btn btn-ghost btn-sm" disabled={busy === it.id} onClick={() => void approve(it, true)}>
+                    {busy === it.id ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />} Aprobar de todos modos
+                  </button>
+                  <span className="mpa-muted mpa-after-reject">Si el cliente reclamó con el código {it.id.slice(0, 8).toUpperCase()} y confirmaste que el pago llegó.</span>
+                </div>
               )}
             </div>
           ))}

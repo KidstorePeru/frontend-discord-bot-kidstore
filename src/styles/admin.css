@@ -492,5 +492,6 @@
 .mpa-amount { font-size: 1.05rem; color: #d97706 !important; }
 .mpa-warn { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; padding: 8px 10px; border-radius: 10px; background: rgba(220,38,38,.08); color: #b91c1c; font-size: .8rem; font-weight: 700; }
 .mpa-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.mpa-after-reject { align-self: center; flex: 1 1 220px; }
 .mpa-reject { display: flex; flex-direction: column; gap: 8px; }
 .mpa-reject select, .mpa-reject textarea { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg-surface-2); color: var(--text-primary); font: inherit; font-size: .84rem; }
