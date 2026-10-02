@@ -8,6 +8,15 @@ export function manualAmount(amount: number, currency: string): string {
   return currency === 'EUR' ? `€${amount.toFixed(2)}` : `S/ ${amount.toFixed(2)}`;
 }
 
+// KC de los comprobantes que estaban en revisión y ya se aprobaron (0 si
+// ninguno): con esto Recargar celebra la acreditación mientras el cliente espera.
+export function justApprovedKC(before: ManualPaymentRequest[], after: ManualPaymentRequest[]): number {
+  const was = new Map(before.map((m) => [m.id, m.status]));
+  return after
+    .filter((m) => m.status === 'approved' && was.get(m.id) === 'pending')
+    .reduce((sum, m) => sum + m.kc_amount, 0);
+}
+
 // Código corto de la solicitud: el mismo que ve soporte en el panel admin.
 export function manualSupportCode(id: string): string {
   return id.slice(0, 8).toUpperCase();

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
@@ -7,7 +7,9 @@ import { KC_PACKAGES, COMMISSIONS, withCommission, formatReferencePrice } from '
 import type { PaymentInfo } from '../services/constants';
 import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefreshToken, getMyManualPayments, type ManualPaymentRequest } from '../services/api';
 import ProofUploadModal from '../components/ProofUploadModal';
-import ManualPaymentsList from '../components/ManualPaymentsList';
+import ManualPaymentsList, { justApprovedKC } from '../components/ManualPaymentsList';
+import ManualApprovedModal from '../components/ManualApprovedModal';
+import { onAccountChanged, requestAccountCheck } from '../services/accountEvents';
 import { track } from '../services/analytics';
 import type { KCPackage } from '../types';
 import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X, Globe, Upload } from 'lucide-react';
@@ -102,12 +104,29 @@ export default function Recharge() {
   const [manualReqs, setManualReqs] = useState<ManualPaymentRequest[]>([]);
   const [uploadsEnabled, setUploadsEnabled] = useState(true);
   const [showProofModal, setShowProofModal] = useState(false);
+  const [approvedKC, setApprovedKC] = useState(0); // comprobante aprobado mientras el cliente esperaba
+  const manualRef = useRef<{ list: ManualPaymentRequest[]; loaded: boolean }>({ list: [], loaded: false });
   const loadManualReqs = () => {
     getMyManualPayments()
-      .then((r) => { setManualReqs(r.requests); setUploadsEnabled(r.enabled); })
-      .catch(() => setUploadsEnabled(false)); // sin backend: queda el contacto por WhatsApp/Discord
+      .then((r) => {
+        const kc = justApprovedKC(manualRef.current.list, r.requests);
+        if (kc > 0) setApprovedKC(kc);
+        manualRef.current = { list: r.requests, loaded: true };
+        setManualReqs(r.requests);
+        setUploadsEnabled(r.enabled);
+      })
+      .catch(() => {
+        // Sin backend al abrir la página: queda el contacto por WhatsApp/Discord.
+        // Un fallo en una recarga posterior no esconde la subida.
+        if (!manualRef.current.loaded) setUploadsEnabled(false);
+      });
   };
-  useEffect(loadManualReqs, []);
+  useEffect(() => {
+    loadManualReqs();
+    // La campana avisa cuando cambia el saldo o se revisa un comprobante.
+    return onAccountChanged(loadManualReqs);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Medición: recarga acreditada (una vez por cada pago aprobado).
   useEffect(() => {
     if (payResult === 'success') track('recarga_aprobada', { kc: payKcCredited });
@@ -750,7 +769,7 @@ export default function Recharge() {
                 methodLabel: activeMethod.label,
               }}
               onClose={() => setShowProofModal(false)}
-              onDone={() => loadManualReqs()}
+              onDone={() => { loadManualReqs(); requestAccountCheck(); }}
             />
           )}
           </>}
@@ -759,6 +778,8 @@ export default function Recharge() {
 
         </div>
       )}
+
+      {approvedKC > 0 && <ManualApprovedModal kc={approvedKC} es={es} onClose={() => setApprovedKC(0)} />}
 
       {/* Payment overlay modal */}
       {payPending && (

@@ -13,6 +13,7 @@ import { Package, Zap, ArrowRight, Gamepad2, ShoppingBag, TrendingUp, Clock, Coi
 import { useSEO } from '../hooks/useSEO';
 import { usePaginatedHistory } from '../hooks/usePaginatedHistory';
 import { paymentMethodLabel } from '../services/paymentMethods';
+import { onAccountChanged } from '../services/accountEvents';
 
 // buildPageList arma la lista compacta de páginas a mostrar (primera,
 // última, la actual y `siblingCount` vecinas a cada lado, con "…" para el
@@ -142,7 +143,11 @@ export default function Dashboard() {
   // aparecen como recargas en el historial).
   const [manualReqs, setManualReqs] = useState<ManualPaymentRequest[]>([]);
   useEffect(() => {
-    getMyManualPayments().then((r) => setManualReqs(r.requests.filter((m) => m.status !== 'approved'))).catch(() => {});
+    const load = () => {
+      getMyManualPayments().then((r) => setManualReqs(r.requests.filter((m) => m.status !== 'approved'))).catch(() => {});
+    };
+    load();
+    return onAccountChanged(load); // un comprobante revisado sale de la lista al instante
   }, []);
   const [orderPage, setOrderPage] = useState(1);
   // Totales calculados en el servidor sobre TODO el historial — antes se

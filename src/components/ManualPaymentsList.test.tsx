@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
-import ManualPaymentsList, { manualSupportCode } from './ManualPaymentsList';
+import ManualPaymentsList, { manualSupportCode, justApprovedKC } from './ManualPaymentsList';
 import type { ManualPaymentRequest } from '../services/api';
 
 // Un comprobante rechazado le dice al cliente cómo reclamar si fue un error.
@@ -37,5 +37,17 @@ describe('ManualPaymentsList', () => {
 
   it('el código coincide con el que ve soporte en el panel', () => {
     expect(manualSupportCode('a1b2c3d4-0000-4000-8000-000000000001')).toBe('A1B2C3D4');
+  });
+});
+
+describe('justApprovedKC', () => {
+  const req = (id: string, status: string, kc = 800) => ({ ...base, id, status, kc_amount: kc }) as ManualPaymentRequest;
+  it('suma solo los que pasaron de "en revisión" a aprobado', () => {
+    const before = [req('a', 'pending', 800), req('b', 'pending', 2400), req('c', 'approved')];
+    const after = [req('a', 'approved', 800), req('b', 'rejected', 2400), req('c', 'approved'), req('d', 'approved')];
+    expect(justApprovedKC(before, after)).toBe(800);
+  });
+  it('en la primera carga no celebra nada', () => {
+    expect(justApprovedKC([], [req('a', 'approved')])).toBe(0);
   });
 });

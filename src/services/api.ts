@@ -709,9 +709,16 @@ export async function getNotifications(limit = 20): Promise<{ notifications: App
   return { notifications: res.notifications ?? [], unread: res.unread ?? 0 };
 }
 
-export async function getUnreadNotifications(): Promise<number> {
-  const res = await request<{ unread: number }>('/store/notifications/unread');
-  return res.unread ?? 0;
+export interface AccountPulse {
+  unread: number;
+  kcBalance?: number;    // saldo actual (falta si el servidor no pudo leerlo)
+  pendingManual: number; // comprobantes de pago manual en revisión
+}
+
+// Consulta liviana y periódica: avisos sin leer + saldo + comprobantes en revisión.
+export async function getAccountPulse(): Promise<AccountPulse> {
+  const res = await request<{ unread: number; kc_balance?: number; pending_manual?: number }>('/store/notifications/unread');
+  return { unread: res.unread ?? 0, kcBalance: res.kc_balance, pendingManual: res.pending_manual ?? 0 };
 }
 
 export async function markNotificationsRead(): Promise<void> {
