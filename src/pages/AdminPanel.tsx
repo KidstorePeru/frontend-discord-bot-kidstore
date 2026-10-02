@@ -941,12 +941,20 @@ export default function AdminPanel() {
                         <button className="adm-action-btn" title={c.is_admin ? 'Quitar admin' : 'Hacer admin'}
                           style={{color: c.is_admin ? '#f59e0b' : '#6b7280'}}
                           onClick={async () => {
+                            if (!c.is_admin && !window.confirm(`¿Hacer admin a ${c.epic_username}?\n\nTendrá acceso completo al panel y, si tiene Discord vinculado, recibirá los avisos del bot y podrá aprobar comprobantes y usar /kc.`)) return;
                             try {
-                              await adminFetch(`/admin/customers/${c.id}`, undefined, {
+                              const r = await adminFetch(`/admin/customers/${c.id}`, undefined, {
                                 method: 'PUT', body: JSON.stringify({ is_admin: !c.is_admin })
                               });
                               loadTab('customers');
-                              setToast({msg: c.is_admin ? 'Admin removido' : 'Admin asignado', type:'success'});
+                              // Al sumarlo al equipo: ¿le llegarán los avisos de Discord?
+                              let msg = c.is_admin ? 'Admin removido (ya no recibe los avisos de Discord)' : 'Admin asignado';
+                              if (!c.is_admin) {
+                                if (r?.discord_welcome_sent) msg = 'Admin asignado: ya recibe los avisos en Discord (le llegó un mensaje de bienvenida)';
+                                else if (r?.discord_linked === false) msg = 'Admin asignado. No tiene Discord vinculado: para recibir los avisos en Discord, que lo vincule en Mi cuenta';
+                                else if (r?.discord_linked) msg = 'Admin asignado, pero el bot no pudo escribirle por Discord: que active los mensajes privados del servidor';
+                              }
+                              setToast({msg, type:'success'});
                             } catch (e: any) { setToast({msg: e.message, type:'error'}); }
                           }}>
                           <ShieldCheck size={13}/>
