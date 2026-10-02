@@ -13,6 +13,7 @@ import {
   CreditCard, ClipboardList, Send, UserCheck, Star, Receipt
 } from 'lucide-react';
 import ManualPaymentsAdmin from '../components/admin/ManualPaymentsAdmin';
+import PaymentFeesAdmin from '../components/admin/PaymentFeesAdmin';
 import { useSEO } from '../hooks/useSEO';
 
 type AdminTab = 'stats' | 'customers' | 'orders' | 'recharge' | 'bots' | 'schedule' | 'payments' | 'proofs' | 'complaints' | 'reviews';
@@ -1040,7 +1041,8 @@ export default function AdminPanel() {
       {/* ── PAYMENTS ── */}
       {tab === 'payments' && !loading && (
         <div className="admin-table-section">
-          <p className="admin-tab-sub">Recargas de KC pagadas por pasarela automática (MercadoPago, dLocal Go, PayPal, cripto). Los pagos manuales (Yape, Plin, banco) no aparecen aquí — esos se acreditan desde la pestaña "Recargar KC".</p>
+          <PaymentFeesAdmin adminFetch={adminFetch} notify={(msg, type) => setToast({ msg, type })} />
+          <p className="admin-tab-sub">Recargas de KC pagadas con Mercado Pago (los pagos antiguos de dLocal Go, PayPal y cripto también aparecen aquí). Los pagos manuales (Yape, Plin, banco, Bizum) están en la pestaña "Comprobantes".</p>
           <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="adm-count">{paymentTotal.toLocaleString('es-PE')} transacci{paymentTotal !== 1 ? 'ones' : 'ón'}</span>
             <div className="adm-filter-row">
@@ -1054,14 +1056,26 @@ export default function AdminPanel() {
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead><tr>
-                <th>Pasarela</th><th>Producto</th><th>Monto</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
+                <th>Pasarela</th><th>Producto</th><th>Cobrado</th><th>Recibido</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
               </tr></thead>
               <tbody>
               {filteredPayments.map((p: any) => (
                   <tr key={p.id}>
                     <td><span style={{textTransform:'capitalize', fontWeight:600}}>{p.gateway}</span></td>
                     <td>{p.product_name}</td>
-                    <td><strong>{formatAdminCharged(p)}</strong></td>
+                    <td>
+                      <strong>{formatAdminCharged(p)}</strong>
+                      {Number(p.fee_amount) > 0 && <div className="text-muted" style={{ fontSize: '.75rem' }}>precio S/ {Number(p.amount_pen).toFixed(2)} + comisión S/ {Number(p.fee_amount).toFixed(2)}</div>}
+                    </td>
+                    <td>
+                      {/* Lo que la pasarela depositó: en rojo si fue menos que el precio */}
+                      {p.net_received == null ? <span className="text-muted">—</span> : (
+                        <strong style={{ color: Number(p.net_received) + 0.005 < Number(p.amount_pen) ? '#dc2626' : '#16a34a' }}
+                          title={Number(p.net_received) + 0.005 < Number(p.amount_pen) ? 'Recibiste menos que el precio: revisa la comisión' : 'Recibiste el precio completo'}>
+                          S/ {Number(p.net_received).toFixed(2)}
+                        </strong>
+                      )}
+                    </td>
                     <td>
                       <span className="status-badge" style={{ '--badge-color':
                         p.status === 'approved' ? '#22c55e' : p.status === 'fulfilled' ? '#3b82f6' :
@@ -1097,7 +1111,7 @@ export default function AdminPanel() {
                     </td>
                   </tr>
                 ))}
-                {filteredPayments.length === 0 && <tr><td colSpan={6} className="adm-empty-row">Sin transacciones</td></tr>}
+                {filteredPayments.length === 0 && <tr><td colSpan={7} className="adm-empty-row">Sin transacciones</td></tr>}
               </tbody>
             </table>
           </div>

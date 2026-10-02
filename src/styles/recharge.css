@@ -503,9 +503,19 @@
 .rc-gateway-btn:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.1); }
 .rc-gateway-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .rc-gateway-btn img { width: 28px; height: 28px; object-fit: contain; }
-.rc-gateway-icon-badge { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
 .rc-gateway-btn .spin { animation: spin 1s linear infinite; }
 .rc-gateway-btn-main { min-width: 320px; max-width: 460px; width: 100%; padding: 18px 26px; gap: 14px; }
 .rc-gateway-btn-main img { width: 34px; height: 34px; }
 .rc-gateway-btn-main span:first-of-type { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; }
 .rc-gateway-note { text-align: center; font-size: .82rem; color: var(--text-muted); margin-top: 8px; }
+.rc-gateway-btn-main { min-width: 0; }
+.rc-gateway-btn-main small { font-size: .74rem; font-weight: 500; color: var(--text-muted); }
+.rc-gateway-total { margin-left: auto; font-size: 1rem; font-weight: 900; color: var(--text-primary); white-space: nowrap; }
+/* Desglose del pago con Mercado Pago: precio + comisión = total */
+.rc-fee-breakdown { max-width: 460px; margin: 0 auto; padding: 12px 16px; border: 1px dashed var(--border-bright); border-radius: var(--radius-md); background: var(--bg-surface); }
+.rc-fee-breakdown div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: .85rem; }
+.rc-fee-breakdown dt { color: var(--text-secondary); }
+.rc-fee-breakdown dd { margin: 0; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.rc-fee-breakdown .is-total { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 7px; font-weight: 800; }
+.rc-fee-breakdown .is-total dd { color: var(--accent); }
+.rc-link-btn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }

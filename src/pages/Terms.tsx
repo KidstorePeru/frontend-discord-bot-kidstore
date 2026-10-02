@@ -38,19 +38,19 @@ export default function Terms() {
             <h2>4. Métodos de pago</h2>
             <p>KidStorePeru ofrece dos formas de recargar KidCoins:</p>
             <ul>
-              <li><strong>Pasarelas automáticas (al instante):</strong> MercadoPago (Perú — tarjetas de crédito/débito y Yape); y en el resto del mundo, dLocal Go (tarjetas internacionales como Visa, Mastercard, Diners y American Express, y métodos de pago locales según tu país), PayPal y criptomonedas. Tus KidCoins se acreditan apenas la pasarela confirma el pago.</li>
-              <li><strong>Métodos manuales (con periodo de espera):</strong> en Perú, Yape, Plin y transferencia bancaria (BCP, Interbank, BBVA); en España, Bizum. Con estos métodos verificamos manualmente que tu pago haya llegado antes de liberar tus KidCoins — la entrega no es inmediata.</li>
+              <li><strong>Pago automático (al instante):</strong> Mercado Pago, con tarjetas de crédito o débito (Visa, Mastercard, American Express y Diners) emitidas en Perú o en el extranjero. El cobro se hace en soles. La comisión de Mercado Pago se suma al precio del paquete y se informa desglosada antes de pagar. Tus KidCoins se acreditan apenas Mercado Pago confirma el pago.</li>
+              <li><strong>Métodos manuales (con periodo de espera):</strong> en Perú, Yape, Plin y transferencia bancaria (BCP, Interbank, BBVA), sin comisión; en España, Bizum, cobrado en euros con un recargo que cubre el envío del dinero a Perú (el monto final se informa antes de pagar). Con estos métodos verificamos manualmente que tu pago haya llegado antes de liberar tus KidCoins — la entrega no es inmediata.</li>
             </ul>
             <h2>5. Productos disponibles</h2>
             <p>KidStorePeru vende KidCoins (KC), la moneda interna del sitio. Con tus KC compras ítems de la Tienda de Fortnite (skins, packs y cosméticos) directamente desde tu cuenta — no se venden ítems de Fortnite por separado con dinero real.</p>
             <h2>6. Proceso de compra</h2>
-            <ol><li>Recargas KidCoins eligiendo una pasarela automática o un método manual</li><li>Si usas una pasarela automática, tus KC se acreditan al instante al confirmarse el pago</li><li>Si usas un método manual, pagas con los datos indicados, subes tu comprobante en la página de Recargar (o nos lo envías por WhatsApp o Discord) y esperas a que lo verifiquemos antes de que se acrediten tus KC</li><li>Seleccionas el ítem de la Tienda que deseas comprar con tus KC</li><li>Ingresas tu usuario de Epic Games para la entrega</li><li>Procesamos y gestionamos la entrega dentro del juego</li></ol>
+            <ol><li>Recargas KidCoins eligiendo el pago automático o un método manual</li><li>Si usas el pago automático, tus KC se acreditan al instante al confirmarse el pago</li><li>Si usas un método manual, pagas con los datos indicados, subes tu comprobante en la página de Recargar (o nos lo envías por WhatsApp o Discord) y esperas a que lo verifiquemos antes de que se acrediten tus KC</li><li>Seleccionas el ítem de la Tienda que deseas comprar con tus KC</li><li>Ingresas tu usuario de Epic Games para la entrega</li><li>Procesamos y gestionamos la entrega dentro del juego</li></ol>
             <h2>7. Notificaciones</h2>
             <p>Recibirás notificaciones por correo electrónico cuando tu pago sea aprobado y cuando tu pedido sea entregado.</p>
             <h2>8. Entrega y contingencias</h2>
             <p>Los tiempos son estimados y pueden variar. La entrega se considera completada cuando el ítem figura entregado dentro del juego. Si no puede completarse por causas ajenas a KidStorePeru, ofrecemos reintentos, cambios o crédito.</p>
             <h2>9. Reembolsos</h2>
-            <p>Por la naturaleza digital e inmediata de los productos, no hay reembolsos una vez completada la entrega. Los pagos realizados por MercadoPago, dLocal Go, PayPal o criptomonedas pueden ser disputados directamente a través de la pasarela correspondiente. Los pagos manuales no son reembolsables una vez acreditados los KC. Ver nuestra <Link to="/refunds" className="legal-link">Política de Reembolsos</Link>.</p>
+            <p>Por la naturaleza digital e inmediata de los productos, no hay reembolsos una vez completada la entrega. Los pagos realizados por Mercado Pago pueden ser disputados directamente a través de Mercado Pago. Los pagos manuales no son reembolsables una vez acreditados los KC. Ver nuestra <Link to="/refunds" className="legal-link">Política de Reembolsos</Link>.</p>
             <h2>10. Contacto</h2>
             <p>Para consultas, contáctanos por nuestros <Link to="/contact" className="legal-link">canales de soporte</Link>.</p></div>) : (<div className="legal-body"><p>These Terms and Conditions govern the use of the KidStorePeru website and the purchase of digital products offered. By accessing, browsing, or purchasing, you accept these Terms.</p>
             <div className="legal-highlight">
@@ -65,19 +65,19 @@ export default function Terms() {
             <h2>4. Payment methods</h2>
             <p>KidStorePeru offers two ways to recharge KidCoins:</p>
             <ul>
-              <li><strong>Automatic gateways (instant):</strong> MercadoPago (Peru — credit/debit cards and Yape); and elsewhere, dLocal Go (international cards such as Visa, Mastercard, Diners, and American Express, plus local payment methods depending on your country), PayPal, and cryptocurrency. Your KidCoins are credited as soon as the gateway confirms payment.</li>
-              <li><strong>Manual methods (with a waiting period):</strong> in Peru, Yape, Plin, and bank transfer (BCP, Interbank, BBVA); in Spain, Bizum. With these methods we manually verify your payment arrived before releasing your KidCoins — delivery is not immediate.</li>
+              <li><strong>Automatic payment (instant):</strong> Mercado Pago, with credit or debit cards (Visa, Mastercard, American Express, and Diners) issued in Peru or abroad. The charge is made in Peruvian soles. The Mercado Pago fee is added to the package price and shown itemized before you pay. Your KidCoins are credited as soon as Mercado Pago confirms payment.</li>
+              <li><strong>Manual methods (with a waiting period):</strong> in Peru, Yape, Plin, and bank transfer (BCP, Interbank, BBVA), with no fee; in Spain, Bizum, charged in euros with a fee that covers sending the money to Peru (the final amount is shown before you pay). With these methods we manually verify your payment arrived before releasing your KidCoins — delivery is not immediate.</li>
             </ul>
             <h2>5. Available products</h2>
             <p>KidStorePeru sells KidCoins (KC), the site's internal currency. You use your KC to buy items from the Fortnite Store (skins, packs, and cosmetics) directly from your account — Fortnite items are not sold separately for real money.</p>
             <h2>6. Purchase process</h2>
-            <ol><li>Recharge KidCoins by choosing an automatic gateway or a manual method</li><li>If using an automatic gateway, your KC are credited instantly once payment is confirmed</li><li>If using a manual method, you pay with the details shown, upload your receipt on the Recharge page (or send it to us on WhatsApp or Discord), and wait while we verify it before your KC are credited</li><li>Select the Store item you want to buy with your KC</li><li>Enter your Epic Games username for delivery</li><li>We process and manage in-game delivery</li></ol>
+            <ol><li>Recharge KidCoins by choosing automatic payment or a manual method</li><li>If using automatic payment, your KC are credited instantly once payment is confirmed</li><li>If using a manual method, you pay with the details shown, upload your receipt on the Recharge page (or send it to us on WhatsApp or Discord), and wait while we verify it before your KC are credited</li><li>Select the Store item you want to buy with your KC</li><li>Enter your Epic Games username for delivery</li><li>We process and manage in-game delivery</li></ol>
             <h2>7. Notifications</h2>
             <p>You will receive email notifications when your payment is approved and when your order is delivered.</p>
             <h2>8. Delivery and contingencies</h2>
             <p>Delivery times are estimates and may vary. Delivery is considered complete when the item appears delivered in-game. If delivery cannot be completed due to causes outside KidStorePeru, we offer retries, exchanges, or credit.</p>
             <h2>9. Refunds</h2>
-            <p>Due to the immediate digital nature of products, no refunds are issued once delivery is complete. Payments made via MercadoPago, dLocal Go, PayPal, or cryptocurrency can be disputed directly through the corresponding gateway. Manual payments are non-refundable once KC are credited. See our <Link to="/refunds" className="legal-link">Refund Policy</Link>.</p>
+            <p>Due to the immediate digital nature of products, no refunds are issued once delivery is complete. Payments made via Mercado Pago can be disputed directly through Mercado Pago. Manual payments are non-refundable once KC are credited. See our <Link to="/refunds" className="legal-link">Refund Policy</Link>.</p>
             <h2>10. Contact</h2>
             <p>For inquiries, contact us through our <Link to="/contact" className="legal-link">support channels</Link>.</p></div>)}
       </div>

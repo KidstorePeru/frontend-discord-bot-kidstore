@@ -104,7 +104,7 @@ export const SUPPORTED_CURRENCIES: { code: string; region: CurrencyRegion }[] = 
 const SUPPORTED_CODES = new Set(SUPPORTED_CURRENCIES.map(c => c.code));
 
 /** Para países fuera de la lista soportada (ej. Canadá, Reino Unido, Japón)
- *  cae a USD — es la divisa más universal para pagar (dLocal Go/cripto). */
+ *  cae a USD — la divisa de referencia más universal. */
 export function supportedCurrencyFor(currencyCode: string): string {
   return SUPPORTED_CODES.has(currencyCode) ? currencyCode : 'USD';
 }

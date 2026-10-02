@@ -1,3 +1,4 @@
+import type { PaymentFees } from './fees';
 import type { AuthResponse, Customer, Order } from '../types';
 
 // Exportado para components/fortnite-shop/hooks.ts (useShopData): esa
@@ -522,16 +523,20 @@ export async function createOrder(data: {
 export async function createPayment(
   gateway: string, paymentType: string, productId: string,
   custom?: { name: string; price: number; kc?: number },
-  currency?: string
-): Promise<{ payment_id: string; checkout_url: string }> {
-  return request<{ success: boolean; payment_id: string; checkout_url: string }>('/store/payment', {
+): Promise<{ payment_id: string; checkout_url: string; price?: number; fee?: number; total?: number }> {
+  return request<{ success: boolean; payment_id: string; checkout_url: string; price?: number; fee?: number; total?: number }>('/store/payment', {
     method: 'POST',
     body: JSON.stringify({
       gateway, payment_type: paymentType, product_id: productId,
       ...(custom ? { custom_name: custom.name, custom_price: custom.price, custom_kc: custom.kc || 0 } : {}),
-      ...(currency ? { currency } : {}),
     }),
   });
+}
+
+// Comisiones vigentes (Mercado Pago y recargo de Bizum) para mostrar el desglose.
+export async function getPaymentFees(): Promise<PaymentFees> {
+  const res = await request<{ success: boolean; fees: PaymentFees }>('/store/payment-fees');
+  return res.fees;
 }
 
 export async function getPaymentStatus(paymentId: string) {

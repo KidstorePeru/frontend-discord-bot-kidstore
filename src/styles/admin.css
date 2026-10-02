@@ -495,3 +495,22 @@
 .mpa-after-reject { align-self: center; flex: 1 1 220px; }
 .mpa-reject { display: flex; flex-direction: column; gap: 8px; }
 .mpa-reject select, .mpa-reject textarea { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg-surface-2); color: var(--text-primary); font: inherit; font-size: .84rem; }
+
+/* ── Comisiones a cargo del cliente (Pagos) ── */
+.pf-card { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg-surface); padding: 18px; margin-bottom: 22px; display: flex; flex-direction: column; gap: 16px; }
+.pf-head h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 1rem; }
+.pf-head p { margin: 0; font-size: .84rem; color: var(--text-secondary); line-height: 1.5; }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pf-box { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; }
+.pf-box h4 { margin: 0 0 4px; font-size: .92rem; }
+.pf-help { margin: 0 0 10px; font-size: .78rem; color: var(--text-muted); line-height: 1.45; }
+.pf-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.pf-field { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--text-secondary); }
+.pf-field small { font-size: .72rem; color: var(--text-muted); }
+.pf-input { display: flex; align-items: center; border: 1px solid var(--border-bright); border-radius: var(--radius-sm); background: var(--bg-base, var(--bg-surface)); overflow: hidden; }
+.pf-input input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 8px 10px; font: inherit; font-size: .9rem; color: var(--text-primary); }
+.pf-input em { font-style: normal; padding: 0 10px; color: var(--text-muted); font-weight: 700; }
+.pf-input input, .pf-input input:focus { border: 0; outline: none; box-shadow: none; }
+.pf-input:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft, rgba(108,92,231,.15)); }
+.pf-preview td, .pf-preview th { white-space: nowrap; }
+.pf-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: .8rem; }

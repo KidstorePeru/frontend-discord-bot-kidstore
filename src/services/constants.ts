@@ -7,20 +7,15 @@ import { FALLBACK_RATES } from './useExchangeRates';
 // PAQUETES KC — el precio FIJO siempre es PEN
 // USD y EUR se calculan dinámicamente con la API
 // ─────────────────────────────────────────────────────────────
-// Mismo precio para pago manual y automático — S/ 1.30 cada 100 KC (S/0.013/KC).
+// Precio del paquete (S/ 1.30 cada 100 KC, S/0.013/KC). Es lo que recibe la
+// tienda: Mercado Pago suma su comisión aparte y Bizum el recargo de la remesa
+// (ver services/fees.ts).
 export const KC_PACKAGES: KCPackage[] = [
   { id: 'starter', name: 'Starter', kc: 800,   price_pen: 10.40,  price_pen_online: 10.40,  price_usd: 0, price_eur: 0, emoji: '⚡', color: '#3b82f6' },
   { id: 'gamer',   name: 'Gamer',   kc: 2400,  price_pen: 31.20,  price_pen_online: 31.20,  price_usd: 0, price_eur: 0, emoji: '🎮', color: '#8b5cf6', popular: true },
   { id: 'pro',     name: 'Pro',     kc: 4500,  price_pen: 58.50,  price_pen_online: 58.50,  price_usd: 0, price_eur: 0, emoji: '🔥', color: '#f59e0b' },
   { id: 'legend',  name: 'Legend',  kc: 12500, price_pen: 162.50, price_pen_online: 162.50, price_usd: 0, price_eur: 0, emoji: '👑', color: '#f59e0b', premium: true },
 ];
-
-// ─────────────────────────────────────────────────────────────
-// COMISIONES
-// ─────────────────────────────────────────────────────────────
-export const COMMISSIONS = {
-  bizum: 0.015,  // 1.5%
-};
 
 // ─────────────────────────────────────────────────────────────
 // PRECIO DE REFERENCIA EN CUALQUIER DIVISA (todas las que da la API)
@@ -68,10 +63,6 @@ export function formatReferencePrice(
 // ─────────────────────────────────────────────────────────────
 export function roundCents(n: number): number {
   return Math.round(n * 100) / 100;
-}
-
-export function withCommission(base: number, rate: number): number {
-  return Math.ceil(base * (1 + rate) * 100) / 100;
 }
 
 export function vbucksToKC(vbucks: number): number {

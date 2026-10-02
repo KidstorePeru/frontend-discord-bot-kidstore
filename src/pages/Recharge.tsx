@@ -3,22 +3,23 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { KC_PACKAGES, COMMISSIONS, withCommission, formatReferencePrice } from '../services/constants';
+import { KC_PACKAGES, formatReferencePrice } from '../services/constants';
+import { DEFAULT_PAYMENT_FEES, gatewayTotal, bizumTotal, type PaymentFees } from '../services/fees';
 import type { PaymentInfo } from '../services/constants';
-import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefreshToken, getMyManualPayments, type ManualPaymentRequest } from '../services/api';
+import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefreshToken, getMyManualPayments, getPaymentFees, type ManualPaymentRequest } from '../services/api';
 import ProofUploadModal from '../components/ProofUploadModal';
 import ManualPaymentsList, { justApprovedKC } from '../components/ManualPaymentsList';
 import ManualApprovedModal from '../components/ManualApprovedModal';
 import { onAccountChanged, requestAccountCheck } from '../services/accountEvents';
 import { track } from '../services/analytics';
 import type { KCPackage } from '../types';
-import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X, Globe, Upload } from 'lucide-react';
+import { Zap, MessageCircle, Copy, CheckCircle, ArrowRight, RefreshCw, Loader2, X, Upload } from 'lucide-react';
 import { TrustpilotCTA } from '../components/UI';
 import SegTabs from '../components/SegTabs';
 import { useSEO } from '../hooks/useSEO';
 
 // Pago manual solo existe para PEN (Perú) y EUR (España) — para las demás
-// divisas se usa el pago automático (dLocal Go, PayPal, Cripto).
+// divisas se usa el pago automático (Mercado Pago, con tarjeta de cualquier país).
 type Currency = 'PEN' | 'EUR';
 type MethodId = 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'bizum';
 
@@ -29,7 +30,8 @@ interface PayMethod {
   qr: string | null;
   currency: Currency[];
   color: string;
-  commission?: keyof typeof COMMISSIONS;
+  // true: lleva el recargo de la remesa a Perú (Bizum), ver services/fees.ts.
+  surcharge?: boolean;
   // true si el método solo funciona en un país puntual dentro de su divisa
   // (ej. Bizum es exclusivo de España, aunque EUR también cubre Italia).
   spainOnly?: boolean;
@@ -41,7 +43,7 @@ const METHODS: PayMethod[] = [
   { id:'bcp',       label:'BCP',       icon:'/bcp.png',        qr:'/transferencia-bancos.png', currency:['PEN'],  color:'#003DA5' },
   { id:'interbank', label:'Interbank', icon:'/interbank.png',  qr:'/transferencia-bancos.png', currency:['PEN'],  color:'#00A14B' },
   { id:'bbva',      label:'BBVA',      icon:'/bbva.png',       qr:'/transferencia-bancos.png', currency:['PEN'],  color:'#004999' },
-  { id:'bizum',     label:'Bizum',     icon:'/bizum.png',      qr:'/bizum-qr.png',             currency:['EUR'],  color:'#00AFAA', commission:'bizum', spainOnly: true },
+  { id:'bizum',     label:'Bizum',     icon:'/bizum.png',      qr:'/bizum-qr.png',             currency:['EUR'],  color:'#00AFAA', surcharge: true, spainOnly: true },
 ];
 
 const PKG_TAGS: Record<string, { label_es: string; label_en: string; color: string }> = {
@@ -74,8 +76,8 @@ export default function Recharge() {
   useSEO({
     title: lang === 'es' ? 'Recargar KidCoins' : 'Recharge KidCoins',
     description: lang === 'es'
-      ? 'Recarga KidCoins con Yape, Plin, MercadoPago, PayPal, dLocal Go o cripto y compra en la tienda de Fortnite.'
-      : 'Recharge KidCoins with Yape, Plin, MercadoPago, PayPal, dLocal Go or crypto and shop the Fortnite store.',
+      ? 'Recarga KidCoins con Yape, Plin, transferencia, Bizum o tarjeta (Mercado Pago) y compra en la tienda de Fortnite.'
+      : 'Recharge KidCoins with Yape, Plin, bank transfer, Bizum or card (Mercado Pago) and shop the Fortnite store.',
   });
   const { currency: refCurrency, rates: refRates } = useCurrency();
   const [copied, setCopied]         = useState('');
@@ -90,6 +92,8 @@ export default function Recharge() {
   const [rates, setRates]           = useState<{usd:number;eur:number} | null>(null);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [payInfo, setPayInfo] = useState<PaymentInfo | null>(null);
+  // Comisiones vigentes (las configura el admin): Mercado Pago y recargo de Bizum.
+  const [fees, setFees] = useState<PaymentFees>(DEFAULT_PAYMENT_FEES);
   const [payTab, setPayTab] = useState<'online' | 'manual'>('online');
   const [payLoading, setPayLoading] = useState('');
   const [payPending, setPayPending] = useState(false);
@@ -142,6 +146,9 @@ export default function Recharge() {
     getPaymentInfo()
       .then(setPayInfo)
       .catch(() => {});
+    getPaymentFees()
+      .then(setFees)
+      .catch(() => {}); // se muestran las de por defecto; el cobro real lo calcula el servidor
   }, []);
 
   function convertRaw(pen: number, cur: Currency): number {
@@ -199,7 +206,6 @@ export default function Recharge() {
       const onlinePrice = getPrice(selectedPkg);
       const res = await createPayment(gateway, 'kc_recharge', selectedPkg.id,
         isCustom ? { name: `${selectedPkg.kc} KC (personalizado)`, price: onlinePrice, kc: selectedPkg.kc } : undefined,
-        gateway === 'dlocalgo' ? refCurrency : undefined
       );
       // Open payment in new window
       const payWindow = window.open(res.checkout_url, '_blank');
@@ -223,7 +229,7 @@ export default function Recharge() {
         // status=failure, la pasarela nos está diciendo directamente que el
         // pago se canceló o falló — no tiene sentido seguir esperando hasta 6
         // minutos a que el backend lo detecte solo. Mientras el popup sigue en
-        // el dominio de la pasarela (checkout de MercadoPago/PayPal/etc.) leer
+        // el dominio de la pasarela (checkout de Mercado Pago) leer
         // su URL falla por cross-origin, lo cual es normal y se ignora.
         let returnedAsFailure = false;
         try {
@@ -319,11 +325,19 @@ export default function Recharge() {
     return `https://wa.me/51983454837?text=${encodeURIComponent(parts.join('\n'))}`;
   }
 
+  // Bizum: euros a pagar y recargo que cubre la remesa a Perú.
+  function bizumQuote(): { total: number; fee: number } | null {
+    if (!selectedPkg) return null;
+    return bizumTotal(getPrice(selectedPkg), rates?.eur ?? 0.246, fees.bizum);
+  }
+
   function getMethodPrice(m: PayMethod): string {
     if (!selectedPkg || !manualCurrency) return '';
-    const base = convertRaw(getPrice(selectedPkg), manualCurrency);
-    const rate = m.commission ? COMMISSIONS[m.commission] : 0;
-    const total = rate > 0 ? withCommission(base, rate) : base;
+    if (m.surcharge) {
+      const q = bizumQuote();
+      return q ? `€${q.total.toFixed(2)}` : '';
+    }
+    const total = convertRaw(getPrice(selectedPkg), manualCurrency);
     return manualCurrency === 'PEN' ? `S/ ${total.toFixed(2)}` : `€${total.toFixed(2)}`;
   }
 
@@ -339,7 +353,8 @@ export default function Recharge() {
     selMethod:  es ? 'Selecciona un método de pago:' : 'Select a payment method:',
     payWith:    es ? 'Pago con'                   : 'Pay with',
     total:      es ? 'Total a pagar'              : 'Total to pay',
-    feeIncl:    es ? 'comisión incluida'          : 'fee included',
+    feeIncl:    (fee: string) => es ? `incluye ${fee} de recargo por el envío a Perú` : `includes a ${fee} fee for the transfer to Peru`,
+    surcharge:  es ? '+ recargo'                  : '+ fee',
     scan:       es ? 'Escanea con'                : 'Scan with',
     numero:     es ? 'Número'                     : 'Number',
     nombre:     es ? 'Nombre'                     : 'Name',
@@ -360,14 +375,14 @@ export default function Recharge() {
     manualWaitNote: es
       ? 'Estos métodos requieren que nuestro equipo verifique tu pago a mano, así que los KC no se acreditan al instante.'
       : 'These methods require our team to verify your payment by hand, so your KC are not credited instantly.',
-    payWithMP:  es ? 'Pagar con MercadoPago' : 'Pay with MercadoPago',
-    payWithDL:  es ? 'Pagar con dLocal Go'   : 'Pay with dLocal Go',
-    payWithPP:  es ? 'PayPal'                : 'PayPal',
-    payWithCrypto: es ? 'Cripto'             : 'Crypto',
-    dlocalDesc: es ? 'Tarjetas internacionales y métodos de pago locales' : 'International cards and local payment methods',
-    notConfigured: es
-      ? 'Esta pasarela todavía no está activa. Vuelve pronto.'
-      : 'This gateway isn\'t active yet. Check back soon.',
+    payWithMP:  es ? 'Pagar con Mercado Pago' : 'Pay with Mercado Pago',
+    mpMethods:  es ? 'Tarjeta de crédito o débito (de Perú o del extranjero) y más' : 'Credit or debit card (from Peru or abroad) and more',
+    pkgPrice:   es ? 'Precio del paquete' : 'Package price',
+    mpFee:      es ? 'Comisión de Mercado Pago' : 'Mercado Pago fee',
+    chargedPEN: (approx: string) => es
+      ? `Se cobra en soles (≈ ${approx}); tu banco hace la conversión.`
+      : `Charged in Peruvian soles (≈ ${approx}); your bank converts it.`,
+    noFeeManual: es ? '¿Prefieres no pagar comisión? Paga con Yape, Plin o transferencia en' : 'Rather not pay a fee? Pay with Yape, Plin or bank transfer in',
     manualNotAvailable: es
       ? 'El pago manual no está disponible para tu divisa. Usa el pago automático arriba.'
       : 'Manual payment isn\'t available for your currency. Use the automatic payment tab above.',
@@ -509,72 +524,47 @@ export default function Recharge() {
             />
           </div>
 
-          {/* ── Online tab: MercadoPago (Perú) o dLocal Go + PayPal + Cripto (resto del mundo) ── */}
-          {payTab === 'online' && (refCurrency === 'PEN' ? (
-            <>
-              <div className="rc-gateways">
-                <button
-                  className="rc-gateway-btn rc-gateway-btn-main"
-                  style={{borderColor: payLoading==='mercadopago' ? '#6c5ce7' : undefined}}
-                  disabled={!!payLoading}
-                  onClick={() => handleGateway('mercadopago')}
-                >
-                  {payLoading==='mercadopago'
-                    ? <RefreshCw size={20} className="spin" style={{color:'#6c5ce7'}}/>
-                    : <img src="/mercadopago.png" alt="MercadoPago"
-                           onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
-                  <span><strong>{txt.payWithMP}</strong></span>
-                  <span style={{fontSize:'.85rem',fontWeight:800,color:'var(--text-primary)',marginLeft:'auto'}}>
-                    {`S/ ${getPrice(selectedPkg).toFixed(2)}`}
-                  </span>
-                </button>
-              </div>
-              <p className="rc-gateway-note">{txt.gatewayNote}</p>
-            </>
-          ) : (
-            <>
-              <div className="rc-gateways">
-                <button
-                  className="rc-gateway-btn"
-                  style={{borderColor: payLoading==='dlocalgo' ? '#6c5ce7' : undefined}}
-                  disabled={!!payLoading}
-                  onClick={() => handleGateway('dlocalgo')}
-                >
-                  {payLoading==='dlocalgo'
-                    ? <RefreshCw size={20} className="spin" style={{color:'#6c5ce7'}}/>
-                    : <span className="rc-gateway-icon-badge" style={{background:'#6c5ce71a',color:'#6c5ce7'}} aria-hidden="true"><Globe size={18}/></span>}
-                  <span>{txt.payWithDL}</span>
-                  <span style={{fontSize:'.7rem',color:'var(--text-muted)',marginLeft:'auto'}}>{refCurrency}</span>
-                </button>
-                <button
-                  className="rc-gateway-btn"
-                  style={{borderColor: payLoading==='paypal' ? '#003087' : undefined}}
-                  disabled={!!payLoading}
-                  onClick={() => handleGateway('paypal')}
-                >
-                  {payLoading==='paypal'
-                    ? <RefreshCw size={20} className="spin" style={{color:'#003087'}}/>
-                    : <img src="/paypal.png" alt="PayPal"
-                           onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
-                  <span>{txt.payWithPP}</span>
-                  <span style={{fontSize:'.7rem',color:'var(--text-muted)',marginLeft:'auto'}}>USD</span>
-                </button>
-                <button
-                  className="rc-gateway-btn"
-                  style={{borderColor: payLoading==='nowpayments' ? '#00c853' : undefined}}
-                  disabled={!!payLoading}
-                  onClick={() => handleGateway('nowpayments')}
-                >
-                  {payLoading==='nowpayments'
-                    ? <RefreshCw size={20} className="spin" style={{color:'#00c853'}}/>
-                    : <img src="/nowpayments.png" alt="NOWPayments" onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
-                  <span>{txt.payWithCrypto}</span>
-                  <span style={{fontSize:'.7rem',color:'var(--text-muted)',marginLeft:'auto'}}>BTC, ETH, USDT +150</span>
-                </button>
-              </div>
-              <p className="rc-gateway-note">{txt.gatewayNote}</p>
-            </>
-          ))}
+          {/* ── Pestaña automática: Mercado Pago para todos (tarjetas de Perú y del
+               extranjero). La comisión la paga el cliente: se muestra el desglose. ── */}
+          {payTab === 'online' && (() => {
+            const price = getPrice(selectedPkg);
+            const { total, fee } = gatewayTotal(price, fees.mercadopago);
+            const pen = (n: number) => `S/ ${n.toFixed(2)}`;
+            return (
+              <>
+                <div className="rc-gateways">
+                  <button
+                    className="rc-gateway-btn rc-gateway-btn-main"
+                    style={{borderColor: payLoading==='mercadopago' ? '#6c5ce7' : undefined}}
+                    disabled={!!payLoading}
+                    onClick={() => handleGateway('mercadopago')}
+                  >
+                    {payLoading==='mercadopago'
+                      ? <RefreshCw size={20} className="spin" style={{color:'#6c5ce7'}}/>
+                      : <img src="/mercadopago.png" alt="Mercado Pago"
+                             onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
+                    <span><strong>{txt.payWithMP}</strong><small>{txt.mpMethods}</small></span>
+                    <span className="rc-gateway-total">{pen(total)}</span>
+                  </button>
+                </div>
+                <dl className="rc-fee-breakdown">
+                  <div><dt>{txt.pkgPrice}</dt><dd>{pen(price)}</dd></div>
+                  <div><dt>{txt.mpFee}</dt><dd>+ {pen(fee)}</dd></div>
+                  <div className="is-total"><dt>{txt.total}</dt><dd>{pen(total)}</dd></div>
+                </dl>
+                {refCurrency !== 'PEN' && (
+                  <p className="rc-gateway-note">{txt.chargedPEN(formatReferencePrice(total, refCurrency, refRates))}</p>
+                )}
+                <p className="rc-gateway-note">{txt.gatewayNote}</p>
+                {refCurrency === 'PEN' && (
+                  <p className="rc-gateway-note">
+                    {txt.noFeeManual}{' '}
+                    <button type="button" className="rc-link-btn" onClick={() => setPayTab('manual')}>{txt.tabManual}</button>.
+                  </p>
+                )}
+              </>
+            );
+          })()}
 
           {/* ── Manual tab ── */}
           {payTab === 'manual' && (
@@ -598,7 +588,7 @@ export default function Recharge() {
                 <img src={m.icon} alt={m.label} className="rc-method-pill-icon"
                   onError={e=>{(e.target as HTMLImageElement).style.opacity='0';}}/>
                 <span>{m.label}{m.spainOnly && ` (${es ? 'España' : 'Spain'})`}</span>
-                {m.commission && <span className="rc-pill-comm">+{(COMMISSIONS[m.commission]*100).toFixed(1)}%</span>}
+                {m.surcharge && <span className="rc-pill-comm">{txt.surcharge}</span>}
                 {method===m.id && <CheckCircle size={13} className="rc-pill-check"/>}
               </button>
             ))}
@@ -617,7 +607,7 @@ export default function Recharge() {
                 <div className="rc-detail-total">
                   <span>{txt.total}</span>
                   <strong>{getMethodPrice(activeMethod)}</strong>
-                  {activeMethod.commission && <em>{txt.feeIncl}</em>}
+                  {activeMethod.surcharge && bizumQuote() && <em>{txt.feeIncl(`€${bizumQuote()!.fee.toFixed(2)}`)}</em>}
                 </div>
               </div>
 
