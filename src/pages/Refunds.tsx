@@ -51,8 +51,8 @@ export default function Refunds() {
             </ul>
             <p>Si Epic Games no confirma la entrega, el pedido no se marca como enviado y tu compra queda protegida por las condiciones de reembolso de esta política.</p>
 
-            <h2>4. Pagos con Mercado Pago</h2>
-            <p>Si realizaste el pago a través de Mercado Pago, puedes abrir una disputa o reclamo directamente con Mercado Pago según sus propios plazos y condiciones. KidStorePeru colaborará proporcionando la información necesaria (incluyendo la evidencia de entrega descrita arriba) para resolver el caso.</p>
+            <h2>4. Pagos por pasarela (Mercado Pago, PayPal, criptomonedas)</h2>
+            <p>Si realizaste el pago a través de Mercado Pago, PayPal o criptomonedas, puedes abrir una disputa o reclamo directamente con la pasarela correspondiente según sus propios plazos y condiciones. KidStorePeru colaborará proporcionando la información necesaria (incluyendo la evidencia de entrega descrita arriba) para resolver el caso.</p>
 
             <h2>5. Pagos manuales (Yape, Plin, BCP, Interbank, BBVA — Perú; Bizum — España)</h2>
             <p>Los pagos manuales pasan por un periodo de espera mientras verificamos que el pago haya llegado — recién ahí se acreditan tus KidCoins. Una vez acreditados, <strong>no son reembolsables</strong>. Si tu pago manual todavía no fue verificado, puedes solicitar la cancelación.</p>
@@ -107,8 +107,8 @@ export default function Refunds() {
             </ul>
             <p>If Epic Games does not confirm delivery, the order is not marked as sent and your purchase remains protected under this policy's refund conditions.</p>
 
-            <h2>4. Mercado Pago payments</h2>
-            <p>If you paid via Mercado Pago, you can open a dispute or claim directly with Mercado Pago according to their own timelines and conditions. KidStorePeru will cooperate by providing the necessary information (including the delivery evidence described above) to resolve the case.</p>
+            <h2>4. Gateway payments (Mercado Pago, PayPal, cryptocurrency)</h2>
+            <p>If you paid via Mercado Pago, PayPal, or cryptocurrency, you can open a dispute or claim directly with the corresponding gateway according to their own timelines and conditions. KidStorePeru will cooperate by providing the necessary information (including the delivery evidence described above) to resolve the case.</p>
 
             <h2>5. Manual payments (Yape, Plin, BCP, Interbank, BBVA — Peru; Bizum — Spain)</h2>
             <p>Manual payments go through a waiting period while we verify the payment arrived — only then are your KidCoins credited. Once credited, they are <strong>non-refundable</strong>. If your manual payment hasn't been verified yet, you may request cancellation.</p>

@@ -14,11 +14,14 @@ function IconStar()  { return <svg width="13" height="13" viewBox="0 0 24 24" fi
 function IconFire()  { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-4.4 0-8-3.6-8-8 0-3.5 2.3-6.5 5.5-7.6-.3 1-.2 2.1.4 3 .3.5.8.9 1.3 1.1C10.1 9.4 10 7 10.8 5c.8-2 2.4-3.5 4.2-4.5-.3 1.6.1 3.3 1.2 4.5.7.8 1.5 1.3 2.5 1.6-1 1.2-1.7 2.7-1.7 4.4 0 3.3 2 4.5 2 7C19 19.4 15.4 23 12 23z"/></svg>; }
 function IconCrown() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M3 19h18v2H3v-2zM2 7l4 8h12l4-8-5 3-5-8-5 8-5-3z"/></svg>; }
 
-// Refleja los métodos reales de /recharge: el pago automático (Mercado Pago,
-// con tarjeta) primero y luego los manuales.
+// Refleja los métodos reales de /recharge: las pasarelas automáticas
+// (Mercado Pago con tarjeta, PayPal y cripto) primero y luego los manuales.
 const PAYMENT_METHODS = [
   { name: 'MercadoPago', logo: '/mercadopago.png' },
+  { name: 'PayPal',      logo: '/paypal-imagotipo.png' },
   { name: 'Tarjetas',    logo: '/tarjetas.png' },
+  { name: 'USDT',        logo: '/usdt.png' },
+  { name: 'USDC',        logo: '/usdc.png' },
   { name: 'Yape',        logo: '/yape-imagotipo.png' },
   { name: 'Plin',        logo: '/plin-imagotipo.png' },
   { name: 'BCP',         logo: '/bcp-imagotipo.png' },
@@ -181,8 +184,8 @@ export default function Landing() {
   useSEO({
     title: lang === 'es' ? 'Inicio' : 'Home',
     description: lang === 'es'
-      ? 'Compra skins, packs y V-Bucks de Fortnite con KidCoins. Entrega automática, pagos con Yape, Plin, transferencia, Bizum o tarjeta (Mercado Pago).'
-      : 'Buy Fortnite skins, packs and V-Bucks with KidCoins. Automatic delivery, pay with Yape, Plin, bank transfer, Bizum or card (Mercado Pago).',
+      ? 'Compra skins, packs y V-Bucks de Fortnite con KidCoins. Entrega automática, pagos con Yape, Plin, Mercado Pago, PayPal, cripto y más.'
+      : 'Buy Fortnite skins, packs and V-Bucks with KidCoins. Automatic delivery, pay with Yape, Plin, Mercado Pago, PayPal, crypto and more.',
     path: '/',
   });
   const { customer } = useAuth();

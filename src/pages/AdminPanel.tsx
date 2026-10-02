@@ -1042,7 +1042,7 @@ export default function AdminPanel() {
       {tab === 'payments' && !loading && (
         <div className="admin-table-section">
           <PaymentFeesAdmin adminFetch={adminFetch} notify={(msg, type) => setToast({ msg, type })} />
-          <p className="admin-tab-sub">Recargas de KC pagadas con Mercado Pago (los pagos antiguos de dLocal Go, PayPal y cripto también aparecen aquí). Los pagos manuales (Yape, Plin, banco, Bizum) están en la pestaña "Comprobantes".</p>
+          <p className="admin-tab-sub">Recargas de KC pagadas por pasarela automática (Mercado Pago, PayPal, cripto; los pagos antiguos de dLocal Go también aparecen aquí). Los pagos manuales (Yape, Plin, banco, Bizum) están en la pestaña "Comprobantes".</p>
           <div className="adm-section-head" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="adm-count">{paymentTotal.toLocaleString('es-PE')} transacci{paymentTotal !== 1 ? 'ones' : 'ón'}</span>
             <div className="adm-filter-row">
@@ -1065,16 +1065,26 @@ export default function AdminPanel() {
                     <td>{p.product_name}</td>
                     <td>
                       <strong>{formatAdminCharged(p)}</strong>
-                      {Number(p.fee_amount) > 0 && <div className="text-muted" style={{ fontSize: '.75rem' }}>precio S/ {Number(p.amount_pen).toFixed(2)} + comisión S/ {Number(p.fee_amount).toFixed(2)}</div>}
+                      {(() => {
+                        // Precio y comisión en la divisa que cobró la pasarela (soles en Mercado Pago, dólares en PayPal/cripto).
+                        const inUSD = p.charged_currency === 'USD';
+                        const sym = inUSD ? 'US$ ' : 'S/ ';
+                        const price = Number(inUSD ? p.amount_usd : p.amount_pen);
+                        return Number(p.fee_amount) > 0 && <div className="text-muted" style={{ fontSize: '.75rem' }}>precio {sym}{price.toFixed(2)} + comisión {sym}{Number(p.fee_amount).toFixed(2)}</div>;
+                      })()}
                     </td>
                     <td>
                       {/* Lo que la pasarela depositó: en rojo si fue menos que el precio */}
-                      {p.net_received == null ? <span className="text-muted">—</span> : (
-                        <strong style={{ color: Number(p.net_received) + 0.005 < Number(p.amount_pen) ? '#dc2626' : '#16a34a' }}
-                          title={Number(p.net_received) + 0.005 < Number(p.amount_pen) ? 'Recibiste menos que el precio: revisa la comisión' : 'Recibiste el precio completo'}>
-                          S/ {Number(p.net_received).toFixed(2)}
-                        </strong>
-                      )}
+                      {p.net_received == null ? <span className="text-muted">—</span> : (() => {
+                        const inUSD = p.charged_currency === 'USD';
+                        const short = Number(p.net_received) + 0.005 < Number(inUSD ? p.amount_usd : p.amount_pen);
+                        return (
+                          <strong style={{ color: short ? '#dc2626' : '#16a34a' }}
+                            title={short ? 'Recibiste menos que el precio: revisa la comisión' : 'Recibiste el precio completo'}>
+                            {inUSD ? 'US$ ' : 'S/ '}{Number(p.net_received).toFixed(2)}
+                          </strong>
+                        );
+                      })()}
                     </td>
                     <td>
                       <span className="status-badge" style={{ '--badge-color':

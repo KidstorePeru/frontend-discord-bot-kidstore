@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { KC_PACKAGES, formatReferencePrice } from '../services/constants';
-import { DEFAULT_PAYMENT_FEES, gatewayTotal, bizumTotal, type PaymentFees } from '../services/fees';
+import { DEFAULT_PAYMENT_FEES, gatewayTotal, bizumTotal, priceUSD, type PaymentFees } from '../services/fees';
 import type { PaymentInfo } from '../services/constants';
 import { getPaymentInfo, getExchangeRates, createPayment, cancelPayment, tryRefreshToken, getMyManualPayments, getPaymentFees, type ManualPaymentRequest } from '../services/api';
 import ProofUploadModal from '../components/ProofUploadModal';
@@ -19,7 +19,7 @@ import SegTabs from '../components/SegTabs';
 import { useSEO } from '../hooks/useSEO';
 
 // Pago manual solo existe para PEN (Perú) y EUR (España) — para las demás
-// divisas se usa el pago automático (Mercado Pago, con tarjeta de cualquier país).
+// divisas se usa el pago automático (Mercado Pago con tarjeta, PayPal o cripto).
 type Currency = 'PEN' | 'EUR';
 type MethodId = 'yape' | 'plin' | 'bcp' | 'interbank' | 'bbva' | 'bizum';
 
@@ -76,8 +76,8 @@ export default function Recharge() {
   useSEO({
     title: lang === 'es' ? 'Recargar KidCoins' : 'Recharge KidCoins',
     description: lang === 'es'
-      ? 'Recarga KidCoins con Yape, Plin, transferencia, Bizum o tarjeta (Mercado Pago) y compra en la tienda de Fortnite.'
-      : 'Recharge KidCoins with Yape, Plin, bank transfer, Bizum or card (Mercado Pago) and shop the Fortnite store.',
+      ? 'Recarga KidCoins con Yape, Plin, transferencia, Bizum, tarjeta (Mercado Pago), PayPal o cripto y compra en la tienda de Fortnite.'
+      : 'Recharge KidCoins with Yape, Plin, bank transfer, Bizum, card (Mercado Pago), PayPal or crypto and shop the Fortnite store.',
   });
   const { currency: refCurrency, rates: refRates } = useCurrency();
   const [copied, setCopied]         = useState('');
@@ -379,9 +379,16 @@ export default function Recharge() {
     mpMethods:  es ? 'Tarjeta de crédito o débito (de Perú o del extranjero) y más' : 'Credit or debit card (from Peru or abroad) and more',
     pkgPrice:   es ? 'Precio del paquete' : 'Package price',
     mpFee:      es ? 'Comisión de Mercado Pago' : 'Mercado Pago fee',
-    chargedPEN: (approx: string) => es
-      ? `Se cobra en soles (≈ ${approx}); tu banco hace la conversión.`
-      : `Charged in Peruvian soles (≈ ${approx}); your bank converts it.`,
+    chargedIntl: (approx: string) => es
+      ? `Mercado Pago cobra en soles (≈ ${approx}); PayPal y cripto, en dólares. Tu banco hace la conversión.`
+      : `Mercado Pago charges in Peruvian soles (≈ ${approx}); PayPal and crypto, in US dollars. Your bank converts it.`,
+    payWithPP:  es ? 'Pagar con PayPal' : 'Pay with PayPal',
+    ppMethods:  es ? 'Saldo de PayPal o tarjeta' : 'PayPal balance or card',
+    payWithCrypto: es ? 'Pagar con cripto' : 'Pay with crypto',
+    feeWord:    es ? 'comisión' : 'fee',
+    cryptoFee:  (price: string) => es
+      ? `${price} + la comisión de la red (la ves al elegir la cripto)`
+      : `${price} + the network fee (shown when you pick the coin)`,
     noFeeManual: es ? '¿Prefieres no pagar comisión? Paga con Yape, Plin o transferencia en' : 'Rather not pay a fee? Pay with Yape, Plin or bank transfer in',
     manualNotAvailable: es
       ? 'El pago manual no está disponible para tu divisa. Usa el pago automático arriba.'
@@ -524,39 +531,53 @@ export default function Recharge() {
             />
           </div>
 
-          {/* ── Pestaña automática: Mercado Pago para todos (tarjetas de Perú y del
-               extranjero). La comisión la paga el cliente: se muestra el desglose. ── */}
+          {/* ── Pestaña automática: Mercado Pago (tarjetas de Perú y del extranjero);
+               fuera de Perú también PayPal y cripto. La comisión la paga el cliente
+               encima del precio y se muestra desglosada (ver services/fees.ts). ── */}
           {payTab === 'online' && (() => {
             const price = getPrice(selectedPkg);
-            const { total, fee } = gatewayTotal(price, fees.mercadopago);
+            const usd = priceUSD(price, rates?.usd ?? 0.267);
+            const mp = gatewayTotal(price, fees.mercadopago);
+            const pp = gatewayTotal(usd, fees.paypal);
+            const np = gatewayTotal(usd, fees.nowpayments);
             const pen = (n: number) => `S/ ${n.toFixed(2)}`;
+            const dollars = (n: number) => `US$ ${n.toFixed(2)}`;
+            const intl = refCurrency !== 'PEN';
+            const option = (id: string, logo: string, alt: string, color: string, title: string, sub: string, detail: string, total: string) => (
+              <button
+                key={id}
+                className="rc-gateway-btn rc-gateway-btn-main"
+                style={{borderColor: payLoading===id ? color : undefined}}
+                disabled={!!payLoading}
+                onClick={() => handleGateway(id)}
+              >
+                {payLoading===id
+                  ? <RefreshCw size={20} className="spin" style={{color}}/>
+                  : <img src={logo} alt={alt} onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
+                <span><strong>{title}</strong><small>{sub}</small>{intl && <small className="rc-gateway-detail">{detail}</small>}</span>
+                <span className="rc-gateway-total">{total}</span>
+              </button>
+            );
             return (
               <>
                 <div className="rc-gateways">
-                  <button
-                    className="rc-gateway-btn rc-gateway-btn-main"
-                    style={{borderColor: payLoading==='mercadopago' ? '#6c5ce7' : undefined}}
-                    disabled={!!payLoading}
-                    onClick={() => handleGateway('mercadopago')}
-                  >
-                    {payLoading==='mercadopago'
-                      ? <RefreshCw size={20} className="spin" style={{color:'#6c5ce7'}}/>
-                      : <img src="/mercadopago.png" alt="Mercado Pago"
-                             onError={e=>{(e.target as HTMLImageElement).style.display='none';}}/>}
-                    <span><strong>{txt.payWithMP}</strong><small>{txt.mpMethods}</small></span>
-                    <span className="rc-gateway-total">{pen(total)}</span>
-                  </button>
+                  {option('mercadopago', '/mercadopago.png', 'Mercado Pago', '#6c5ce7', txt.payWithMP, txt.mpMethods,
+                    `${pen(price)} + ${txt.feeWord} ${pen(mp.fee)}`, pen(mp.total))}
+                  {intl && option('paypal', '/paypal.png', 'PayPal', '#003087', txt.payWithPP, txt.ppMethods,
+                    `${dollars(usd)} + ${txt.feeWord} ${dollars(pp.fee)}`, dollars(pp.total))}
+                  {intl && option('nowpayments', '/nowpayments.png', 'NOWPayments', '#00c853', txt.payWithCrypto, 'BTC, ETH, USDT +150',
+                    np.fee > 0 ? `${dollars(usd)} + ${txt.feeWord} ${dollars(np.fee)}` : txt.cryptoFee(dollars(usd)), dollars(np.total))}
                 </div>
-                <dl className="rc-fee-breakdown">
-                  <div><dt>{txt.pkgPrice}</dt><dd>{pen(price)}</dd></div>
-                  <div><dt>{txt.mpFee}</dt><dd>+ {pen(fee)}</dd></div>
-                  <div className="is-total"><dt>{txt.total}</dt><dd>{pen(total)}</dd></div>
-                </dl>
-                {refCurrency !== 'PEN' && (
-                  <p className="rc-gateway-note">{txt.chargedPEN(formatReferencePrice(total, refCurrency, refRates))}</p>
+                {!intl && (
+                  <dl className="rc-fee-breakdown">
+                    <div><dt>{txt.pkgPrice}</dt><dd>{pen(price)}</dd></div>
+                    <div><dt>{txt.mpFee}</dt><dd>+ {pen(mp.fee)}</dd></div>
+                    <div className="is-total"><dt>{txt.total}</dt><dd>{pen(mp.total)}</dd></div>
+                  </dl>
                 )}
+                {intl && <p className="rc-gateway-note">{txt.chargedIntl(formatReferencePrice(mp.total, refCurrency, refRates))}</p>}
                 <p className="rc-gateway-note">{txt.gatewayNote}</p>
-                {refCurrency === 'PEN' && (
+                {!intl && (
                   <p className="rc-gateway-note">
                     {txt.noFeeManual}{' '}
                     <button type="button" className="rc-link-btn" onClick={() => setPayTab('manual')}>{txt.tabManual}</button>.

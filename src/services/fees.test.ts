@@ -13,9 +13,18 @@ describe('comisión de Mercado Pago', () => {
     expect(gatewayTotal(31.20, DEFAULT_PAYMENT_FEES.mercadopago)).toEqual({ total: 33.78, fee: 2.58 });
   });
 
+  it('PayPal Gamer: US$8.42 con 6.9% + US$0.30 → el cliente paga US$9.37 (comisión US$0.95)', () => {
+    expect(gatewayTotal(8.42, DEFAULT_PAYMENT_FEES.paypal)).toEqual({ total: 9.37, fee: 0.95 });
+  });
+
+  it('cripto: sin extra configurado no se suma nada (NOWPayments cobra al cliente)', () => {
+    expect(gatewayTotal(8.42, DEFAULT_PAYMENT_FEES.nowpayments)).toEqual({ total: 8.42, fee: 0 });
+  });
+
   it('a la tienda siempre le queda al menos el precio, sin cobrar de más', () => {
     const tarifas: GatewayFee[] = [
       DEFAULT_PAYMENT_FEES.mercadopago,
+      DEFAULT_PAYMENT_FEES.paypal,
       { percent: 4.99, fixed: 1, tax: 18, margin: 0 },
       { percent: 3.99, fixed: 0, tax: 18, margin: 0 },
       { percent: 3.49, fixed: 1, tax: 18, margin: 0.5 },
