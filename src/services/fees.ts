@@ -30,7 +30,7 @@ export interface PaymentFees {
 // Las mismas que usa el backend si el admin no guardó otras.
 export const DEFAULT_PAYMENT_FEES: PaymentFees = {
   mercadopago: { percent: 3.49, fixed: 1, tax: 18, margin: 0, volume_threshold: 25000, volume_percent: 3.99 },
-  paypal: { percent: 6.9, fixed: 0.3, tax: 0, margin: 0 },
+  paypal: { percent: 5.4, fixed: 0.3, tax: 0, margin: 0 },
   nowpayments: { percent: 0, fixed: 0, tax: 0, margin: 0 },
   bizum: { percent: 1.5, fixed: 0, fx_margin: 0 },
 };

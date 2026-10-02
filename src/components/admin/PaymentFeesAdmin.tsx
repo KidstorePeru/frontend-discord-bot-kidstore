@@ -112,7 +112,7 @@ export default function PaymentFeesAdmin({ adminFetch, notify }: {
         </div>
         <div className="pf-box">
           <h4>PayPal (cobra en dólares)</h4>
-          <p className="pf-help">Tu tarifa está en PayPal → Actividad → detalle de un cobro ("Comisión"). Para cobros del extranjero, Perú cobra 5.4% + 1.5% internacional + US$0.30. Si al retirar a tu banco pierdes en el cambio, súmalo en "Margen extra".</p>
+          <p className="pf-help">Tu tarifa está en PayPal → Actividad → detalle de un cobro ("Comisión"). PayPal Perú cobra 5.4% + US$0.30 (igual para cobros nacionales e internacionales). Si al retirar a tu banco pierdes en el cambio, súmalo en "Margen extra".</p>
           <div className="pf-fields">
             <NumField label="Comisión" value={pp.percent} onChange={(v) => setGW('paypal', 'percent', v)} suffix="%" />
             <NumField label="Cargo fijo por venta" value={pp.fixed} onChange={(v) => setGW('paypal', 'fixed', v)} suffix="US$" />
@@ -166,7 +166,7 @@ export default function PaymentFeesAdmin({ adminFetch, notify }: {
 
       <footer className="pf-foot">
         <span className="text-muted">
-          {meta.updated_at ? `Última modificación: ${meta.updated_by || '—'} · ${new Date(meta.updated_at).toLocaleString('es-PE')}` : 'Usando las tarifas públicas (Mercado Pago 3.49% + S/1 + IGV; PayPal 6.9% + US$0.30) hasta que guardes las tuyas.'}
+          {meta.updated_at ? `Última modificación: ${meta.updated_by || '—'} · ${new Date(meta.updated_at).toLocaleString('es-PE')}` : 'Usando las tarifas públicas (Mercado Pago 3.49% + S/1 + IGV; PayPal 5.4% + US$0.30) hasta que guardes las tuyas.'}
         </span>
         <button className="btn btn-primary btn-sm" disabled={!dirty || saving} onClick={() => void save()}>
           {saving ? <Loader2 size={14} className="spin" /> : <Save size={14} />} Guardar comisiones
