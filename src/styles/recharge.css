@@ -5,24 +5,6 @@
    RECHARGE PAGE — Premium redesign
    ══════════════════════════════════════════ */
 
-/* Balance banner */
-
-/* Page header */
-
-.pkg-tag {
-  position: absolute; top: 0; right: 0; padding: 4px 10px;
-  border-radius: 0 var(--radius-lg) 0 var(--radius-md);
-  font-size: 0.62rem; font-weight: 800; color: #000; background: var(--kc-gold);
-}
-
-.pkg-name  { font-weight: 800; font-size: 0.95rem; }
-.pkg-kc    { font-size: 1.25rem; font-weight: 900; color: var(--kc-gold); }
-.pkg-prices { display: flex; flex-direction: column; gap: 1px; font-size: 0.73rem; color: var(--text-muted); margin-top: 1px; }
-
-.pkg-check { color: var(--accent); position: absolute; bottom: 10px; right: 10px; }
-
-.summary-price      { font-size: 1.15rem; color: var(--kc-gold); }
-
 /* Payment method display with QR */
 .pay-block {
   background: var(--bg-surface); border: 1px solid var(--border-bright);
@@ -44,10 +26,6 @@
 .pay-line-value { font-size: 0.88rem; color: var(--text-secondary); }
 .pay-note { font-size: 0.78rem; color: var(--amber-500); padding: 9px 13px; background: color-mix(in srgb, var(--amber-500) 8%, transparent); border-radius: var(--radius-sm); line-height: 1.5; }
 
-.btn-copy { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: var(--radius-sm); flex-shrink: 0; background: var(--accent-soft); color: var(--accent); transition: all 0.2s; }
-.btn-copy:hover { background: var(--accent); color: #fff; }
-
-.confirm-note        { font-size: 0.79rem !important; color: var(--text-muted) !important; }
 
 @media (max-width: 480px) {  .pay-qr { width: 100%; height: auto; aspect-ratio: 1; } }
 

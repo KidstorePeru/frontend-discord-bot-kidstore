@@ -2,25 +2,6 @@
 /* ═══════════════════════════════════════════════════
    LANDING
    ═══════════════════════════════════════════════════ */
-.landing { overflow: hidden; }
-.hero {
-  position: relative; min-height: 86vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 80px 24px;
-}
-
-.hero-content { position: relative; z-index: 2; max-width: 640px; text-align: center; animation: fadeUp 0.6s ease-out both; }
-
-.hero-content h1 { font-size: clamp(2rem, 6vw, 3.6rem); margin-bottom: 18px; }
-
-.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-
-.section { max-width: var(--max-width); margin: 0 auto; padding: 64px 24px; }
-
-.section-title { font-size: 1.9rem; text-align: center; margin-bottom: 44px; }
-
-.footer { padding: 28px 24px; text-align: center; color: var(--text-muted); font-size: 0.82rem; border-top: 1px solid var(--border); }
-
 /* ════════════════════════════════════════════════════════
    LANDING v2 — DARK GAMING PREMIUM
    ════════════════════════════════════════════════════════ */

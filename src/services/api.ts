@@ -484,7 +484,7 @@ export async function getPaymentInfo(): Promise<Record<string, Record<string, st
 
 export interface BotsStatusResponse {
   success: boolean;
-  accounts: { id: string; display_name: string; remaining_gifts: number; vbucks: number; is_active: boolean; created_at: string; friends_count?: number | null; friends_limit?: number }[];
+  accounts: { id: string; display_name: string; remaining_gifts: number; is_active: boolean; friends_count?: number | null; friends_limit?: number }[];
   in_schedule: boolean;
   reason: string;
   schedule: { enabled: boolean; start_hour: number; end_hour: number; timezone: string };

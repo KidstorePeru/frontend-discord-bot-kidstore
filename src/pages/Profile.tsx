@@ -301,7 +301,7 @@ function PerfilTab({ customer, refresh, setAuth, setToast, lang, onCopyId, copie
                   value={passForEpic}
                   onChange={e => setPassForEpic(e.target.value)}
                 />
-                <button type="button" className="pass-eye" onClick={() => setShowPass(v => !v)}>
+                <button type="button" className="pass-eye" onClick={() => setShowPass(v => !v)} aria-label={es ? 'Mostrar u ocultar la contraseña' : 'Show or hide the password'}>
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -333,7 +333,7 @@ function PerfilTab({ customer, refresh, setAuth, setToast, lang, onCopyId, copie
             <span className="account-info-label"><User size={13}/> {es ? 'ID de usuario' : 'User ID'}</span>
             <span className="account-info-value account-info-mono">
               {customer.id}
-              <button className="btn-copy-sm" onClick={onCopyId} type="button">
+              <button className="btn-copy-sm" onClick={onCopyId} type="button" aria-label={es ? 'Copiar ID de usuario' : 'Copy user ID'}>
                 {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}
               </button>
             </span>
@@ -633,7 +633,7 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
                     onChange={e => setPassForEmail(e.target.value)}
                     disabled={emailLocked}
                   />
-                  <button type="button" className="pass-eye" onClick={() => setShowPassEmail(v => !v)}>
+                  <button type="button" className="pass-eye" onClick={() => setShowPassEmail(v => !v)} aria-label={es ? 'Mostrar u ocultar la contraseña' : 'Show or hide the password'}>
                     {showPassEmail ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
@@ -744,7 +744,7 @@ function SecurityTab({ customer, setAuth, setToast, lang }: {
                   onChange={e => setCurrPass(e.target.value)}
                   required
                 />
-                <button type="button" className="pass-eye" onClick={() => setShowPass(v => !v)}>
+                <button type="button" className="pass-eye" onClick={() => setShowPass(v => !v)} aria-label={es ? 'Mostrar u ocultar la contraseña' : 'Show or hide the password'}>
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -1161,7 +1161,7 @@ function OrderDetailCard({ order, lang }: { order: Order; lang: string }) {
         <div className="order-detail-meta">
           <span className="order-detail-id">
             {es ? 'N.º de pedido:' : 'Order ID:'} <code>{order.id.slice(0, 13)}…</code>
-            <button className="btn-copy-sm" onClick={copyId} type="button">{copied ? <CheckCircle2 size={12}/> : <Copy size={12}/>}</button>
+            <button className="btn-copy-sm" onClick={copyId} type="button" aria-label={es ? 'Copiar N.º de pedido' : 'Copy order ID'}>{copied ? <CheckCircle2 size={12}/> : <Copy size={12}/>}</button>
           </span>
           <span className="order-detail-date"><Clock size={12}/> {new Date(order.created_at).toLocaleDateString(es ? 'es-PE' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
         </div>

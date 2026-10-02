@@ -284,7 +284,7 @@ export default function ResetPassword() {
                 onChange={e => setPassword(e.target.value)}
                 required minLength={8} autoFocus
               />
-              <button type="button" className="pass-eye" onClick={() => setShow(v => !v)}>
+              <button type="button" className="pass-eye" onClick={() => setShow(v => !v)} aria-label={es ? 'Mostrar u ocultar la contraseña' : 'Show or hide the password'}>
                 {show ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>

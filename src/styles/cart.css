@@ -145,11 +145,6 @@
 .confirm-balance span, .confirm-total span, .confirm-remaining span { color: var(--text-secondary); }
 .confirm-total { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 2px; }
 .confirm-total-num { font-size: 1.1rem; color: var(--kc-gold); }
-.confirm-note {
-  font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;
-  padding: 10px 14px; background: var(--bg-sunken);
-  border-radius: var(--radius-sm);
-}
 .confirm-modal-footer {
   display: flex; gap: 10px; padding: 18px 26px;
   border-top: 1px solid var(--border); flex-wrap: wrap;

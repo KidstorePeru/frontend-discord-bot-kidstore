@@ -21,6 +21,12 @@ const OAUTH_ERROR_MESSAGES: Record<string, { es: string; en: string }> = {
   invalid_state:      { es: 'La sesión de inicio expiró, intenta de nuevo.', en: 'The login session expired, please try again.' },
   exchange_failed:    { es: 'No se pudo verificar tu cuenta. Intenta de nuevo.', en: "We couldn't verify your account. Please try again." },
   user_fetch_failed:  { es: 'No se pudo obtener tu perfil. Intenta de nuevo.', en: "We couldn't fetch your profile. Please try again." },
+  no_user_id:         { es: 'No se pudo obtener tu perfil. Intenta de nuevo.', en: "We couldn't fetch your profile. Please try again." },
+  missing_code:       { es: 'No se completó el inicio de sesión. Si lo cancelaste por error, vuelve a intentarlo.', en: "The sign-in wasn't completed. If you cancelled it by mistake, please try again." },
+  account_inactive:   { es: 'Tu cuenta está desactivada. Si crees que es un error, escríbenos por WhatsApp o Discord.', en: 'Your account is deactivated. If you think this is a mistake, message us on WhatsApp or Discord.' },
+  invalid_link_token: { es: 'El enlace para vincular tu cuenta venció. Inicia sesión y vuelve a intentarlo desde Mi cuenta → Seguridad.', en: 'The link to connect your account expired. Sign in and try again from My account → Security.' },
+  token_error:        { es: 'Tuvimos un problema al iniciar tu sesión. Intenta de nuevo en unos minutos.', en: 'We had a problem signing you in. Please try again in a few minutes.' },
+  internal_error:     { es: 'Tuvimos un problema al iniciar tu sesión. Intenta de nuevo en unos minutos.', en: 'We had a problem signing you in. Please try again in a few minutes.' },
 };
 
 export default function Login() {

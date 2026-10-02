@@ -9,7 +9,7 @@ import Bots from './Bots';
 // al final de las cuentas conectadas.
 
 const account = (id: string, name: string, friends: number | null) => ({
-  id, display_name: name, remaining_gifts: 5, vbucks: 1000, is_active: true, created_at: '2026-01-01',
+  id, display_name: name, remaining_gifts: 5, is_active: true,
   friends_count: friends, friends_limit: 1000,
 });
 
