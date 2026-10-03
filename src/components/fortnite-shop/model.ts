@@ -36,7 +36,9 @@ export interface ApiEntry {
   inDate?: string;
   outDate?: string;
   giftable?: boolean;
-  banner?: { value?: string; backendValue?: string };
+  banner?: { value?: string; backendValue?: string; intensity?: string };
+  /** Material del fondo de la tarjeta (p. ej. ShopTile_Holographic). */
+  tileBackgroundMaterial?: string;
   colors?: { color1?: string; color2?: string; color3?: string; textBackgroundColor?: string };
   layout?: { id: string; name?: string; category?: string; index?: number; rank?: number; displayType?: string };
   bundle?: { name?: string; info?: string; image?: string };
@@ -66,7 +68,11 @@ export interface Offer {
   images: string[];
   colors: { gradient: string; text: string; accent: string };
   price: { final: number; regular: number; formattedFinal: string; formattedRegular: string };
-  discountBanner: string | null;
+  /** Cinta sobre el nombre: "¡Personalizable!", "¡Nuevo!", un descuento…
+   *  high = cinta amarilla (como la tienda oficial); si no, blanca. */
+  ribbon: { text: string; high: boolean } | null;
+  /** Fondo holográfico animado (líneas y barrido de luz), material ShopTile_Holographic. */
+  holo: boolean;
   features: string[];
   outDate?: string;
   rarityLabel: string | null;
@@ -265,13 +271,17 @@ function toOffer(entry: ApiEntry, order: number, t: ShopText, nf: Intl.NumberFor
   const regular = entry.regularPrice ?? entry.finalPrice;
   const final = entry.finalPrice;
 
-  let discountBanner: string | null = null;
+  // La etiqueta de la oferta va como cinta sobre el nombre, igual que en la
+  // tienda oficial: amarilla si su intensidad es alta ("¡Personalizable!",
+  // "¡Nuevo!", "¡Reacciona a la música!") y blanca si es baja (descuentos).
+  let ribbon: Offer['ribbon'] = null;
   const features: string[] = [];
   if (entry.banner?.value) {
+    const high = entry.banner.intensity?.toLowerCase() === 'high';
     if (entry.banner.backendValue === 'AmountOff') {
-      discountBanner = regular > final ? t.amountOff(nf.format(regular - final)) : entry.banner.value;
+      ribbon = { text: regular > final ? t.amountOff(nf.format(regular - final)) : entry.banner.value, high };
     } else {
-      features.push(entry.banner.value);
+      ribbon = { text: t.ribbon(entry.banner.value), high };
     }
   }
   if (br.some((i) => i.variants?.some((v) => (v.options?.length ?? 0) > 1))) features.push(t.selectableStyles);
@@ -293,7 +303,8 @@ function toOffer(entry: ApiEntry, order: number, t: ShopText, nf: Intl.NumberFor
     images,
     colors: offerColors(entry.colors),
     price: { final, regular, formattedFinal: nf.format(final), formattedRegular: nf.format(regular) },
-    discountBanner,
+    ribbon,
+    holo: entry.tileBackgroundMaterial === 'ShopTile_Holographic',
     features,
     outDate: entry.outDate,
     rarityLabel: main?.series?.value || main?.rarity?.displayValue || null,

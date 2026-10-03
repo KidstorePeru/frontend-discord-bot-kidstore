@@ -1,4 +1,4 @@
-import { memo, useRef, type CSSProperties } from 'react';
+import { memo, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import CardMedia from './CardMedia';
 import Price from './Price';
 import WishBell from './WishBell';
@@ -18,6 +18,39 @@ function LeaveBadge({ outDate, label, live }: { outDate: string; label: string; 
     <div className={`fns-card__leave${ms < 3_600_000 ? ' is-urgent' : ''}`} title={`${label} ${text}`}>
       <ClockIcon size={12} />
       <span>{text}</span>
+    </div>
+  );
+}
+
+// Cinta sobre el nombre ("¡Personalizable!", "¡Nuevo!", descuentos). Si el
+// texto no cabe en la tarjeta, se desplaza de lado a lado como en la tienda
+// oficial (sin animación para quien prefiere reducir el movimiento).
+function Ribbon({ text, high }: { text: string; high: boolean }) {
+  const trackRef = useRef<HTMLSpanElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(false);
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    const el = textRef.current;
+    if (!track || !el) return;
+    // El texto se mide a su ancho natural contra el espacio de la cinta, así el
+    // resultado no cambia al pasar a desplazarse (no hay ida y vuelta).
+    const check = () => setOverflow(el.offsetWidth > track.clientWidth + 1);
+    check();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(check);
+    ro.observe(track);
+    return () => ro.disconnect();
+  }, [text]);
+  return (
+    <div
+      className={`fns-card__pill${high ? ' is-high' : ''}${overflow ? ' is-marquee' : ''}`}
+      style={overflow ? ({ '--marquee-duration': `${Math.max(4, text.length * 0.22)}s` } as CSSProperties) : undefined}
+    >
+      <span className="fns-card__pill-track" ref={trackRef}>
+        <span ref={textRef}>{text}</span>
+        {overflow && <span aria-hidden="true">{text}</span>}
+      </span>
     </div>
   );
 }
@@ -50,7 +83,10 @@ function OfferCard({
         className={`fns-card fns-card--${offer.cols} fns-card--${offer.preset}${wide ? ' fns-card--wide' : ''}${inCart ? ' fns-card--in-cart' : ''}`}
         style={{ '--card-bg': offer.colors.gradient, '--card-text': offer.colors.text } as CSSProperties}
       >
-        <div className="fns-card__bg" aria-hidden="true" />
+        <div className="fns-card__bg" aria-hidden="true">
+          {/* Material holográfico: líneas que corren y un barrido de luz (como la tienda oficial). */}
+          {offer.holo && <div className="fns-card__holo" />}
+        </div>
         <CardMedia images={offer.images} preset={offer.preset} alt={offer.title} active={inView} />
         {offer.outDate && <LeaveBadge outDate={offer.outDate} label={t.leavesIn} live={inView} />}
         {offer.wish && <WishBell wish={offer.wish} t={t} />}
@@ -62,11 +98,7 @@ function OfferCard({
 
         <div className="fns-card__content">
           <div className="fns-card__info">
-            {offer.discountBanner && (
-              <div className="fns-card__pill">
-                <span>{offer.discountBanner}</span>
-              </div>
-            )}
+            {offer.ribbon && <Ribbon text={offer.ribbon.text} high={offer.ribbon.high} />}
             {offer.subtitle && <div className="fns-card__subtitle">{offer.subtitle}</div>}
             <h3 className="fns-card__title">{offer.title}</h3>
             <div className="fns-card__buy">

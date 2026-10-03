@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildShop, filterShop, isValidEntry, withBestSellers, type ApiEntry } from './model';
-import { SHOP_LANGS } from './i18n';
+import { SHOP_LANGS, type ShopText } from './i18n';
 
 // Regresiones del orden exacto de la tienda oficial (ver PROMPT-tienda-fortnite.md §2):
 //   secciones por layout.rank DESC (empate: layout.index ASC)
@@ -167,5 +167,40 @@ describe('isValidEntry', () => {
     ['layout no es objeto', { ...ok, layout: 'x' }],
   ])('rechaza %s', (_name, value) => {
     expect(isValidEntry(value)).toBe(false);
+  });
+});
+
+describe('buildShop — cintas y material de la tarjeta (como la tienda oficial)', () => {
+  const offersOf = (entries: ApiEntry[], lang: ShopText = t) => buildShop(entries, lang).sections.flatMap((s) => s.groups.flatMap((g) => g.offers));
+
+  it('la etiqueta va como cinta: amarilla si es de intensidad alta, con signos de exclamación', () => {
+    const [a, b, c] = offersOf([
+      entry({ offerId: 'a', banner: { value: 'Personalizable', backendValue: 'Customizable', intensity: 'High' } }),
+      entry({ offerId: 'b', banner: { value: 'Reacciona a la música', backendValue: 'MusicianPickaxe', intensity: 'High' } }),
+      entry({ offerId: 'c' }),
+    ]);
+    expect(a.ribbon).toEqual({ text: '¡Personalizable!', high: true });
+    expect(b.ribbon).toEqual({ text: '¡Reacciona a la música!', high: true });
+    expect(c.ribbon).toBeNull();
+    expect(a.features).not.toContain('Personalizable');
+  });
+
+  it('en inglés solo lleva el signo final', () => {
+    const [a] = offersOf([entry({ offerId: 'a', banner: { value: 'New', backendValue: 'New', intensity: 'High' } })], SHOP_LANGS.en);
+    expect(a.ribbon).toEqual({ text: 'New!', high: true });
+  });
+
+  it('el descuento es una cinta blanca con lo que se ahorra', () => {
+    const [a] = offersOf([entry({ offerId: 'a', regularPrice: 2000, finalPrice: 1500, banner: { value: '500 monedas V de descuento', backendValue: 'AmountOff', intensity: 'Low' } })]);
+    expect(a.ribbon).toEqual({ text: '500 monedas V de descuento', high: false });
+  });
+
+  it('el material holográfico activa el fondo animado; los demás no', () => {
+    const [holo, glitch, plain] = offersOf([
+      entry({ offerId: 'a', tileBackgroundMaterial: 'ShopTile_Holographic' }),
+      entry({ offerId: 'b', tileBackgroundMaterial: 'ShopTile_Glitch' }),
+      entry({ offerId: 'c' }),
+    ]);
+    expect([holo.holo, glitch.holo, plain.holo]).toEqual([true, false, false]);
   });
 });

@@ -1297,14 +1297,88 @@
   transform: skewX(-12deg);
 }
 .fns-card__pill span {
-  overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
   font-family: var(--font-ui);
   font-weight: 800;
   font-size: var(--text-2xs);
   line-height: 1.4;
   text-transform: uppercase;
+}
+/* Etiquetas de intensidad alta ("¡Personalizable!", "¡Nuevo!"): amarillas como en la tienda oficial. */
+.fns-card__pill.is-high {
+  background: #f7ff19;
+}
+/* El texto va a su ancho natural; la pista lo recorta. Si no cabe, se desplaza
+   en bucle (dos copias + espacio, se mueve justo una copia). */
+.fns-card__pill-track {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+}
+.fns-card__pill-track > span {
+  flex: none;
+}
+.fns-card__pill.is-marquee .fns-card__pill-track {
+  gap: 2em;
+  overflow: visible;
+  animation: fns-marquee var(--marquee-duration, 6s) linear infinite;
+}
+.fns-card__pill.is-marquee {
+  overflow: hidden;
+}
+@keyframes fns-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-50% - 1em)); }
+}
+
+/* Material holográfico (ShopTile_Holographic): líneas que corren sin parar y un
+   barrido de luz de abajo hacia arriba, por detrás de la imagen del objeto. */
+.fns-card__holo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.25;
+  mix-blend-mode: overlay;
+  background: repeating-linear-gradient(#fff 0, #fff 2px, transparent 3px, transparent 5px);
+  animation: fns-scan-lines 0.2s linear infinite;
+}
+.fns-card__holo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 90%, #fff 100%);
+  animation: fns-scan-swipe 10s linear infinite;
+}
+@keyframes fns-scan-lines {
+  from { background-position: 0 5px; }
+  to { background-position: 0 0; }
+}
+@keyframes fns-scan-swipe {
+  0% { transform: translateY(0); }
+  50%, 100% { transform: translateY(-100%); }
+}
+/* Sin movimiento para quien lo prefiere: la cinta se corta con "…" y el fondo queda quieto. */
+@media (prefers-reduced-motion: reduce) {
+  .fns-card__pill.is-marquee .fns-card__pill-track {
+    animation: none;
+    overflow: hidden;
+  }
+  .fns-card__pill-track > span {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .fns-card__pill-track > span + span {
+    display: none;
+  }
+  .fns-card__holo {
+    animation: none;
+  }
+  .fns-card__holo::after {
+    display: none;
+  }
 }
 @media (min-width: 48rem) {
   .fns-card__pill span {
